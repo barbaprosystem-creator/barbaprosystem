@@ -1,0 +1,82 @@
+.app-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid hsl(var(--border));
+  padding: 1.5rem 1rem;
+  background-color: hsl(var(--background));
+  z-index: 10;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+  padding: 0 0.5rem;
+}
+
+.brand-logo {
+  color: hsl(var(--primary));
+}
+
+.brand-text {
+  color: hsl(var(--foreground));
+  letter-spacing: -0.025em;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover, .nav-item.active {
+  background-color: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+
+.sidebar-footer {
+  margin-top: auto;
+}
+
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  background-color: hsl(var(--background) / 0.5);
+}
+
+/* Scrollbar styling for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground));
+}
