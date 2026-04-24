@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter } from 'lucide-react';
 
@@ -7,26 +7,26 @@ const PIPELINE_STAGES = [
   { id: 'contacted',      label: 'Contactado',        color: '#f59e0b' },
   { id: 'appointment_set',label: 'Cita Agendada',     color: '#8b5cf6' },
   { id: 'estimate_sent',  label: 'Estimado Enviado',  color: '#06b6d4' },
-  { id: 'closed_won',     label: 'âœ... Ganado',          color: '#10b981' },
-  { id: 'closed_lost',    label: 'âŒ Perdido',         color: '#ef4444' },
+  { id: 'closed_won',     label: 'Ã¢Å... Ganado',          color: '#10b981' },
+  { id: 'closed_lost',    label: 'Ã¢ÂÅ Perdido',         color: '#ef4444' },
 ];
 
 const SOURCES = [
-  { id: 'google',    label: 'Google My Business', icon: 'ðŸ"', color: '#4285F4' },
-  { id: 'facebook',  label: 'Facebook',           icon: 'ðŸ"˜', color: '#1877F2' },
-  { id: 'instagram', label: 'Instagram',          icon: 'ðŸ"¸', color: '#E1306C' },
-  { id: 'tiktok',    label: 'TikTok',             icon: 'ðŸŽµ', color: '#010101' },
-  { id: 'referral',  label: 'Referido',           icon: 'ðŸ¤', color: '#10b981' },
-  { id: 'phone',     label: 'Llamada',            icon: 'ðŸ"ž', color: '#6b7280' },
-  { id: 'walk_in',   label: 'Walk-in',            icon: 'ðŸš¶', color: '#f59e0b' },
-  { id: 'web',       label: 'Sitio Web',          icon: 'ðŸŒ', color: '#8b5cf6' },
-  { id: 'other',     label: 'Otro',               icon: 'ðŸ"‹', color: '#6b7280' },
+  { id: 'google',    label: 'Google My Business', icon: 'Ã°Å¸"Â', color: '#4285F4' },
+  { id: 'facebook',  label: 'Facebook',           icon: 'Ã°Å¸"Ë', color: '#1877F2' },
+  { id: 'instagram', label: 'Instagram',          icon: 'Ã°Å¸"Â¸', color: '#E1306C' },
+  { id: 'tiktok',    label: 'TikTok',             icon: 'Ã°Å¸Å½Âµ', color: '#010101' },
+  { id: 'referral',  label: 'Referido',           icon: 'Ã°Å¸Â¤Â', color: '#10b981' },
+  { id: 'phone',     label: 'Llamada',            icon: 'Ã°Å¸"Å¾', color: '#6b7280' },
+  { id: 'walk_in',   label: 'Walk-in',            icon: 'Ã°Å¸Å¡Â¶', color: '#f59e0b' },
+  { id: 'web',       label: 'Sitio Web',          icon: 'Ã°Å¸ÅÂ', color: '#8b5cf6' },
+  { id: 'other',     label: 'Otro',               icon: 'Ã°Å¸"â¹', color: '#6b7280' },
 ];
 
 const QUALITY = {
-  hot:  { label: 'Caliente', color: '#ef4444', dot: 'ðŸ"´' },
-  warm: { label: 'Tibio',    color: '#f59e0b', dot: 'ðŸŸ�' },
-  cold: { label: 'Frio',     color: '#3b82f6', dot: 'ðŸ"µ' },
+  hot:  { label: 'Caliente', color: '#ef4444', dot: 'Ã°Å¸"Â´' },
+  warm: { label: 'Tibio',    color: '#f59e0b', dot: 'Ã°Å¸Å¸¡' },
+  cold: { label: 'Frio',     color: '#3b82f6', dot: 'Ã°Å¸"Âµ' },
 };
 
 const srcMap = Object.fromEntries(SOURCES.map(s => [s.id, s]));
@@ -105,7 +105,7 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
           <div className="crm-form-grid">
             <div className="form-group"><label>Nombre *</label><input value={form.first_name} onChange={e => set('first_name', e.target.value)} required /></div>
             <div className="form-group"><label>Apellido *</label><input value={form.last_name} onChange={e => set('last_name', e.target.value)} required /></div>
-            <div className="form-group"><label>TelÃ�fono</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(502) 555-0000" /></div>
+            <div className="form-group"><label>TelÃ©fono</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(502) 555-0000" /></div>
             <div className="form-group"><label>Email</label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
             <div className="form-group full-width"><label>Direccion</label><input value={form.address} onChange={e => set('address', e.target.value)} /></div>
             <div className="form-group"><label>Ciudad</label><input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Louisville" /></div>
@@ -121,9 +121,9 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
             <div className="form-group">
               <label>Calidad del Lead</label>
               <select value={form.lead_quality || 'warm'} onChange={e => set('lead_quality', e.target.value)}>
-                <option value="hot">ðŸ"´ Caliente</option>
-                <option value="warm">ðŸŸ� Tibio</option>
-                <option value="cold">ðŸ"µ Frio</option>
+                <option value="hot">Ã°Å¸"Â´ Caliente</option>
+                <option value="warm">Ã°Å¸Å¸¡ Tibio</option>
+                <option value="cold">Ã°Å¸"Âµ Frio</option>
               </select>
             </div>
             <div className="form-group">
@@ -258,7 +258,7 @@ export default function CRMPipeline() {
         <div className="crm-toolbar-right">
           <div className="crm-search">
             <Search size={16} />
-            <input placeholder="Buscar nombre, telÃ�fono..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input placeholder="Buscar nombre, telÃ©fono..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="crm-view-toggle">
             <button className={viewMode === 'kanban' ? 'active' : ''} onClick={() => setViewMode('kanban')} title="Kanban">
@@ -345,7 +345,7 @@ export default function CRMPipeline() {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th><th>TelÃ�fono</th><th>Direccion</th>
+                <th>Nombre</th><th>TelÃ©fono</th><th>Direccion</th>
                 <th>Origen</th><th>Calidad</th><th>Etapa</th>
                 <th>Asignado</th><th>Fecha</th>
               </tr>
@@ -357,8 +357,8 @@ export default function CRMPipeline() {
                 return (
                   <tr key={c.id} onClick={() => handleEdit(c)} className="crm-list-row">
                     <td className="lead-name-cell">{c.first_name} {c.last_name}</td>
-                    <td>{c.phone || 'âEUR"'}</td>
-                    <td>{c.address ? `${c.address}${c.city ? `, ${c.city}` : ''}` : 'âEUR"'}</td>
+                    <td>{c.phone || 'Ã¢EUR"'}</td>
+                    <td>{c.address ? `${c.address}${c.city ? `, ${c.city}` : ''}` : 'Ã¢EUR"'}</td>
                     <td>
                       {src ? (
                         <span style={{
@@ -367,15 +367,15 @@ export default function CRMPipeline() {
                         }}>
                           {src.icon} {src.label}
                         </span>
-                      ) : 'âEUR"'}
+                      ) : 'Ã¢EUR"'}
                     </td>
-                    <td>{q ? <span title={q.label}>{q.dot}</span> : 'âEUR"'}</td>
+                    <td>{q ? <span title={q.label}>{q.dot}</span> : 'Ã¢EUR"'}</td>
                     <td>
                       <span className="stage-badge" style={{ background: PIPELINE_STAGES.find(s => s.id === c.pipeline_status)?.color }}>
                         {PIPELINE_STAGES.find(s => s.id === c.pipeline_status)?.label}
                       </span>
                     </td>
-                    <td>{c.assigned_profile?.full_name || 'âEUR"'}</td>
+                    <td>{c.assigned_profile?.full_name || 'Ã¢EUR"'}</td>
                     <td>{new Date(c.created_at).toLocaleDateString('es')}</td>
                   </tr>
                 );

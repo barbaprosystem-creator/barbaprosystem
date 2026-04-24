@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { BarChart3, TrendingUp, DollarSign, Users, FileText, FolderKanban } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
@@ -84,7 +84,7 @@ export default function ReportsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aun. Las acciones de los usuarios aparecerÃ�n aqui.</p>
+          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aun. Las acciones de los usuarios aparecerÃ¡n aqui.</p>
         )}
       </div>
     </div>

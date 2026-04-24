@@ -1,9 +1,9 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Users } from 'lucide-react';
 
-const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'MiÃ�', 'Jue', 'Vie', 'SÃ�b'];
+const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const SALES_TYPES = {
@@ -232,7 +232,7 @@ export default function CalendarPage() {
 
       {/* Tab description */}
       <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-        {tabConfig.description} âEUR" <em>{tabConfig.privateNote}</em>
+        {tabConfig.description} Ã¢EUR" <em>{tabConfig.privateNote}</em>
       </p>
 
       {/* Month navigation */}
@@ -269,7 +269,7 @@ export default function CalendarPage() {
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Nuevo Evento âEUR" {selDate}</h2>
+              <h2>Nuevo Evento Ã¢EUR" {selDate}</h2>
               <button className="modal-close" onClick={() => setShowForm(false)}><X size={20} /></button>
             </div>
             <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px', paddingLeft: '4px' }}>

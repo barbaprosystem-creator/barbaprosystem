@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Package, Search, Plus } from 'lucide-react';
 
@@ -32,7 +32,7 @@ export default function Materials() {
     <div className="admin-page p-6 lg:p-10 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">CatÃ�logo de Materiales</h1>
+          <h1 className="text-3xl font-bold tracking-tight">CatÃ¡logo de Materiales</h1>
           <p className="text-[#888888]">{filtered.length} productos</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4">
@@ -73,7 +73,7 @@ export default function Materials() {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4 admin-card">
           <Package size={40} className="animate-pulse text-slate-700" />
-          <p className="text-sm font-medium uppercase tracking-widest">Cargando catÃ�logo...</p>
+          <p className="text-sm font-medium uppercase tracking-widest">Cargando catÃ¡logo...</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4 admin-card">

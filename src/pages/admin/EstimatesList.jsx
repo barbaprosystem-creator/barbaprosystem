@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -48,7 +48,7 @@ export default function EstimatesList() {
   }
 
   async function deleteEstimate(id) {
-    if(!confirm('Â�Eliminar este estimado?')) return;
+    if(!confirm('Ã¿Eliminar este estimado?')) return;
     await supabase.from('estimate_items').delete().eq('estimate_id',id);
     await supabase.from('estimates').delete().eq('id',id);
     fetchEstimates();
@@ -69,7 +69,7 @@ export default function EstimatesList() {
         <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
         <div className="crm-toolbar-right">
           <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-          <button className="btn-primary" onClick={() => alert('Constructor de Estimados âEUR" Proximamente')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => alert('Constructor de Estimados Ã¢EUR" Proximamente')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
       <div className="estimate-tabs">
@@ -87,10 +87,10 @@ export default function EstimatesList() {
               <tr key={est.id} className="crm-list-row">
                 <td className="est-number">EST-{String(est.estimate_number).padStart(4,'0')}</td>
                 <td className="lead-name-cell">{est.contact?.first_name} {est.contact?.last_name}</td>
-                <td>{est.contact?.address||'âEUR"'}</td>
+                <td>{est.contact?.address||'Ã¢EUR"'}</td>
                 <td className="est-total">{formatCurrency(est.grand_total)}</td>
                 <td><span className="stage-badge" style={{background:STATUS_MAP[est.status]?.color}}>{STATUS_MAP[est.status]?.label}</span></td>
-                <td>{est.creator?.full_name||'âEUR"'}</td>
+                <td>{est.creator?.full_name||'Ã¢EUR"'}</td>
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
                   {est.status==='draft' && <button className="icon-btn" title="Enviar" onClick={() => updateStatus(est.id,'sent')}><Send size={15}/></button>}

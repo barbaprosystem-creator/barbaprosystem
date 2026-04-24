@@ -1,13 +1,13 @@
-﻿import { useEstimatorStore } from '../../store/useEstimatorStore';
+import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const MATERIALS = [
   { id: 'architectural', label: 'Arquitectonico',    desc: 'Asphalt, 30-50 anos' },
   { id: 'designer',      label: 'Premium/Designer',  desc: 'Dimension alta, lifetime' },
-  { id: 'metal_steel',   label: 'Metal âEUR" Acero',     desc: 'Panel standing seam' },
-  { id: 'metal_alum',    label: 'Metal âEUR" Aluminio',  desc: 'Liviano, anti-corrosion' },
+  { id: 'metal_steel',   label: 'Metal Ã¢EUR" Acero',     desc: 'Panel standing seam' },
+  { id: 'metal_alum',    label: 'Metal Ã¢EUR" Aluminio',  desc: 'Liviano, anti-corrosion' },
   { id: 'tpo',           label: 'TPO / Flat',        desc: 'Techo plano comercial' },
-  { id: 'tile',          label: 'Teja / Tile',       desc: 'CerÃ�mica o concreto' },
+  { id: 'tile',          label: 'Teja / Tile',       desc: 'CerÃ¡mica o concreto' },
 ];
 
 export default function RoofingConfigurator() {
@@ -46,7 +46,7 @@ export default function RoofingConfigurator() {
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
             <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
-              Techo âEUR" {MATERIALS.find(m => m.id === roofingConfig.material)?.label}
+              Techo Ã¢EUR" {MATERIALS.find(m => m.id === roofingConfig.material)?.label}
             </p>
             <p className="text-sm text-[#888888]">{roofingConfig.squares || 0} Squares (1 sq = 100 sqft)</p>
           </div>

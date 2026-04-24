@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { MapPin, Calendar, User, Loader2, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';

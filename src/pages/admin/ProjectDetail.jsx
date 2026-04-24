@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus } from 'lucide-react';
@@ -181,7 +181,7 @@ export default function ProjectDetail({ projectId, onBack }) {
 
       {/* Tab content */}
       <div className="bg-[#1a1a1a]/30 border border-[#2a2a2a]/40 rounded-2xl p-6">
-        {/* â"EURâ"EUR PIPELINE TAB */}
+        {/* Ã¢"EURÃ¢"EUR PIPELINE TAB */}
         {activeTab === 'pipeline' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -201,7 +201,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* â"EURâ"EUR PAYMENTS TAB */}
+        {/* Ã¢"EURÃ¢"EUR PAYMENTS TAB */}
         {activeTab === 'payments' && (
           <div className="space-y-4">
             <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
@@ -261,7 +261,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* â"EURâ"EUR PHOTOS TAB */}
+        {/* Ã¢"EURÃ¢"EUR PHOTOS TAB */}
         {activeTab === 'photos' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -295,7 +295,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                         'bg-[#2a2a2a]/80 text-[#c0c0c0]'
                       }`}>
                         {photo.photo_type === 'before' ? 'Antes' :
-                         photo.photo_type === 'after' ? 'DespuÃ�s' :
+                         photo.photo_type === 'after' ? 'DespuÃ©s' :
                          photo.photo_type === 'issue' ? 'Problema' : 'Progreso'}
                       </span>
                     </div>

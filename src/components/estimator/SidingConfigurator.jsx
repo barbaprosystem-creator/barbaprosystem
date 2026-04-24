@@ -1,11 +1,11 @@
-﻿import { useEstimatorStore } from '../../store/useEstimatorStore';
+import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const MATERIALS = [
   { id: 'vinyl',      label: 'Vinyl Siding',   desc: 'Bajo mantenimiento, durable' },
   { id: 'hardiplank', label: 'HardiePlank',    desc: 'Fibra de cemento, resistente' },
   { id: 'lp_smart',   label: 'LP SmartSide',  desc: 'Engineered wood, premium' },
-  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clÃ�sico' },
+  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clÃ¡sico' },
 ];
 
 export default function SidingConfigurator() {
@@ -44,7 +44,7 @@ export default function SidingConfigurator() {
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
             <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
-              Siding âEUR" {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
+              Siding Ã¢EUR" {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
             </p>
             <p className="text-sm text-[#888888]">{sidingConfig.sqft || 0} Square Feet</p>
           </div>

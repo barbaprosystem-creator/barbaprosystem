@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Trash2, Send, Save, FileText } from 'lucide-react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 import { supabase } from '../../lib/supabase';
