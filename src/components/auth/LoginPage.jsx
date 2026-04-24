@@ -14,9 +14,9 @@ export default function LoginPage({ onAuth }) {
     setLoading(true);
     try {
       const result = await onAuth(email, password);
-      if (result?.error) setError(result.error.message || 'Credenciales invÃ¡lidas');
+      if (result?.error) setError(result.error.message || 'Credenciales invalidas');
     } catch {
-      setError('Error de conexiÃ³n. Intenta de nuevo.');
+      setError('Error de conexion. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -32,7 +32,7 @@ export default function LoginPage({ onAuth }) {
   return (
     <div className="login-page">
 
-      {/* â”€â”€ LEFT â€” Brand Panel â”€â”€ */}
+      {/* LEFT - Brand Panel */}
       <div className="login-left">
         <div className="login-brand-mark">
           <img
@@ -48,14 +48,14 @@ export default function LoginPage({ onAuth }) {
         </div>
 
         <div className="login-headline">
-          GestiÃ³n<br />
+          Gestion<br />
           <em>inteligente</em><br />
           de obras
         </div>
 
         <p className="login-tagline">
           Estimaciones, proyectos, clientes y<br />
-          pagos â€” todo en un solo lugar.
+          pagos &mdash; todo en un solo lugar.
         </p>
 
         <div className="login-services">
@@ -65,12 +65,12 @@ export default function LoginPage({ onAuth }) {
         </div>
       </div>
 
-      {/* â”€â”€ RIGHT â€” Form Panel â”€â”€ */}
+      {/* RIGHT - Form Panel */}
       <div className="login-right">
         <div className="login-card">
           <div className="login-card-header">
             <div className="login-gold-line" />
-            <h2>Iniciar SesiÃ³n</h2>
+            <h2>Iniciar Sesion</h2>
             <p>Accede a tu panel de control</p>
           </div>
 
@@ -97,14 +97,14 @@ export default function LoginPage({ onAuth }) {
             </div>
 
             <div className="login-field">
-              <label htmlFor="password">ContraseÃ±a</label>
+              <label htmlFor="password">Contrasena</label>
               <div className="login-password-wrap">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
                   required
                   autoComplete="current-password"
                 />
@@ -133,7 +133,7 @@ export default function LoginPage({ onAuth }) {
 
           {/* Quick Access */}
           <div className="quick-access">
-            <p className="quick-access-label">Acceso RÃ¡pido</p>
+            <p className="quick-access-label">Acceso Rapido</p>
             <div className="quick-access-buttons">
               {quickUsers.map((u) => (
                 <button
@@ -150,7 +150,7 @@ export default function LoginPage({ onAuth }) {
                       const result = await onAuth(u.email, u.pw);
                       if (result?.error) setError(result.error.message || 'Error');
                     } catch {
-                      setError('Error de conexiÃ³n');
+                      setError('Error de conexion');
                     } finally {
                       setLoading(false);
                     }
@@ -163,11 +163,10 @@ export default function LoginPage({ onAuth }) {
           </div>
 
           <p className="login-footer">
-            Barba Construction Â© {new Date().getFullYear()}
+            Barba Construction &copy; {new Date().getFullYear()}
           </p>
         </div>
       </div>
     </div>
   );
 }
-
