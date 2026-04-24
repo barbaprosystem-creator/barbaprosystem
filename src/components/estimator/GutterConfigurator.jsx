@@ -2,11 +2,11 @@
 import Numpad from './Numpad';
 
 const PROFILES = [
-  { id: 'k-style',    label: 'K-Style',    desc: 'MÃ¡s comÃºn, angulado' },
-  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clÃ¡sico' },
+  { id: 'k-style',    label: 'K-Style',    desc: 'MÃ�s comun, angulado' },
+  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clÃ�sico' },
 ];
 const SIZES = [
-  { val: '5', label: '5"', desc: 'Residencial estÃ¡ndar' },
+  { val: '5', label: '5"', desc: 'Residencial estÃ�ndar' },
   { val: '6', label: '6"', desc: 'Residencial premium' },
   { val: '7', label: '7"', desc: 'Comercial / Grande' },
 ];
@@ -50,7 +50,7 @@ export default function GutterConfigurator() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-blue-400 flex-none" />
-        <h3 className="text-xl font-bold text-[#f0f0f0]">ConfiguraciÃ³n de Canales</h3>
+        <h3 className="text-xl font-bold text-[#f0f0f0]">Configuracion de Canales</h3>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -75,7 +75,7 @@ export default function GutterConfigurator() {
 
           {/* Size */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">TamaÃ±o</p>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">Tamano</p>
             <div className="flex gap-3">
               {SIZES.map(s => (
                 <SizeBtn
@@ -91,7 +91,7 @@ export default function GutterConfigurator() {
 
           {/* Preview */}
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
-            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del Ã­tem</p>
+            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
               Canal {gutterConfig.size}" {gutterConfig.profile === 'k-style' ? 'K-Style' : 'Half-Round'}
             </p>

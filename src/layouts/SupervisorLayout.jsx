@@ -55,7 +55,7 @@ export default function SupervisorLayout({ profile, onSignOut }) {
               <span className="admin-user-role">Supervisor</span>
             </div>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar SesiÃ³n">
+          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
             <LogOut size={18} />
           </button>
         </div>

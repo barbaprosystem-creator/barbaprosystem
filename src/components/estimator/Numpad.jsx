@@ -1,6 +1,6 @@
 ﻿import { Delete } from 'lucide-react';
 
-const KEYS = ['7','8','9','4','5','6','1','2','3','.','0','âŒ«'];
+const KEYS = ['7','8','9','4','5','6','1','2','3','.','0','âŒ<<'];
 
 export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onClear, onSubmit, submitLabel = 'Agregar al Estimado', submitColor = 'bg-orange-500 hover:bg-orange-400' }) {
   return (
@@ -17,14 +17,14 @@ export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onCl
         {KEYS.map(key => (
           <button
             key={key}
-            onClick={() => key === 'âŒ«' ? onBackspace() : onAppend(key)}
+            onClick={() => key === 'âŒ<<' ? onBackspace() : onAppend(key)}
             className={`h-14 rounded-xl font-bold text-xl transition-all active:scale-95 border
-              ${key === 'âŒ«'
+              ${key === 'âŒ<<'
                 ? 'bg-[#2a2a2a] hover:bg-red-500/20 hover:text-red-400 text-[#c0c0c0] border-[#333333]/50'
                 : 'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#f0f0f0] border-[#2a2a2a]/50'
               }`}
           >
-            {key === 'âŒ«' ? <Delete size={20} className="mx-auto" /> : key}
+            {key === 'âŒ<<' ? <Delete size={20} className="mx-auto" /> : key}
           </button>
         ))}
       </div>

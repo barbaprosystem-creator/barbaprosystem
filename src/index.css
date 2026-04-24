@@ -3,63 +3,63 @@
 
 
 /* ===================================
-   DESIGN TOKENS â€” BARBA CONSTRUCTION
+   DESIGN TOKENS âEUR" BARBA CONSTRUCTION
    =================================== */
 :root {
-  /* â”€â”€ Brand Palette â”€â”€ */
-  --gold:         #F5C518;   /* Primary yellow â€” rooftop icon */
-  --gold-dark:    #C49A10;   /* Shadow gold â€” depth accent */
+  /* â"EURâ"EUR Brand Palette â"EURâ"EUR */
+  --gold:         #F5C518;   /* Primary yellow âEUR" rooftop icon */
+  --gold-dark:    #C49A10;   /* Shadow gold âEUR" depth accent */
   --gold-glow:    rgba(245, 197, 24, 0.22);
   --gold-soft:    rgba(245, 197, 24, 0.10);
   --gold-hover:   #FFD740;
 
-  /* â”€â”€ Backgrounds â”€â”€ */
-  --bg-primary:   #0b0b0b;   /* True black â€” brand background */
+  /* â"EURâ"EUR Backgrounds â"EURâ"EUR */
+  --bg-primary:   #0b0b0b;   /* True black âEUR" brand background */
   --bg-secondary: #141414;
   --bg-card:      #1a1a1a;
   --bg-card-hover:#222222;
   --bg-input:     #111111;
   --bg-sidebar:   #0b0b0b;
 
-  /* â”€â”€ Text â”€â”€ */
+  /* â"EURâ"EUR Text â"EURâ"EUR */
   --text-primary:   #F0F0F0;
   --text-secondary: #8A8A8A;
   --text-muted:     #555555;
 
-  /* â”€â”€ Accent (maps to gold) â”€â”€ */
+  /* â"EURâ"EUR Accent (maps to gold) â"EURâ"EUR */
   --accent:         var(--gold);
   --accent-glow:    var(--gold-glow);
   --accent-hover:   var(--gold-hover);
   --accent-soft:    var(--gold-soft);
 
-  /* â”€â”€ Status â”€â”€ */
+  /* â"EURâ"EUR Status â"EURâ"EUR */
   --success: #22C55E;
   --warning: #F5C518;
   --danger:  #EF4444;
   --info:    #3B82F6;
 
-  /* â”€â”€ Borders â”€â”€ */
+  /* â"EURâ"EUR Borders â"EURâ"EUR */
   --border:       #242424;
   --border-gold:  rgba(245, 197, 24, 0.35);
   --border-focus: rgba(245, 197, 24, 0.6);
 
-  /* â”€â”€ Radius â”€â”€ */
+  /* â"EURâ"EUR Radius â"EURâ"EUR */
   --radius-sm: 4px;
   --radius:    8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
 
-  /* â”€â”€ Shadows â”€â”€ */
+  /* â"EURâ"EUR Shadows â"EURâ"EUR */
   --shadow-sm:   0 1px 4px rgba(0,0,0,0.6);
   --shadow:      0 4px 16px rgba(0,0,0,0.7);
   --shadow-lg:   0 12px 40px rgba(0,0,0,0.85);
   --shadow-glow: 0 0 24px var(--gold-glow), 0 0 48px rgba(245,197,24,0.08);
 
-  /* â”€â”€ Transitions â”€â”€ */
+  /* â"EURâ"EUR Transitions â"EURâ"EUR */
   --transition:      150ms cubic-bezier(0.4,0,0.2,1);
   --transition-slow: 300ms cubic-bezier(0.4,0,0.2,1);
 
-  /* â”€â”€ Typography â”€â”€ */
+  /* â"EURâ"EUR Typography â"EURâ"EUR */
   --font:         'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-display: 'Oswald', 'Inter', system-ui, sans-serif;
 }
@@ -138,7 +138,7 @@
 .spin { animation: spin 1s linear infinite; }
 
 /* ===================================
-   LOGIN PAGE â€” BARBA CONSTRUCTION
+   LOGIN PAGE âEUR" BARBA CONSTRUCTION
    =================================== */
 .login-page {
   display: flex;
@@ -160,7 +160,7 @@
   z-index: 0;
 }
 
-/* Gold accent bar â€” top left */
+/* Gold accent bar âEUR" top left */
 .login-page::after {
   content: '';
   position: absolute;
@@ -269,7 +269,7 @@
   flex-shrink: 0;
 }
 
-/* â”€â”€ Right panel: form â”€â”€ */
+/* â"EURâ"EUR Right panel: form â"EURâ"EUR */
 .login-right {
   width: 440px;
   min-width: 380px;
@@ -480,7 +480,7 @@
   }
 }
 
-/* â”€â”€ Sidebar Brand â”€â”€ */
+/* â"EURâ"EUR Sidebar Brand â"EURâ"EUR */
 .login-brand { display: none; }
 .login-logo-ring { display: none; }
 .login-title { display: none; }
@@ -1263,7 +1263,7 @@
 
 /* Page Container */
 .admin-page {
-  /* Sin padding propio â€” Tailwind p-* controla el spacing */
+  /* Sin padding propio âEUR" Tailwind p-* controla el spacing */
   min-height: 100%;
 }
 
@@ -1418,8 +1418,8 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  /* Sin overflow:hidden â€” evita recortar contenido interno */
-  /* Sin padding propio â€” cada uso agrega p-* via Tailwind */
+  /* Sin overflow:hidden âEUR" evita recortar contenido interno */
+  /* Sin padding propio âEUR" cada uso agrega p-* via Tailwind */
 }
 
 .admin-card-header {

@@ -45,7 +45,7 @@ export default function ReportsPage() {
     { label:'Proyectos', value:stats.projects, icon:FolderKanban, color:'#f59e0b' },
     { label:'Ingresos Cobrados', value:formatCurrency(stats.revenue), icon:DollarSign, color:'#10b981' },
     { label:'Ticket Promedio', value:formatCurrency(stats.avgDeal), icon:TrendingUp, color:'#06b6d4' },
-    { label:'Tasa de ConversiÃ³n', value:`${stats.convRate}%`, icon:BarChart3, color:'#ec4899' },
+    { label:'Tasa de Conversion', value:`${stats.convRate}%`, icon:BarChart3, color:'#ec4899' },
   ];
 
   return (
@@ -84,7 +84,7 @@ export default function ReportsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aÃºn. Las acciones de los usuarios aparecerÃ¡n aquÃ­.</p>
+          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aun. Las acciones de los usuarios aparecerÃ�n aqui.</p>
         )}
       </div>
     </div>

@@ -67,7 +67,7 @@ export default function Clients() {
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
             <Search size={48} className="text-slate-700" />
-            <p className="text-sm font-medium">No se encontraron clientes que coincidan con la bÃºsqueda.</p>
+            <p className="text-sm font-medium">No se encontraron clientes que coincidan con la busqueda.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -84,7 +84,7 @@ export default function Clients() {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {filtered.map((client) => {
-                  const s = statusMap[client.status] || { label: client.status || 'â€”', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
+                  const s = statusMap[client.status] || { label: client.status || 'âEUR"', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                   return (
                     <tr key={client.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
                       <td className="py-4 px-6">
@@ -115,7 +115,7 @@ export default function Clients() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-sm text-[#888888]">
-                        {client.source || 'â€”'}
+                        {client.source || 'âEUR"'}
                       </td>
                       <td className="py-4 px-6 text-sm text-[#888888] font-medium">
                         {new Date(client.created_at).toLocaleDateString('es', { month: 'short', day: 'numeric', year: 'numeric' })}

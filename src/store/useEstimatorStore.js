@@ -57,10 +57,10 @@ export const useEstimatorStore = create((set, get) => ({
     const { roofingConfig, prices, addItem } = get();
     const sq = parseFloat(roofingConfig.squares) || 0;
     if (sq <= 0) return;
-    const labels = { architectural: 'Shingles Arquitectónicos', designer: 'Shingles Premium', metal_steel: 'Metal (Acero)', metal_alum: 'Metal (Aluminio)', tpo: 'TPO/Flat', tile: 'Teja/Tile' };
+    const labels = { architectural: 'Shingles Arquitectonicos', designer: 'Shingles Premium', metal_steel: 'Metal (Acero)', metal_alum: 'Metal (Aluminio)', tpo: 'TPO/Flat', tile: 'Teja/Tile' };
     const cat = prices.find(p => p.category?.toLowerCase() === 'roofing');
     const unitPrice = cat?.unit_price || cat?.sell_price || 350;
-    addItem({ service: 'roofing', name: `Techo — ${labels[roofingConfig.material]}`, details: `${sq} sq @ $${unitPrice.toFixed(2)}/sq`, quantity: sq, unitPrice, total: sq * unitPrice });
+    addItem({ service: 'roofing', name: `Techo  -  ${labels[roofingConfig.material]}`, details: `${sq} sq @ $${unitPrice.toFixed(2)}/sq`, quantity: sq, unitPrice, total: sq * unitPrice });
   },
 
   // Siding
@@ -76,7 +76,7 @@ export const useEstimatorStore = create((set, get) => ({
     const labels = { vinyl: 'Vinyl Siding', hardiplank: 'HardiePlank', lp_smart: 'LP SmartSide', wood: 'Madera Natural' };
     const cat = prices.find(p => p.category?.toLowerCase() === 'siding');
     const unitPrice = cat?.unit_price || cat?.sell_price || 8.50;
-    addItem({ service: 'siding', name: `Siding — ${labels[sidingConfig.material]}`, details: `${sqft} sqft @ $${unitPrice.toFixed(2)}/sqft`, quantity: sqft, unitPrice, total: sqft * unitPrice });
+    addItem({ service: 'siding', name: `Siding  -  ${labels[sidingConfig.material]}`, details: `${sqft} sqft @ $${unitPrice.toFixed(2)}/sqft`, quantity: sqft, unitPrice, total: sqft * unitPrice });
   },
 
   // Windows
@@ -90,11 +90,11 @@ export const useEstimatorStore = create((set, get) => ({
     const qty = parseFloat(windowsConfig.quantity) || 0;
     if (qty <= 0) return;
     const typeLabels = { double_hung: 'Double Hung', single_hung: 'Single Hung', casement: 'Casement', sliding: 'Sliding', picture: 'Picture/Fixed', bay: 'Bay Window' };
-    const sizeLabels = { small: 'Pequeño', medium: 'Mediano', large: 'Grande' };
+    const sizeLabels = { small: 'Pequeno', medium: 'Mediano', large: 'Grande' };
     const cat = prices.find(p => p.category?.toLowerCase() === 'windows');
     const base = cat?.unit_price || cat?.sell_price || 450;
     const mult = { small: 0.8, medium: 1, large: 1.3 }[windowsConfig.size];
     const unitPrice = base * mult;
-    addItem({ service: 'windows', name: `Ventana — ${typeLabels[windowsConfig.type]}`, details: `${qty} uds (${sizeLabels[windowsConfig.size]}) @ $${unitPrice.toFixed(2)}/ud`, quantity: qty, unitPrice, total: qty * unitPrice });
+    addItem({ service: 'windows', name: `Ventana  -  ${typeLabels[windowsConfig.type]}`, details: `${qty} uds (${sizeLabels[windowsConfig.size]}) @ $${unitPrice.toFixed(2)}/ud`, quantity: qty, unitPrice, total: qty * unitPrice });
   },
 }));

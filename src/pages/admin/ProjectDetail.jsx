@@ -126,7 +126,7 @@ export default function ProjectDetail({ projectId, onBack }) {
               <MapPin size={18} className="text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-[#555555] uppercase tracking-wider">DirecciÃ³n</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Direccion</p>
               <p className="text-sm font-bold text-[#f0f0f0] truncate">{project.address}</p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ProjectDetail({ projectId, onBack }) {
 
       {/* Tab content */}
       <div className="bg-[#1a1a1a]/30 border border-[#2a2a2a]/40 rounded-2xl p-6">
-        {/* â”€â”€ PIPELINE TAB */}
+        {/* â"EURâ"EUR PIPELINE TAB */}
         {activeTab === 'pipeline' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -201,7 +201,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* â”€â”€ PAYMENTS TAB */}
+        {/* â"EURâ"EUR PAYMENTS TAB */}
         {activeTab === 'payments' && (
           <div className="space-y-4">
             <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
@@ -232,7 +232,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-[#e0e0e0]">
-                            {pay.payment_type === 'deposit' ? 'DepÃ³sito' :
+                            {pay.payment_type === 'deposit' ? 'Deposito' :
                              pay.payment_type === 'partial' ? 'Pago Parcial' : 'Pago Final'}
                           </p>
                           {pay.due_date && (
@@ -261,7 +261,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* â”€â”€ PHOTOS TAB */}
+        {/* â"EURâ"EUR PHOTOS TAB */}
         {activeTab === 'photos' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -270,7 +270,7 @@ export default function ProjectDetail({ projectId, onBack }) {
             {photos.length === 0 ? (
               <div className="text-center py-12 text-[#555555]">
                 <Camera size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No hay fotos todavÃ­a.</p>
+                <p className="text-sm">No hay fotos todavia.</p>
                 <p className="text-xs text-slate-600 mt-1">El supervisor puede subir fotos desde la app.</p>
               </div>
             ) : (
@@ -295,7 +295,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                         'bg-[#2a2a2a]/80 text-[#c0c0c0]'
                       }`}>
                         {photo.photo_type === 'before' ? 'Antes' :
-                         photo.photo_type === 'after' ? 'DespuÃ©s' :
+                         photo.photo_type === 'after' ? 'DespuÃ�s' :
                          photo.photo_type === 'issue' ? 'Problema' : 'Progreso'}
                       </span>
                     </div>

@@ -2,12 +2,12 @@
 import Numpad from './Numpad';
 
 const MATERIALS = [
-  { id: 'architectural', label: 'ArquitectÃ³nico',    desc: 'Asphalt, 30-50 aÃ±os' },
-  { id: 'designer',      label: 'Premium/Designer',  desc: 'DimensiÃ³n alta, lifetime' },
-  { id: 'metal_steel',   label: 'Metal â€” Acero',     desc: 'Panel standing seam' },
-  { id: 'metal_alum',    label: 'Metal â€” Aluminio',  desc: 'Liviano, anti-corrosiÃ³n' },
+  { id: 'architectural', label: 'Arquitectonico',    desc: 'Asphalt, 30-50 anos' },
+  { id: 'designer',      label: 'Premium/Designer',  desc: 'Dimension alta, lifetime' },
+  { id: 'metal_steel',   label: 'Metal âEUR" Acero',     desc: 'Panel standing seam' },
+  { id: 'metal_alum',    label: 'Metal âEUR" Aluminio',  desc: 'Liviano, anti-corrosion' },
   { id: 'tpo',           label: 'TPO / Flat',        desc: 'Techo plano comercial' },
-  { id: 'tile',          label: 'Teja / Tile',       desc: 'CerÃ¡mica o concreto' },
+  { id: 'tile',          label: 'Teja / Tile',       desc: 'CerÃ�mica o concreto' },
 ];
 
 export default function RoofingConfigurator() {
@@ -17,7 +17,7 @@ export default function RoofingConfigurator() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-amber-400 flex-none" />
-        <h3 className="text-xl font-bold text-[#f0f0f0]">ConfiguraciÃ³n de Techos</h3>
+        <h3 className="text-xl font-bold text-[#f0f0f0]">Configuracion de Techos</h3>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -44,9 +44,9 @@ export default function RoofingConfigurator() {
           </div>
 
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
-            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del Ã­tem</p>
+            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
-              Techo â€” {MATERIALS.find(m => m.id === roofingConfig.material)?.label}
+              Techo âEUR" {MATERIALS.find(m => m.id === roofingConfig.material)?.label}
             </p>
             <p className="text-sm text-[#888888]">{roofingConfig.squares || 0} Squares (1 sq = 100 sqft)</p>
           </div>

@@ -55,7 +55,7 @@ export default function POSDashboard() {
     <div className="admin-page p-6 lg:p-10 space-y-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Mi Dashboard</h1>
-        <p className="text-[#888888]">Resumen de tu actividad de ventas y desempeÃ±o</p>
+        <p className="text-[#888888]">Resumen de tu actividad de ventas y desempeno</p>
       </div>
 
       {/* KPIs */}
@@ -102,7 +102,7 @@ export default function POSDashboard() {
           ) : recentLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Users size={48} className="text-slate-700" />
-              <p className="text-sm font-medium">No tienes leads asignados todavÃ­a.</p>
+              <p className="text-sm font-medium">No tienes leads asignados todavia.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -129,7 +129,7 @@ export default function POSDashboard() {
                           </span>
                         </td>
                         <td className="py-4 px-6 text-sm text-[#888888]">
-                          {lead.source || 'â€”'}
+                          {lead.source || 'âEUR"'}
                         </td>
                         <td className="py-4 px-6 text-sm text-[#888888] text-right font-medium">
                           {new Date(lead.created_at).toLocaleDateString('es', { month: 'short', day: 'numeric', year: 'numeric' })}

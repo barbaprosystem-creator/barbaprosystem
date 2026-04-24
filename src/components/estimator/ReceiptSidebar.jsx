@@ -66,7 +66,7 @@ export default function ReceiptSidebar() {
         </div>
         <div>
           <h2 className="font-bold text-[#f0f0f0] leading-tight">Resumen del Estimado</h2>
-          <p className="text-xs text-[#888888]">{receiptItems.length} Ã­tem(s)</p>
+          <p className="text-xs text-[#888888]">{receiptItems.length} item(s)</p>
         </div>
       </div>
 
@@ -78,7 +78,7 @@ export default function ReceiptSidebar() {
           onChange={e => setSelectedClient(e.target.value)}
           className="w-full px-3 py-2.5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a]/60 text-[#f0f0f0] text-sm focus:outline-none focus:border-[#F5C518]/60 transition-colors"
         >
-          <option value="">â€” Seleccionar cliente â€”</option>
+          <option value="">âEUR" Seleccionar cliente âEUR"</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
         </select>
       </div>

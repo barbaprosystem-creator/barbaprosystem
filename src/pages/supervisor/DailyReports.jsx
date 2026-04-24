@@ -56,7 +56,7 @@ export default function DailyReports() {
                 <td>{r.weather}</td>
               </tr>
             ))}
-            {reports.length===0 && <tr><td colSpan={5} className="crm-empty-row">No hay reportes aÃºn</td></tr>}
+            {reports.length===0 && <tr><td colSpan={5} className="crm-empty-row">No hay reportes aun</td></tr>}
           </tbody>
         </table>
       </div>
@@ -69,10 +69,10 @@ export default function DailyReports() {
                 <div className="form-group full-width"><label>Proyecto *</label>
                   <select value={form.project_id} onChange={e => setForm({...form,project_id:e.target.value})} required>
                     <option value="">Seleccionar...</option>
-                    {projects.map(p => <option key={p.id} value={p.id}>PRJ-{String(p.project_number).padStart(4,'0')} â€” {p.title}</option>)}
+                    {projects.map(p => <option key={p.id} value={p.id}>PRJ-{String(p.project_number).padStart(4,'0')} âEUR" {p.title}</option>)}
                   </select>
                 </div>
-                <div className="form-group full-width"><label>Trabajo completado *</label><textarea value={form.work_completed} onChange={e => setForm({...form,work_completed:e.target.value})} rows={4} required placeholder="Â¿QuÃ© se hizo hoy?"/></div>
+                <div className="form-group full-width"><label>Trabajo completado *</label><textarea value={form.work_completed} onChange={e => setForm({...form,work_completed:e.target.value})} rows={4} required placeholder="Â�QuÃ� se hizo hoy?"/></div>
                 <div className="form-group"><label>Crew</label><input type="number" value={form.crew_count} onChange={e => setForm({...form,crew_count:+e.target.value})}/></div>
                 <div className="form-group"><label>Clima</label>
                   <select value={form.weather} onChange={e => setForm({...form,weather:e.target.value})}>

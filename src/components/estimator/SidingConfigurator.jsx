@@ -5,7 +5,7 @@ const MATERIALS = [
   { id: 'vinyl',      label: 'Vinyl Siding',   desc: 'Bajo mantenimiento, durable' },
   { id: 'hardiplank', label: 'HardiePlank',    desc: 'Fibra de cemento, resistente' },
   { id: 'lp_smart',   label: 'LP SmartSide',  desc: 'Engineered wood, premium' },
-  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clÃ¡sico' },
+  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clÃ�sico' },
 ];
 
 export default function SidingConfigurator() {
@@ -15,7 +15,7 @@ export default function SidingConfigurator() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-emerald-400 flex-none" />
-        <h3 className="text-xl font-bold text-[#f0f0f0]">ConfiguraciÃ³n de Siding</h3>
+        <h3 className="text-xl font-bold text-[#f0f0f0]">Configuracion de Siding</h3>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -42,9 +42,9 @@ export default function SidingConfigurator() {
           </div>
 
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
-            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del Ã­tem</p>
+            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
-              Siding â€” {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
+              Siding âEUR" {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
             </p>
             <p className="text-sm text-[#888888]">{sidingConfig.sqft || 0} Square Feet</p>
           </div>

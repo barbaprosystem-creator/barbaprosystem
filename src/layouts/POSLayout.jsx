@@ -56,7 +56,7 @@ export default function POSLayout({ onSignOut, profile }) {
               <span className="admin-user-role">Vendedor</span>
             </div>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar SesiÃ³n">
+          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
             <LogOut size={18} />
           </button>
         </div>

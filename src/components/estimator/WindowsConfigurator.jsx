@@ -2,18 +2,18 @@
 import Numpad from './Numpad';
 
 const TYPES = [
-  { id: 'double_hung', label: 'Double Hung',    desc: 'MÃ¡s comÃºn, dos paneles' },
+  { id: 'double_hung', label: 'Double Hung',    desc: 'MÃ�s comun, dos paneles' },
   { id: 'single_hung', label: 'Single Hung',    desc: 'Panel inferior movible' },
   { id: 'casement',    label: 'Casement',       desc: 'Bisagra lateral, full-open' },
   { id: 'sliding',     label: 'Sliding',        desc: 'Deslizante horizontal' },
-  { id: 'picture',     label: 'Picture / Fixed', desc: 'Sin apertura, vista panorÃ¡mica' },
-  { id: 'bay',         label: 'Bay Window',     desc: 'Triple panel en Ã¡ngulo' },
+  { id: 'picture',     label: 'Picture / Fixed', desc: 'Sin apertura, vista panorÃ�mica' },
+  { id: 'bay',         label: 'Bay Window',     desc: 'Triple panel en Ã�ngulo' },
 ];
 
 const SIZES = [
-  { id: 'small',  label: 'PequeÃ±o',  desc: 'Hasta 24Ã—36"' },
-  { id: 'medium', label: 'Mediano',  desc: '28Ã—54" aprox.' },
-  { id: 'large',  label: 'Grande',   desc: '36Ã—60" y mÃ¡s' },
+  { id: 'small',  label: 'Pequeno',  desc: 'Hasta 24Ã - 36"' },
+  { id: 'medium', label: 'Mediano',  desc: '28Ã - 54" aprox.' },
+  { id: 'large',  label: 'Grande',   desc: '36Ã - 60" y mÃ�s' },
 ];
 
 export default function WindowsConfigurator() {
@@ -23,7 +23,7 @@ export default function WindowsConfigurator() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-purple-400 flex-none" />
-        <h3 className="text-xl font-bold text-[#f0f0f0]">ConfiguraciÃ³n de Ventanas</h3>
+        <h3 className="text-xl font-bold text-[#f0f0f0]">Configuracion de Ventanas</h3>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -52,7 +52,7 @@ export default function WindowsConfigurator() {
 
           {/* Size */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">TamaÃ±o</p>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">Tamano</p>
             <div className="flex gap-3">
               {SIZES.map(s => (
                 <button
@@ -73,10 +73,10 @@ export default function WindowsConfigurator() {
 
           {/* Preview */}
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
-            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del Ã­tem</p>
+            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
               {TYPES.find(t => t.id === windowsConfig.type)?.label}{' '}
-              â€” {SIZES.find(s => s.id === windowsConfig.size)?.label}
+              âEUR" {SIZES.find(s => s.id === windowsConfig.size)?.label}
             </p>
             <p className="text-sm text-[#888888]">{windowsConfig.quantity || 0} unidad(es)</p>
           </div>
