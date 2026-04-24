@@ -1,104 +1,65 @@
-import React, { useState } from 'react';
-import { PanelsTopLeft, AppWindow, CornerDownLeft } from 'lucide-react';
+import { useEstimatorStore } from '../../store/useEstimatorStore';
+import Numpad from './Numpad';
+
+const MATERIALS = [
+  { id: 'vinyl',      label: 'Vinyl Siding',   desc: 'Bajo mantenimiento, durable' },
+  { id: 'hardiplank', label: 'HardiePlank',    desc: 'Fibra de cemento, resistente' },
+  { id: 'lp_smart',   label: 'LP SmartSide',  desc: 'Engineered wood, premium' },
+  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clásico' },
+];
 
 export default function SidingConfigurator() {
-  const [profile, setProfile] = useState('vinyl');
-  const [squares, setSquares] = useState('0');
-
-  const appendDigit = (digit) => {
-    setSquares(prev => {
-      if (prev === '0' && digit !== '.') return digit;
-      if (digit === '.' && prev.includes('.')) return prev;
-      return prev + digit;
-    });
-  };
-
-  const clearDigits = () => setSquares('0');
+  const { sidingConfig, setSidingField, sidingAppend, sidingBackspace, sidingClear, addSidingToReceipt } = useEstimatorStore();
 
   return (
-    <div className="mt-6 admin-card flex flex-col gap-8 w-full p-8">
-      <div className="flex items-center gap-4">
-        <div className="h-[2px] bg-[var(--accent)]/50 flex-1 rounded-full"></div>
-        <span className="text-xs font-bold tracking-[0.2em] text-[var(--accent)]">CONFIGURACIÓN DE SIDING</span>
-        <div className="h-[2px] bg-slate-800 flex-1 rounded-full"></div>
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <span className="w-3 h-3 rounded-full bg-emerald-400 flex-none" />
+        <h3 className="text-xl font-bold text-slate-100">Configuración de Siding</h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Left: Toggles & Profiles */}
-        <div className="flex flex-col gap-8">
-          <div>
-            <label className="text-xs font-bold tracking-widest text-slate-400 mb-4 block">TIPO DE MATERIAL</label>
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => setProfile('vinyl')}
-                className={`p-5 rounded-xl flex flex-col items-center gap-3 border transition-all active:scale-95 ${
-                  profile === 'vinyl' 
-                  ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-500 hover:bg-slate-800'
-                }`}
-              >
-                <PanelsTopLeft size={36} />
-                <span className="text-xs font-bold uppercase tracking-widest text-center">Vinyl</span>
-              </button>
-              <button 
-                onClick={() => setProfile('hardie')}
-                className={`p-5 rounded-xl flex flex-col items-center gap-3 border transition-all active:scale-95 ${
-                  profile === 'hardie' 
-                  ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-500 hover:bg-slate-800'
-                }`}
-              >
-                <AppWindow size={36} />
-                <span className="text-xs font-bold uppercase tracking-widest text-center">Hardie Plank</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Custom Numpad for Measurement */}
-        <div className="flex flex-col gap-6">
-          <div>
-            <label className="text-xs font-bold tracking-widest text-slate-400 block mb-3">SQUARES TOTALES</label>
-            <div className="bg-slate-900 border border-slate-700/50 p-5 rounded-2xl flex items-center justify-between shadow-inner">
-              <span className={`text-5xl font-bold tracking-tight ${squares === '0' ? 'text-slate-600' : 'text-[var(--accent)]'}`}>
-                {squares}
-              </span>
-              <span className="text-slate-500 font-bold">SQ</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Options col */}
+        <div className="space-y-7">
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Material</p>
+            <div className="grid grid-cols-2 gap-3">
+              {MATERIALS.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => setSidingField('material', m.id)}
+                  className={`flex flex-col gap-1 px-4 py-4 rounded-2xl border-2 font-semibold transition-all duration-200 text-left
+                    ${sidingConfig.material === m.id
+                      ? 'bg-emerald-500/20 border-emerald-400/70 text-emerald-300'
+                      : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-500 hover:text-slate-200 hover:bg-slate-800'
+                    }`}
+                >
+                  <span className="text-sm font-bold leading-tight">{m.label}</span>
+                  <span className="text-[11px] text-slate-500 font-normal">{m.desc}</span>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button 
-                key={num}
-                onClick={() => appendDigit(num.toString())}
-                className="h-20 bg-slate-800 rounded-xl flex items-center justify-center text-2xl font-semibold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-500 active:scale-95 transition-all shadow-sm"
-              >
-                {num}
-              </button>
-            ))}
-            <button 
-              onClick={clearDigits}
-              className="h-20 bg-red-950/30 rounded-xl flex items-center justify-center text-xl font-bold text-red-500 border border-red-900/50 hover:bg-red-900/40 active:scale-95 transition-all"
-            >
-              C
-            </button>
-            <button 
-              onClick={() => appendDigit('0')}
-              className="h-20 bg-slate-800 rounded-xl flex items-center justify-center text-2xl font-semibold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-500 active:scale-95 transition-all shadow-sm"
-            >
-              0
-            </button>
-            <button 
-              onClick={() => {
-                clearDigits();
-              }}
-              className="h-20 bg-[var(--accent)] rounded-xl flex items-center justify-center text-black hover:bg-orange-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
-            >
-              <CornerDownLeft size={32} />
-            </button>
+          <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-700/40 space-y-2">
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vista previa del ítem</p>
+            <p className="text-slate-100 font-bold text-lg leading-snug">
+              Siding — {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
+            </p>
+            <p className="text-sm text-slate-400">{sidingConfig.sqft || 0} Square Feet</p>
           </div>
         </div>
+
+        {/* Numpad */}
+        <Numpad
+          value={sidingConfig.sqft}
+          unit="Square Feet"
+          onAppend={sidingAppend}
+          onBackspace={sidingBackspace}
+          onClear={sidingClear}
+          onSubmit={addSidingToReceipt}
+          submitColor="bg-emerald-600 hover:bg-emerald-500"
+        />
       </div>
     </div>
   );

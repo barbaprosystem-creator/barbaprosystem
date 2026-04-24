@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Loader2, Plus, MapPin, Calendar, User, TrendingUp } from 'lucide-react';
+import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import ProjectDetail from './ProjectDetail';
 
 const STATUS_MAP = {
-  pending: { label: 'Pendiente', color: '#6b7280' },
-  scheduled: { label: 'Agendado', color: '#3b82f6' },
+  pending:     { label: 'Pendiente',   color: '#6b7280' },
+  scheduled:   { label: 'Agendado',    color: '#3b82f6' },
   in_progress: { label: 'En Progreso', color: '#f59e0b' },
-  completed: { label: 'Completado', color: '#10b981' },
-  on_hold: { label: 'En Espera', color: '#ef4444' },
+  completed:   { label: 'Completado',  color: '#10b981' },
+  on_hold:     { label: 'En Espera',   color: '#ef4444' },
 };
 
 export default function ProjectsList() {
@@ -16,6 +17,7 @@ export default function ProjectsList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [selectedProjectId, setSelectedProjectId] = useState(null); // ← detail view
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -23,10 +25,22 @@ export default function ProjectsList() {
     setLoading(true);
     const { data } = await supabase
       .from('projects')
-      .select('*, contact:contacts!projects_contact_id_fkey(first_name, last_name, phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
+      .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
       .order('created_at', { ascending: false });
     setProjects(data || []);
     setLoading(false);
+  }
+
+  // If a project is selected, render the detail view
+  if (selectedProjectId) {
+    return (
+      <div className="projects-page">
+        <ProjectDetail
+          projectId={selectedProjectId}
+          onBack={() => setSelectedProjectId(null)}
+        />
+      </div>
+    );
   }
 
   const filtered = projects.filter(p => {
@@ -70,12 +84,21 @@ export default function ProjectsList() {
       {/* Project Cards Grid */}
       <div className="projects-grid">
         {filtered.map(project => (
-          <div key={project.id} className="project-card">
+          <div
+            key={project.id}
+            className="project-card"
+            onClick={() => setSelectedProjectId(project.id)}
+            style={{ cursor: 'pointer' }}
+            title="Ver pipeline del proyecto"
+          >
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
-              <span className="stage-badge" style={{ background: STATUS_MAP[project.status]?.color }}>
-                {STATUS_MAP[project.status]?.label}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="stage-badge" style={{ background: STATUS_MAP[project.status]?.color }}>
+                  {STATUS_MAP[project.status]?.label}
+                </span>
+                <ChevronRight size={14} color="#6b7280" />
+              </div>
             </div>
             <h3 className="project-title">{project.title}</h3>
             {project.contact && (
@@ -96,7 +119,7 @@ export default function ProjectsList() {
                 <span>Supervisor: {project.supervisor.full_name}</span>
               </div>
             )}
-            
+
             {/* Progress Bar */}
             <div className="project-progress">
               <div className="progress-bar">
@@ -120,7 +143,7 @@ export default function ProjectsList() {
           <div className="projects-empty">
             <TrendingUp size={48} />
             <p>No hay proyectos{filterStatus !== 'all' ? ` con estado "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
-            <p className="text-sm">Los proyectos se crean automáticamente cuando un estimado es aprobado</p>
+            <p className="text-sm">Los proyectos se crean cuando un estimado es aprobado</p>
           </div>
         )}
       </div>

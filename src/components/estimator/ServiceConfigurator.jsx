@@ -1,82 +1,148 @@
-import React from 'react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 import GutterConfigurator from './GutterConfigurator';
 import RoofingConfigurator from './RoofingConfigurator';
 import SidingConfigurator from './SidingConfigurator';
 import WindowsConfigurator from './WindowsConfigurator';
-import { Box, Droplets, Hammer, Grid, MapPin } from 'lucide-react';
+import { Droplets, Home, Layers, AppWindow, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 
-const CATEGORIES = [
-  { id: 'roofing', title: 'Techos', desc: 'Composite & Metal', icon: Box, status: 'LISTO' },
-  { id: 'siding', title: 'Siding', desc: 'Vinyl & Plank', icon: Hammer, status: 'LISTO' },
-  { id: 'windows', title: 'Ventanas', desc: 'Double Hung / Casement', icon: Grid, status: 'LISTO' },
-  { id: 'gutters', title: 'Canales', desc: 'Seamless Aluminum', icon: Droplets, status: 'ACTIVO' },
+const SERVICES = [
+  {
+    id: 'roofing', label: 'Roofing', sub: 'Techos & Shingles',
+    icon: '🏠', color: '#f59e0b',
+    priceNote: 'precio por sq', unit: 'sq',
+  },
+  {
+    id: 'siding', label: 'Siding', sub: 'Vinyl & Fiber Cement',
+    icon: '🏗️', color: '#10b981',
+    priceNote: 'precio por sq ft', unit: 'sqft',
+  },
+  {
+    id: 'windows', label: 'Windows', sub: 'Ventanas & Instalación',
+    icon: '🪟', color: '#8b5cf6',
+    priceNote: 'precio por unidad', unit: 'ud',
+  },
+  {
+    id: 'gutters', label: 'Gutters', sub: 'Canaletas & Bajantes',
+    icon: '💧', color: '#3b82f6',
+    priceNote: 'precio por pie lineal', unit: 'LF',
+  },
 ];
 
-export default function ServiceConfigurator() {
-  const { activeCategory, setActiveCategory } = useEstimatorStore();
+const CONFIGURATORS = {
+  roofing: <RoofingConfigurator />,
+  siding:  <SidingConfigurator />,
+  windows: <WindowsConfigurator />,
+  gutters: <GutterConfigurator />,
+};
 
-  const renderConfigurator = () => {
-    switch (activeCategory) {
-      case 'gutters': return <GutterConfigurator />;
-      case 'roofing': return <RoofingConfigurator />;
-      case 'siding': return <SidingConfigurator />;
-      case 'windows': return <WindowsConfigurator />;
-      default: return null;
-    }
+export default function ServiceConfigurator() {
+  const { activeCategory, setActiveCategory, prices, loadingPrices } = useEstimatorStore();
+
+  // Get min sell_price per category from catalog
+  const getPriceRange = (category) => {
+    const items = prices.filter(p => p.category?.toLowerCase() === category && p.is_active);
+    if (!items.length) return null;
+    const min = Math.min(...items.map(p => parseFloat(p.sell_price)));
+    const max = Math.max(...items.map(p => parseFloat(p.sell_price)));
+    return { min, max, count: items.length };
   };
 
   return (
-    <section className="flex flex-col gap-8 w-full">
-      <div className="flex items-center justify-between mb-4 flex-none">
+    <div className="space-y-6">
+      {/* Service Type Grid */}
+      <div className="bg-[var(--bg-card)] border border-slate-700/60 rounded-2xl p-8 space-y-6">
         <div>
-          <h2 className="text-xl font-semibold text-slate-100">Categorías de Servicio</h2>
-          <p className="text-slate-400 text-sm mt-1">Selecciona la categoría para configurar el trabajo</p>
+          <h2 className="text-lg font-bold text-slate-100">Selecciona el Tipo de Servicio</h2>
+          <p className="text-sm text-slate-400 mt-1">
+            Precios desde el catálogo actualizado · {loadingPrices ? 'Cargando...' : `${prices.length} items`}
+          </p>
         </div>
-        <div className="bg-slate-800/50 rounded-full px-4 py-2 border border-slate-700 flex items-center gap-2">
-          <MapPin size={16} className="text-[var(--accent)]" />
-          <span className="text-xs font-bold tracking-widest text-slate-300">NUEVO CLIENTE</span>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {SERVICES.map((svc) => {
+            const isActive = activeCategory === svc.id;
+            const range = getPriceRange(svc.id);
+
+            return (
+              <button
+                key={svc.id}
+                onClick={() => setActiveCategory(svc.id)}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  gap: '12px', padding: '24px 16px', borderRadius: '16px', cursor: 'pointer',
+                  border: `2px solid ${isActive ? svc.color : '#374151'}`,
+                  background: isActive ? `${svc.color}15` : '#1e293b',
+                  transition: 'all 0.2s', position: 'relative', textAlign: 'center',
+                }}
+              >
+                {/* Service Icon */}
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '16px',
+                  background: isActive ? `${svc.color}25` : '#0f172a',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '32px', transition: 'all 0.2s',
+                  border: `1px solid ${isActive ? svc.color + '44' : '#1e293b'}`,
+                }}>
+                  {svc.icon}
+                </div>
+
+                {/* Labels */}
+                <div>
+                  <p style={{
+                    fontWeight: '800', fontSize: '16px', margin: '0 0 2px',
+                    color: isActive ? svc.color : '#e2e8f0', letterSpacing: '-0.01em',
+                  }}>
+                    {svc.label}
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>{svc.sub}</p>
+                </div>
+
+                {/* Price range from catalog */}
+                {range && (
+                  <div style={{
+                    background: isActive ? `${svc.color}20` : '#0f172a',
+                    borderRadius: '8px', padding: '6px 10px', width: '100%',
+                    border: `1px solid ${isActive ? svc.color + '33' : '#374151'}`,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                      <Tag size={10} color={isActive ? svc.color : '#6b7280'} />
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: isActive ? svc.color : '#9ca3af' }}>
+                        ${range.min.toFixed(0)}
+                        {range.max !== range.min && `–$${range.max.toFixed(0)}`}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '10px', color: '#4b5563', margin: '2px 0 0', textAlign: 'center' }}>
+                      {svc.priceNote}
+                    </p>
+                  </div>
+                )}
+
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', bottom: '-1px', left: '50%', transform: 'translateX(-50%)',
+                    width: '24px', height: '12px', background: svc.color,
+                    clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                  }} />
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Category Grid */}
-      <div className="grid grid-cols-2 gap-4 lg:gap-6 w-full">
-        {CATEGORIES.map((cat) => {
-          const isActive = activeCategory === cat.id;
-          const Icon = cat.icon;
-          return (
-            <div 
-              key={cat.id}
-              onClick={() => setActiveCategory(isActive ? null : cat.id)}
-              className={`p-6 rounded-xl transition-all cursor-pointer group active:scale-[0.98] ${
-                isActive 
-                ? 'bg-slate-800 border-2 border-[var(--accent)] shadow-[0_0_15px_rgba(249,115,22,0.1)]'
-                : 'bg-slate-900 border border-slate-700 hover:border-slate-500'
-              }`}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <span className={`transition-colors ${
-                  isActive ? 'text-[var(--accent)]' : 'text-slate-500 group-hover:text-slate-300'
-                }`}>
-                  <Icon size={32} />
-                </span>
-                <span className={`text-[10px] tracking-widest px-2 py-1 rounded font-bold ${
-                  isActive ? 'bg-[var(--accent)] text-black' : 'bg-slate-800 text-slate-400'
-                }`}>
-                  {isActive ? 'ACTIVO' : cat.status}
-                </span>
-              </div>
-              <h3 className="text-xl font-semibold mb-1 text-slate-100">{cat.title}</h3>
-              <p className="text-xs text-slate-400 uppercase tracking-widest">{cat.desc}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Configurator Panel (Revealed dynamically) */}
-      <div className="mt-4">
-        {renderConfigurator()}
-      </div>
-    </section>
+      {/* Active Configurator */}
+      {activeCategory && (
+        <div className="bg-[var(--bg-card)] border border-slate-700/60 rounded-2xl p-8"
+          style={{ borderColor: SERVICES.find(s => s.id === activeCategory)?.color + '55' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+            <span style={{ fontSize: '20px' }}>{SERVICES.find(s => s.id === activeCategory)?.icon}</span>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: SERVICES.find(s => s.id === activeCategory)?.color }}>
+              Configurar {SERVICES.find(s => s.id === activeCategory)?.label}
+            </h3>
+          </div>
+          {CONFIGURATORS[activeCategory]}
+        </div>
+      )}
+    </div>
   );
 }

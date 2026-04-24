@@ -1,63 +1,157 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
+import { Trash2, Send, Save, FileText } from 'lucide-react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
-import { Send, FileText } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+
+const SERVICE_COLORS = {
+  roofing: 'text-amber-400',
+  siding:  'text-emerald-400',
+  windows: 'text-purple-400',
+  gutters: 'text-blue-400',
+};
+
+const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 export default function ReceiptSidebar() {
-  const { receiptItems, calculateTotal } = useEstimatorStore();
+  const { receiptItems, removeItem, taxRate, setTaxRate, getSubtotal, getTax, getGrandTotal } = useEstimatorStore();
+  const [clients, setClients] = useState([]);
+  const [selectedClient, setSelectedClient] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const subtotal = calculateTotal();
-  const tax = subtotal * 0.0825;
-  const total = subtotal + tax;
+  useEffect(() => {
+    supabase.from('contacts').select('id, full_name').order('full_name')
+      .then(({ data }) => setClients(data || []));
+  }, []);
+
+  const handleSave = async (status) => {
+    if (!selectedClient || receiptItems.length === 0) return;
+    setSaving(true);
+    const subtotal = getSubtotal();
+    const tax     = getTax();
+    const total   = getGrandTotal();
+
+    const { data: estimate, error } = await supabase
+      .from('estimates')
+      .insert({ contact_id: selectedClient, status, subtotal, tax_amount: tax, total, tax_rate: taxRate })
+      .select()
+      .single();
+
+    if (!error && estimate) {
+      await supabase.from('estimate_items').insert(
+        receiptItems.map(item => ({
+          estimate_id: estimate.id,
+          description: item.name,
+          details: item.details,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          total: item.total,
+          service_type: item.service,
+        }))
+      );
+    }
+    setSaving(false);
+    if (!error) alert('Estimado guardado correctamente.');
+  };
+
+  const subtotal = getSubtotal();
+  const tax      = getTax();
+  const total    = getGrandTotal();
 
   return (
-    <aside className="w-full h-[calc(100vh-8rem)] admin-card flex flex-col p-0 overflow-hidden relative">
-      <div className="p-5 border-b border-slate-700/50 bg-slate-800/50 flex justify-between items-center z-10">
-        <h2 className="text-lg font-bold text-[var(--accent)] tracking-widest uppercase">Resumen del Estimado</h2>
-        <span className="bg-emerald-500/10 text-emerald-400 font-bold tracking-widest text-[10px] px-2 py-1 rounded border border-emerald-500/20">BORRADOR</span>
+    <div className="admin-card flex flex-col">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-700/50 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center">
+          <FileText size={18} className="text-orange-400" />
+        </div>
+        <div>
+          <h2 className="font-bold text-slate-100 leading-tight">Resumen del Estimado</h2>
+          <p className="text-xs text-slate-400">{receiptItems.length} ítem(s)</p>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-3 relative z-10">
+      {/* Client */}
+      <div className="p-5 border-b border-slate-700/50 space-y-1.5">
+        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Cliente</p>
+        <select
+          value={selectedClient}
+          onChange={e => setSelectedClient(e.target.value)}
+          className="w-full px-3 py-2.5 rounded-xl bg-slate-900 border border-slate-700/60 text-slate-100 text-sm focus:outline-none focus:border-orange-500/60 transition-colors"
+        >
+          <option value="">— Seleccionar cliente —</option>
+          {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+        </select>
+      </div>
+
+      {/* Items */}
+      <div className="flex-1 p-5 space-y-3 min-h-0 overflow-y-auto max-h-80">
         {receiptItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3 opacity-50">
-            <FileText size={48} />
-            <p className="font-bold tracking-[0.2em] text-xs">SIN ARTÍCULOS</p>
+          <div className="text-center py-10 text-slate-500">
+            <FileText size={32} className="mx-auto mb-3 opacity-30" />
+            <p className="text-sm">Agrega servicios al estimado</p>
           </div>
         ) : (
-          receiptItems.map((item) => (
-            <div key={item.id} className={`bg-slate-800/50 border border-slate-700/50 p-4 rounded-xl flex justify-between items-center transition-colors ${item.faded ? 'opacity-50' : ''}`}>
-              <div>
-                <p className="font-bold text-sm tracking-wide mb-1 text-slate-200">{item.name}</p>
-                <div className="flex gap-2 text-xs text-slate-400">
-                  <span>{item.details}</span>
-                </div>
+          receiptItems.map(item => (
+            <div key={item.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/60 border border-slate-700/40">
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-semibold leading-tight ${SERVICE_COLORS[item.service] || 'text-slate-200'}`}>{item.name}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{item.details}</p>
               </div>
-              <div className="text-right">
-                <p className="text-xl font-bold text-[var(--accent)] tracking-tight">${item.price.toFixed(2)}</p>
+              <div className="flex items-center gap-2 flex-none">
+                <span className="text-sm font-bold text-slate-100">{fmt(item.total)}</span>
+                <button onClick={() => removeItem(item.id)} className="p-1 rounded-lg hover:bg-red-500/20 hover:text-red-400 text-slate-500 transition-all">
+                  <Trash2 size={14} />
+                </button>
               </div>
             </div>
           ))
         )}
       </div>
 
-      <div className="p-6 bg-slate-800/80 border-t border-slate-700/50 z-10 relative">
-        <div className="flex justify-between text-slate-400 text-sm mb-2 font-bold tracking-widest uppercase">
+      {/* Totals */}
+      <div className="p-5 border-t border-slate-700/50 space-y-3">
+        <div className="flex justify-between text-sm text-slate-400">
           <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>{fmt(subtotal)}</span>
         </div>
-        <div className="flex justify-between text-slate-400 text-sm mb-4 font-bold tracking-widest uppercase">
-          <span>Imps. Est. (8.25%)</span>
-          <span>${tax.toFixed(2)}</span>
+        <div className="flex items-center justify-between text-sm text-slate-400">
+          <div className="flex items-center gap-2">
+            <span>Impuesto</span>
+            <input
+              type="number" min="0" max="30" step="0.5"
+              value={taxRate}
+              onChange={e => setTaxRate(e.target.value)}
+              className="w-14 px-2 py-1 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-100 text-xs text-center focus:outline-none focus:border-orange-500/60"
+            />
+            <span>%</span>
+          </div>
+          <span>{fmt(tax)}</span>
         </div>
-        <div className="flex justify-between items-end border-t border-slate-700/50 pt-4 mb-6">
-          <span className="font-bold tracking-widest text-slate-200">TOTAL</span>
-          <span className="text-4xl font-bold text-[var(--accent)] tracking-tight">${total.toFixed(2)}</span>
+        <div className="flex justify-between items-baseline pt-2 border-t border-slate-700/50">
+          <span className="text-base font-bold text-slate-100">Total</span>
+          <span className="text-2xl font-black text-orange-400">{fmt(total)}</span>
         </div>
+      </div>
 
-        <button className="w-full bg-[var(--accent)] text-black py-4 rounded-xl font-bold text-sm tracking-widest hover:bg-orange-400 transition-all flex justify-center items-center gap-2 active:scale-[0.98]">
-          <Send size={18} />
-          GENERAR PROPUESTA
+      {/* Actions */}
+      <div className="p-5 pt-0 grid grid-cols-2 gap-3">
+        <button
+          onClick={() => handleSave('draft')}
+          disabled={saving || !selectedClient || receiptItems.length === 0}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/50 text-slate-300 text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Save size={16} />
+          Borrador
+        </button>
+        <button
+          onClick={() => handleSave('sent')}
+          disabled={saving || !selectedClient || receiptItems.length === 0}
+          className="flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
+        >
+          <Send size={16} />
+          Enviar
         </button>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -13,4 +13,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
   },
+  realtime: {
+    // Disable realtime to prevent WebSocket DNS resolution hanging on init
+    params: { eventsPerSecond: 10 },
+    timeout: 4000,
+  },
+  global: {
+    fetch: (...args) => {
+      const [url, opts = {}] = args;
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 15000);
+      return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(id));
+    },
+  },
 });

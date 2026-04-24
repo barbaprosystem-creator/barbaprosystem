@@ -1,121 +1,114 @@
-import React from 'react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
-import { Square, Circle, CornerDownLeft } from 'lucide-react';
+import Numpad from './Numpad';
+
+const PROFILES = [
+  { id: 'k-style',    label: 'K-Style',    desc: 'Más común, angulado' },
+  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clásico' },
+];
+const SIZES = [
+  { val: '5', label: '5"', desc: 'Residencial estándar' },
+  { val: '6', label: '6"', desc: 'Residencial premium' },
+  { val: '7', label: '7"', desc: 'Comercial / Grande' },
+];
+
+function ProfileBtn({ active, onClick, label, desc }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex flex-col items-center gap-1.5 py-5 px-4 rounded-2xl border-2 font-semibold transition-all duration-200 text-center
+        ${active
+          ? 'bg-blue-500/20 border-blue-400/70 text-blue-300'
+          : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-500 hover:text-slate-200 hover:bg-slate-800'
+        }`}
+    >
+      <span className="text-base font-bold leading-tight">{label}</span>
+      {desc && <span className="text-[11px] text-slate-500 font-normal">{desc}</span>}
+    </button>
+  );
+}
+
+function SizeBtn({ active, onClick, label, desc }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex-1 flex flex-col items-center gap-1 py-4 px-3 rounded-2xl border-2 font-bold transition-all duration-200 text-center
+        ${active
+          ? 'bg-blue-500/20 border-blue-400/70 text-blue-300'
+          : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-500 hover:text-slate-200 hover:bg-slate-800'
+        }`}
+    >
+      <span className="text-xl font-extrabold leading-none">{label}</span>
+      {desc && <span className="text-[10px] text-slate-500 font-normal">{desc}</span>}
+    </button>
+  );
+}
 
 export default function GutterConfigurator() {
-  const { 
-    gutterConfig, 
-    setGutterProfile, 
-    setGutterSize, 
-    appendDigit, 
-    clearDigits,
-    addToReceipt
-  } = useEstimatorStore();
+  const { gutterConfig, setGutterField, gutterAppend, gutterBackspace, gutterClear, addGutterToReceipt } = useEstimatorStore();
 
   return (
-    <div className="mt-6 admin-card flex flex-col gap-8 w-full p-8">
-      <div className="flex items-center gap-4">
-        <div className="h-[2px] bg-[var(--accent)]/50 flex-1 rounded-full"></div>
-        <span className="text-xs font-bold tracking-[0.2em] text-[var(--accent)]">CONFIGURACIÓN DE CANALES</span>
-        <div className="h-[2px] bg-slate-800 flex-1 rounded-full"></div>
+    <div className="space-y-8">
+      <div className="flex items-center gap-3">
+        <span className="w-3 h-3 rounded-full bg-blue-400 flex-none" />
+        <h3 className="text-xl font-bold text-slate-100">Configuración de Canales</h3>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* Left: Toggles & Profiles */}
-        <div className="flex flex-col gap-8">
-          <div>
-            <label className="text-xs font-bold tracking-widest text-slate-400 mb-4 block">PERFIL DEL CANAL</label>
-            <div className="grid grid-cols-2 gap-4">
-              <button 
-                onClick={() => setGutterProfile('k-style')}
-                className={`p-5 rounded-xl flex flex-col items-center gap-3 border transition-all active:scale-95 ${
-                  gutterConfig.profile === 'k-style' 
-                  ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-500 hover:bg-slate-800'
-                }`}
-              >
-                <Square size={36} />
-                <span className="text-xs font-bold uppercase tracking-widest">K-Style</span>
-              </button>
-              <button 
-                onClick={() => setGutterProfile('half-round')}
-                className={`p-5 rounded-xl flex flex-col items-center gap-3 border transition-all active:scale-95 ${
-                  gutterConfig.profile === 'half-round' 
-                  ? 'bg-[var(--accent)] text-black border-[var(--accent)] shadow-[0_0_15px_rgba(249,115,22,0.3)]'
-                  : 'bg-slate-800/50 text-slate-400 border-slate-700 hover:border-slate-500 hover:bg-slate-800'
-                }`}
-              >
-                <Circle size={36} />
-                <span className="text-xs font-bold uppercase tracking-widest">Half-Round</span>
-              </button>
-            </div>
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+        {/* Options col */}
+        <div className="space-y-7">
 
-          <div>
-            <label className="text-xs font-bold tracking-widest text-slate-400 mb-4 block">TAMAÑO (PULGADAS)</label>
-            <div className="flex bg-slate-900 rounded-xl p-1.5 border border-slate-700/50">
-              {['5', '6', '7'].map(size => (
-                <button 
-                  key={size}
-                  onClick={() => setGutterSize(size)}
-                  className={`flex-1 py-4 text-lg font-bold rounded-lg transition-all ${
-                    gutterConfig.size === size 
-                    ? 'bg-[var(--accent)] text-black shadow-md scale-[1.02]'
-                    : 'text-slate-500 hover:text-slate-200 hover:bg-slate-800/50'
-                  }`}
-                >
-                  {size}"
-                </button>
+          {/* Profile */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Perfil</p>
+            <div className="flex gap-3">
+              {PROFILES.map(p => (
+                <ProfileBtn
+                  key={p.id}
+                  active={gutterConfig.profile === p.id}
+                  onClick={() => setGutterField('profile', p.id)}
+                  label={p.label}
+                  desc={p.desc}
+                />
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Right: Custom Numpad for Measurement */}
-        <div className="flex flex-col gap-6">
-          <div>
-            <label className="text-xs font-bold tracking-widest text-slate-400 block mb-3">PIES LINEALES TOTALES</label>
-            <div className="bg-slate-900 border border-slate-700/50 p-5 rounded-2xl flex items-center justify-between shadow-inner">
-              <span className={`text-5xl font-bold tracking-tight ${gutterConfig.linearFeet === '0' ? 'text-slate-600' : 'text-[var(--accent)]'}`}>
-                {gutterConfig.linearFeet}
-              </span>
-              <span className="text-slate-500 font-bold">PL</span>
+          {/* Size */}
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tamaño</p>
+            <div className="flex gap-3">
+              {SIZES.map(s => (
+                <SizeBtn
+                  key={s.val}
+                  active={gutterConfig.size === s.val}
+                  onClick={() => setGutterField('size', s.val)}
+                  label={s.label}
+                  desc={s.desc}
+                />
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button 
-                key={num}
-                onClick={() => appendDigit(num.toString())}
-                className="h-20 bg-slate-800 rounded-xl flex items-center justify-center text-2xl font-semibold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-500 active:scale-95 transition-all shadow-sm"
-              >
-                {num}
-              </button>
-            ))}
-            <button 
-              onClick={clearDigits}
-              className="h-20 bg-red-950/30 rounded-xl flex items-center justify-center text-xl font-bold text-red-500 border border-red-900/50 hover:bg-red-900/40 active:scale-95 transition-all"
-            >
-              C
-            </button>
-            <button 
-              onClick={() => appendDigit('0')}
-              className="h-20 bg-slate-800 rounded-xl flex items-center justify-center text-2xl font-semibold text-slate-200 border border-slate-700 hover:bg-slate-700 hover:border-slate-500 active:scale-95 transition-all shadow-sm"
-            >
-              0
-            </button>
-            <button 
-              onClick={() => {
-                addToReceipt();
-                clearDigits();
-              }}
-              className="h-20 bg-[var(--accent)] rounded-xl flex items-center justify-center text-black hover:bg-orange-400 active:scale-95 transition-all shadow-[0_0_15px_rgba(249,115,22,0.3)]"
-            >
-              <CornerDownLeft size={32} />
-            </button>
+          {/* Preview */}
+          <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-700/40 space-y-2">
+            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vista previa del ítem</p>
+            <p className="text-slate-100 font-bold text-lg leading-snug">
+              Canal {gutterConfig.size}" {gutterConfig.profile === 'k-style' ? 'K-Style' : 'Half-Round'}
+            </p>
+            <p className="text-sm text-slate-400">{gutterConfig.feet || 0} Pies Lineales</p>
           </div>
         </div>
+
+        {/* Numpad */}
+        <Numpad
+          value={gutterConfig.feet}
+          unit="Pies Lineales (LF)"
+          onAppend={gutterAppend}
+          onBackspace={gutterBackspace}
+          onClear={gutterClear}
+          onSubmit={addGutterToReceipt}
+          submitColor="bg-blue-600 hover:bg-blue-500"
+        />
       </div>
     </div>
   );

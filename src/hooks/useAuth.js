@@ -37,9 +37,16 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true;
 
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Auth timeout')), 8000)
+    );
+
     async function init() {
       try {
-        const { data: { session: s } } = await supabase.auth.getSession();
+        const { data: { session: s } } = await Promise.race([
+          supabase.auth.getSession(),
+          new Promise((_, r) => setTimeout(() => r(new Error('getSession timeout')), 7000))
+        ]);
 
         if (!mounted) return;
         setSession(s);
@@ -51,7 +58,6 @@ export function useAuth() {
           if (p) {
             setProfile(p);
           } else {
-            // Fallback: use metadata from the JWT token
             const meta = s.user.user_metadata || {};
             setProfile({
               id: s.user.id,
@@ -62,39 +68,45 @@ export function useAuth() {
           }
         }
       } catch (err) {
-        console.error('Auth init error:', err);
+        console.warn('Auth init error (may be offline):', err.message);
+        // On timeout/error, clear loading so user sees login page
       } finally {
         if (mounted) setLoading(false);
       }
     }
 
-    init();
+    Promise.race([init(), timeout]).catch(() => {
+      if (mounted) setLoading(false);
+    });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
-        if (!mounted) return;
-        setSession(s);
-
-        if (s?.user) {
-          const p = await fetchProfile(s.user.id);
+        // Always resolve loading even if unmounted
+        const updateState = (updates) => {
           if (!mounted) return;
+          if (updates.session !== undefined) setSession(updates.session);
+          if (updates.profile !== undefined) setProfile(updates.profile);
+          setLoading(false);
+        };
 
-          if (p) {
-            setProfile(p);
-          } else {
-            const meta = s.user.user_metadata || {};
-            setProfile({
-              id: s.user.id,
-              full_name: meta.full_name || s.user.email,
-              role: meta.role || 'salesperson',
-              is_active: true,
-            });
-          }
-        } else {
-          setProfile(null);
+        if (!s?.user) {
+          updateState({ session: null, profile: null });
+          return;
         }
-        setLoading(false);
+
+        const p = await fetchProfile(s.user.id);
+        const fallback = (() => {
+          const meta = s.user.user_metadata || {};
+          return {
+            id: s.user.id,
+            full_name: meta.full_name || s.user.email,
+            role: meta.role || 'salesperson',
+            is_active: true,
+          };
+        })();
+
+        updateState({ session: s, profile: p || fallback });
       }
     );
 

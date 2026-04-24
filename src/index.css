@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import 'tailwindcss';
 
+
 /* ===================================
    DESIGN TOKENS
    =================================== */
@@ -57,29 +58,44 @@
 /* ===================================
    RESET & BASE
    =================================== */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 15px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  img { max-width: 100%; display: block; }
+
+  /* Selects y options: fondo oscuro correcto en todos los navegadores */
+  select {
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--border);
+    font-family: var(--font);
+  }
+  select option {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+  }
 }
 
-html {
-  font-size: 15px;
-  -webkit-text-size-adjust: 100%;
-}
-
-body {
-  font-family: var(--font);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  line-height: 1.6;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-a { color: inherit; text-decoration: none; }
-button { font-family: inherit; cursor: pointer; }
-img { max-width: 100%; display: block; }
 
 .text-muted { color: var(--text-secondary); }
 .text-center { text-align: center; }
@@ -1043,7 +1059,8 @@ img { max-width: 100%; display: block; }
 
 /* Page Container */
 .admin-page {
-  padding: 28px 32px;
+  /* Sin padding propio — Tailwind p-* controla el spacing */
+  min-height: 100%;
 }
 
 .admin-page-title {
@@ -1197,7 +1214,8 @@ img { max-width: 100%; display: block; }
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  /* Sin overflow:hidden — evita recortar contenido interno */
+  /* Sin padding propio — cada uso agrega p-* via Tailwind */
 }
 
 .admin-card-header {
