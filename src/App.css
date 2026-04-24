@@ -1,4 +1,4 @@
-.app-layout {
+﻿.app-layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
@@ -80,3 +80,4 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Upload, Loader2, Image, Trash2 } from 'lucide-react';
 
@@ -80,3 +80,4 @@ export default function PhotoUpload() {
     </div>
   );
 }
+

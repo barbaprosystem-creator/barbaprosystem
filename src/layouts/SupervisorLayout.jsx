@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+﻿import { NavLink, Outlet } from 'react-router-dom';
 import {
   FolderKanban,
   Camera,
@@ -55,7 +55,7 @@ export default function SupervisorLayout({ profile, onSignOut }) {
               <span className="admin-user-role">Supervisor</span>
             </div>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesión">
+          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar SesiÃ³n">
             <LogOut size={18} />
           </button>
         </div>
@@ -67,3 +67,4 @@ export default function SupervisorLayout({ profile, onSignOut }) {
     </div>
   );
 }
+

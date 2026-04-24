@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -17,7 +17,7 @@ export default function ProjectsList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedProjectId, setSelectedProjectId] = useState(null); // ← detail view
+  const [selectedProjectId, setSelectedProjectId] = useState(null); // â† detail view
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -150,3 +150,4 @@ export default function ProjectsList() {
     </div>
   );
 }
+

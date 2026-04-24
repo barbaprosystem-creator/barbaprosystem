@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+﻿import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
@@ -21,7 +21,7 @@ const navItems = [
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
-  { to: '/admin/settings', icon: Settings, label: 'Configuración' },
+  { to: '/admin/settings', icon: Settings, label: 'ConfiguraciÃ³n' },
 ];
 
 export default function AdminLayout({ profile, onSignOut }) {
@@ -34,7 +34,7 @@ export default function AdminLayout({ profile, onSignOut }) {
           </div>
           <div className="admin-brand">
             <span className="admin-brand-name">BARBA PRO</span>
-            <span className="admin-brand-role">Administración</span>
+            <span className="admin-brand-role">AdministraciÃ³n</span>
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function AdminLayout({ profile, onSignOut }) {
                   `admin-nav-item ${isActive ? 'active' : ''}`
                 }
               >
-                <item.icon size={20} />
+                <item.icon size={18} strokeWidth={1.8} />
                 <span>{item.label}</span>
               </NavLink>
             </li>
@@ -65,7 +65,7 @@ export default function AdminLayout({ profile, onSignOut }) {
               <span className="admin-user-role">CEO</span>
             </div>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesión">
+          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar SesiÃ³n">
             <LogOut size={18} />
           </button>
         </div>
@@ -77,3 +77,4 @@ export default function AdminLayout({ profile, onSignOut }) {
     </div>
   );
 }
+

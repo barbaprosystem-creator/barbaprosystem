@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import {
@@ -39,12 +39,12 @@ function AlertBanner({ payments }) {
       <div style={{ flex: 1 }}>
         {overdue.length > 0 && (
           <p style={{ margin: '0 0 4px', fontWeight: '700', color: '#ef4444', fontSize: '14px' }}>
-            ⚠️ {overdue.length} pago{overdue.length > 1 ? 's' : ''} vencido{overdue.length > 1 ? 's' : ''}
+            âš ï¸ {overdue.length} pago{overdue.length > 1 ? 's' : ''} vencido{overdue.length > 1 ? 's' : ''}
           </p>
         )}
         {dueSoon.length > 0 && (
           <p style={{ margin: 0, fontWeight: '600', color: '#f59e0b', fontSize: '13px' }}>
-            🕐 {dueSoon.length} pago{dueSoon.length > 1 ? 's' : ''} vence en menos de 3 días
+            ðŸ• {dueSoon.length} pago{dueSoon.length > 1 ? 's' : ''} vence en menos de 3 dÃ­as
           </p>
         )}
       </div>
@@ -105,9 +105,9 @@ export default function AdminDashboard() {
   }, []);
 
   const SOURCE_ICONS = {
-    google: '🔍', facebook: '📘', instagram: '📸',
-    tiktok: '🎵', referral: '🤝', phone: '📞',
-    walk_in: '🚶', web: '🌐', other: '📋',
+    google: 'ðŸ”', facebook: 'ðŸ“˜', instagram: 'ðŸ“¸',
+    tiktok: 'ðŸŽµ', referral: 'ðŸ¤', phone: 'ðŸ“ž',
+    walk_in: 'ðŸš¶', web: 'ðŸŒ', other: 'ðŸ“‹',
   };
 
   const STAGE_COLORS = {
@@ -124,7 +124,7 @@ export default function AdminDashboard() {
       <header className="admin-page-header">
         <div>
           <h1>Dashboard</h1>
-          <p className="text-muted">Barba Construction — Resumen operativo</p>
+          <p className="text-muted">Barba Construction â€” Resumen operativo</p>
         </div>
         <span style={{ fontSize: '13px', color: '#6b7280' }}>
           {new Date().toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -165,7 +165,7 @@ export default function AdminDashboard() {
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: '#e2e8f0' }}>
-                      PRJ-{String(p.project_number).padStart(4,'0')} — {p.title}
+                      PRJ-{String(p.project_number).padStart(4,'0')} â€” {p.title}
                     </p>
                     {p.address && (
                       <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
         <section className="dash-section">
           <h2>Leads Recientes</h2>
           {recentLeads.length === 0 ? (
-            <p className="text-muted">No hay leads todavía.</p>
+            <p className="text-muted">No hay leads todavÃ­a.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {recentLeads.map(lead => (
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                           <Phone size={10} /> {lead.phone}
                         </span>
                       )}
-                      <span style={{ fontSize: '11px' }}>{SOURCE_ICONS[lead.source] || '📋'}</span>
+                      <span style={{ fontSize: '11px' }}>{SOURCE_ICONS[lead.source] || 'ðŸ“‹'}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -252,3 +252,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

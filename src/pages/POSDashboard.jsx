@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -55,7 +55,7 @@ export default function POSDashboard() {
     <div className="admin-page p-6 lg:p-10 space-y-8">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Mi Dashboard</h1>
-        <p className="text-slate-400">Resumen de tu actividad de ventas y desempeño</p>
+        <p className="text-[#888888]">Resumen de tu actividad de ventas y desempeÃ±o</p>
       </div>
 
       {/* KPIs */}
@@ -68,12 +68,12 @@ export default function POSDashboard() {
             <div className="flex flex-col">
               <span className="text-2xl font-bold tracking-tight">
                 {loading ? (
-                  <div className="h-8 w-16 bg-slate-800 rounded animate-pulse"></div>
+                  <div className="h-8 w-16 bg-[#1a1a1a] rounded animate-pulse"></div>
                 ) : (
                   kpi.value
                 )}
               </span>
-              <span className="text-sm font-medium text-slate-400 uppercase tracking-wider">{kpi.label}</span>
+              <span className="text-sm font-medium text-[#888888] uppercase tracking-wider">{kpi.label}</span>
             </div>
           </div>
         ))}
@@ -81,7 +81,7 @@ export default function POSDashboard() {
 
       {/* Recent Leads */}
       <div className="admin-card overflow-hidden">
-        <div className="p-6 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-[#1a1a1a] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-[var(--accent)]/10 rounded-lg text-[var(--accent)]">
               <Activity size={20} />
@@ -95,43 +95,43 @@ export default function POSDashboard() {
         
         <div className="p-0">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4">
+            <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Clock size={40} className="animate-spin text-slate-700" />
               <p className="text-sm font-medium uppercase tracking-widest">Cargando datos...</p>
             </div>
           ) : recentLeads.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4">
+            <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Users size={48} className="text-slate-700" />
-              <p className="text-sm font-medium">No tienes leads asignados todavía.</p>
+              <p className="text-sm font-medium">No tienes leads asignados todavÃ­a.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800/50 bg-slate-900/50">
-                    <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Cliente</th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider">Fuente</th>
-                    <th className="py-4 px-6 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Fecha</th>
+                  <tr className="border-b border-[#1a1a1a]/50 bg-[#0d0d0d]/50">
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Cliente</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Estado</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Fuente</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider text-right">Fecha</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
                   {recentLeads.map((lead) => {
-                    const s = statusMap[lead.status] || { label: lead.status, cls: 'bg-slate-800 text-slate-300 border-slate-700' };
+                    const s = statusMap[lead.status] || { label: lead.status, cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                     return (
-                      <tr key={lead.id} className="hover:bg-slate-800/30 transition-colors">
+                      <tr key={lead.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
                         <td className="py-4 px-6">
-                          <div className="font-semibold text-slate-200">{lead.full_name}</div>
+                          <div className="font-semibold text-[#e0e0e0]">{lead.full_name}</div>
                         </td>
                         <td className="py-4 px-6">
                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border ${s.cls}`}>
                             {s.label}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-sm text-slate-400">
-                          {lead.source || '—'}
+                        <td className="py-4 px-6 text-sm text-[#888888]">
+                          {lead.source || 'â€”'}
                         </td>
-                        <td className="py-4 px-6 text-sm text-slate-400 text-right font-medium">
+                        <td className="py-4 px-6 text-sm text-[#888888] text-right font-medium">
                           {new Date(lead.created_at).toLocaleDateString('es', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
                       </tr>
@@ -146,3 +146,4 @@ export default function POSDashboard() {
     </div>
   );
 }
+

@@ -1,12 +1,12 @@
-import { useEstimatorStore } from '../../store/useEstimatorStore';
+﻿import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const PROFILES = [
-  { id: 'k-style',    label: 'K-Style',    desc: 'Más común, angulado' },
-  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clásico' },
+  { id: 'k-style',    label: 'K-Style',    desc: 'MÃ¡s comÃºn, angulado' },
+  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clÃ¡sico' },
 ];
 const SIZES = [
-  { val: '5', label: '5"', desc: 'Residencial estándar' },
+  { val: '5', label: '5"', desc: 'Residencial estÃ¡ndar' },
   { val: '6', label: '6"', desc: 'Residencial premium' },
   { val: '7', label: '7"', desc: 'Comercial / Grande' },
 ];
@@ -18,11 +18,11 @@ function ProfileBtn({ active, onClick, label, desc }) {
       className={`flex-1 flex flex-col items-center gap-1.5 py-5 px-4 rounded-2xl border-2 font-semibold transition-all duration-200 text-center
         ${active
           ? 'bg-blue-500/20 border-blue-400/70 text-blue-300'
-          : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-500 hover:text-slate-200 hover:bg-slate-800'
+          : 'bg-[#1a1a1a]/60 border-[#2a2a2a]/40 text-[#888888] hover:border-[#444444] hover:text-[#e0e0e0] hover:bg-[#1a1a1a]'
         }`}
     >
       <span className="text-base font-bold leading-tight">{label}</span>
-      {desc && <span className="text-[11px] text-slate-500 font-normal">{desc}</span>}
+      {desc && <span className="text-[11px] text-[#555555] font-normal">{desc}</span>}
     </button>
   );
 }
@@ -34,11 +34,11 @@ function SizeBtn({ active, onClick, label, desc }) {
       className={`flex-1 flex flex-col items-center gap-1 py-4 px-3 rounded-2xl border-2 font-bold transition-all duration-200 text-center
         ${active
           ? 'bg-blue-500/20 border-blue-400/70 text-blue-300'
-          : 'bg-slate-800/60 border-slate-700/40 text-slate-400 hover:border-slate-500 hover:text-slate-200 hover:bg-slate-800'
+          : 'bg-[#1a1a1a]/60 border-[#2a2a2a]/40 text-[#888888] hover:border-[#444444] hover:text-[#e0e0e0] hover:bg-[#1a1a1a]'
         }`}
     >
       <span className="text-xl font-extrabold leading-none">{label}</span>
-      {desc && <span className="text-[10px] text-slate-500 font-normal">{desc}</span>}
+      {desc && <span className="text-[10px] text-[#555555] font-normal">{desc}</span>}
     </button>
   );
 }
@@ -50,7 +50,7 @@ export default function GutterConfigurator() {
     <div className="space-y-8">
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-blue-400 flex-none" />
-        <h3 className="text-xl font-bold text-slate-100">Configuración de Canales</h3>
+        <h3 className="text-xl font-bold text-[#f0f0f0]">ConfiguraciÃ³n de Canales</h3>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -59,7 +59,7 @@ export default function GutterConfigurator() {
 
           {/* Profile */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Perfil</p>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">Perfil</p>
             <div className="flex gap-3">
               {PROFILES.map(p => (
                 <ProfileBtn
@@ -75,7 +75,7 @@ export default function GutterConfigurator() {
 
           {/* Size */}
           <div className="space-y-3">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Tamaño</p>
+            <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">TamaÃ±o</p>
             <div className="flex gap-3">
               {SIZES.map(s => (
                 <SizeBtn
@@ -90,12 +90,12 @@ export default function GutterConfigurator() {
           </div>
 
           {/* Preview */}
-          <div className="bg-slate-900/70 rounded-2xl p-5 border border-slate-700/40 space-y-2">
-            <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Vista previa del ítem</p>
-            <p className="text-slate-100 font-bold text-lg leading-snug">
+          <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
+            <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del Ã­tem</p>
+            <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
               Canal {gutterConfig.size}" {gutterConfig.profile === 'k-style' ? 'K-Style' : 'Half-Round'}
             </p>
-            <p className="text-sm text-slate-400">{gutterConfig.feet || 0} Pies Lineales</p>
+            <p className="text-sm text-[#888888]">{gutterConfig.feet || 0} Pies Lineales</p>
           </div>
         </div>
 
@@ -113,3 +113,4 @@ export default function GutterConfigurator() {
     </div>
   );
 }
+

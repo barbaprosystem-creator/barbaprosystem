@@ -1,15 +1,15 @@
-import { Delete } from 'lucide-react';
+﻿import { Delete } from 'lucide-react';
 
-const KEYS = ['7','8','9','4','5','6','1','2','3','.','0','⌫'];
+const KEYS = ['7','8','9','4','5','6','1','2','3','.','0','âŒ«'];
 
 export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onClear, onSubmit, submitLabel = 'Agregar al Estimado', submitColor = 'bg-orange-500 hover:bg-orange-400' }) {
   return (
     <div className="space-y-5">
       {/* Display */}
-      <div className="bg-slate-900 rounded-2xl p-6 text-center border border-slate-700/50">
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{unit}</p>
+      <div className="bg-[#0d0d0d] rounded-2xl p-6 text-center border border-[#2a2a2a]/50">
+        <p className="text-xs font-bold text-[#555555] uppercase tracking-widest mb-2">{unit}</p>
         <p className="text-6xl font-black text-white tabular-nums leading-none">{value}</p>
-        <p className="text-sm text-slate-500 mt-2">{unit}</p>
+        <p className="text-sm text-[#555555] mt-2">{unit}</p>
       </div>
 
       {/* Numpad grid */}
@@ -17,14 +17,14 @@ export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onCl
         {KEYS.map(key => (
           <button
             key={key}
-            onClick={() => key === '⌫' ? onBackspace() : onAppend(key)}
+            onClick={() => key === 'âŒ«' ? onBackspace() : onAppend(key)}
             className={`h-14 rounded-xl font-bold text-xl transition-all active:scale-95 border
-              ${key === '⌫'
-                ? 'bg-slate-700 hover:bg-red-500/20 hover:text-red-400 text-slate-300 border-slate-600/50'
-                : 'bg-slate-800 hover:bg-slate-700 text-slate-100 border-slate-700/50'
+              ${key === 'âŒ«'
+                ? 'bg-[#2a2a2a] hover:bg-red-500/20 hover:text-red-400 text-[#c0c0c0] border-[#333333]/50'
+                : 'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#f0f0f0] border-[#2a2a2a]/50'
               }`}
           >
-            {key === '⌫' ? <Delete size={20} className="mx-auto" /> : key}
+            {key === 'âŒ«' ? <Delete size={20} className="mx-auto" /> : key}
           </button>
         ))}
       </div>
@@ -33,7 +33,7 @@ export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onCl
       <div className="flex gap-3">
         <button
           onClick={onClear}
-          className="flex-none px-5 py-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700/50 text-slate-300 text-sm font-semibold transition-all"
+          className="flex-none px-5 py-4 rounded-xl bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a]/50 text-[#c0c0c0] text-sm font-semibold transition-all"
         >
           Limpiar
         </button>
@@ -47,3 +47,4 @@ export default function Numpad({ value, unit = 'LF', onAppend, onBackspace, onCl
     </div>
   );
 }
+

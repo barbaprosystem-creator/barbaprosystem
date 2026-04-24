@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Loader2, DollarSign, CheckCircle, Clock, AlertTriangle, Plus, Bell, X, BellRing } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -8,7 +8,7 @@ const STATUS_MAP = {
   received: { label: 'Recibido',  color: '#10b981', icon: CheckCircle },
   overdue:  { label: 'Vencido',   color: '#ef4444', icon: AlertTriangle },
 };
-const TYPE_MAP = { deposit: 'Depósito', partial: 'Parcial', final: 'Final' };
+const TYPE_MAP = { deposit: 'DepÃ³sito', partial: 'Parcial', final: 'Final' };
 const METHOD_MAP = { check: 'Cheque', zelle: 'Zelle', cash: 'Efectivo', card: 'Tarjeta', financing: 'Financiamiento' };
 
 function daysUntil(dateStr) {
@@ -58,10 +58,10 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
             <div className="form-group full-width">
               <label>Proyecto</label>
               <select value={form.project_id} onChange={e => handleProjectChange(e.target.value)} required>
-                <option value="">— Selecciona proyecto —</option>
+                <option value="">â€” Selecciona proyecto â€”</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>
-                    PRJ-{String(p.project_number).padStart(4,'0')} — {p.title}
+                    PRJ-{String(p.project_number).padStart(4,'0')} â€” {p.title}
                   </option>
                 ))}
               </select>
@@ -73,13 +73,13 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
             <div className="form-group">
               <label>Tipo</label>
               <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}>
-                <option value="deposit">Depósito</option>
+                <option value="deposit">DepÃ³sito</option>
                 <option value="partial">Parcial</option>
                 <option value="final">Final</option>
               </select>
             </div>
             <div className="form-group">
-              <label>Método</label>
+              <label>MÃ©todo</label>
               <select value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
                 <option value="check">Cheque</option>
                 <option value="zelle">Zelle</option>
@@ -152,7 +152,7 @@ function ReminderModal({ payment, onClose }) {
           </div>
           <h2 style={{ margin: '0 0 8px', fontSize: '20px' }}>Enviar Recordatorio</h2>
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            {payment.contact?.first_name} {payment.contact?.last_name} — {formatCurrency(payment.amount)}
+            {payment.contact?.first_name} {payment.contact?.last_name} â€” {formatCurrency(payment.amount)}
           </p>
           {payment.due_date && (
             <p style={{ color: '#f59e0b', fontSize: '13px', marginTop: '4px' }}>
@@ -163,10 +163,10 @@ function ReminderModal({ payment, onClose }) {
 
         {sent ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>✅</div>
+            <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>âœ…</div>
             <p style={{ color: '#10b981', fontWeight: '600' }}>Recordatorio registrado</p>
             <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
-              Cuando Twilio/Resend esté configurado, se enviará automáticamente.
+              Cuando Twilio/Resend estÃ© configurado, se enviarÃ¡ automÃ¡ticamente.
             </p>
             <button className="btn-primary" onClick={onClose} style={{ marginTop: '20px', width: '100%' }}>Cerrar</button>
           </div>
@@ -174,9 +174,9 @@ function ReminderModal({ payment, onClose }) {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               {[
-                { id: 'sms',   label: '📱 Solo SMS',          desc: 'Mensaje de texto via Twilio' },
-                { id: 'email', label: '📧 Solo Email',         desc: 'Correo via Resend' },
-                { id: 'both',  label: '📱📧 SMS + Email',      desc: 'Ambos canales (recomendado)' },
+                { id: 'sms',   label: 'ðŸ“± Solo SMS',          desc: 'Mensaje de texto via Twilio' },
+                { id: 'email', label: 'ðŸ“§ Solo Email',         desc: 'Correo via Resend' },
+                { id: 'both',  label: 'ðŸ“±ðŸ“§ SMS + Email',      desc: 'Ambos canales (recomendado)' },
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -194,7 +194,7 @@ function ReminderModal({ payment, onClose }) {
               ))}
             </div>
             <div style={{ background: '#1e293b', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '12px', color: '#9ca3af' }}>
-              ⚠️ <strong style={{ color: '#f59e0b' }}>Pendiente configuración:</strong> Twilio y Resend deben estar configurados para envío real. Por ahora se registra el intento.
+              âš ï¸ <strong style={{ color: '#f59e0b' }}>Pendiente configuraciÃ³n:</strong> Twilio y Resend deben estar configurados para envÃ­o real. Por ahora se registra el intento.
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn-secondary" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
@@ -305,7 +305,7 @@ export default function PaymentTracker() {
           <thead>
             <tr>
               <th>Proyecto</th><th>Cliente</th><th>Tipo</th>
-              <th>Método</th><th>Monto</th><th>Estado</th>
+              <th>MÃ©todo</th><th>Monto</th><th>Estado</th>
               <th>Vence</th><th>Pagado</th><th>Acciones</th>
             </tr>
           </thead>
@@ -332,13 +332,13 @@ export default function PaymentTracker() {
                         {formatDate(pay.due_date)}
                         {days !== null && pay.status === 'pending' && (
                           <span style={{ display: 'block', fontSize: '11px', color: isOverdue ? '#ef4444' : isDueSoon ? '#f59e0b' : '#6b7280' }}>
-                            {days < 0 ? `${Math.abs(days)}d vencido` : days === 0 ? '¡Hoy!' : `${days}d restantes`}
+                            {days < 0 ? `${Math.abs(days)}d vencido` : days === 0 ? 'Â¡Hoy!' : `${days}d restantes`}
                           </span>
                         )}
                       </span>
-                    ) : '—'}
+                    ) : 'â€”'}
                   </td>
-                  <td style={{ fontSize: '13px' }}>{pay.paid_at ? formatDate(pay.paid_at) : '—'}</td>
+                  <td style={{ fontSize: '13px' }}>{pay.paid_at ? formatDate(pay.paid_at) : 'â€”'}</td>
                   <td>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       {pay.status === 'pending' && (
@@ -385,3 +385,4 @@ export default function PaymentTracker() {
     </div>
   );
 }
+

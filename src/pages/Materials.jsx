@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Package, Search, Plus } from 'lucide-react';
 
@@ -32,12 +32,12 @@ export default function Materials() {
     <div className="admin-page p-6 lg:p-10 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-3xl font-bold tracking-tight">Catálogo de Materiales</h1>
-          <p className="text-slate-400">{filtered.length} productos</p>
+          <h1 className="text-3xl font-bold tracking-tight">CatÃ¡logo de Materiales</h1>
+          <p className="text-[#888888]">{filtered.length} productos</p>
         </div>
         <div className="flex flex-col sm:flex-row items-center gap-4">
-          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700/50 rounded-xl px-4 py-2 w-full sm:w-64 focus-within:border-[var(--accent)] transition-colors">
-            <Search size={18} className="text-slate-500" />
+          <div className="flex items-center gap-2 bg-[#0d0d0d] border border-[#2a2a2a]/50 rounded-xl px-4 py-2 w-full sm:w-64 focus-within:border-[var(--accent)] transition-colors">
+            <Search size={18} className="text-[#555555]" />
             <input
               type="text"
               placeholder="Buscar por nombre o SKU..."
@@ -60,7 +60,7 @@ export default function Materials() {
             className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-all ${
               activeCategory === cat 
               ? 'bg-[var(--accent)] text-black shadow-[0_0_10px_rgba(249,115,22,0.2)]' 
-              : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-300 border border-slate-700/50'
+              : 'bg-[#1a1a1a]/50 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#c0c0c0] border border-[#2a2a2a]/50'
             }`}
             onClick={() => setActiveCategory(cat)}
           >
@@ -71,12 +71,12 @@ export default function Materials() {
 
       {/* Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4 admin-card">
+        <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4 admin-card">
           <Package size={40} className="animate-pulse text-slate-700" />
-          <p className="text-sm font-medium uppercase tracking-widest">Cargando catálogo...</p>
+          <p className="text-sm font-medium uppercase tracking-widest">Cargando catÃ¡logo...</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4 admin-card">
+        <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4 admin-card">
           <Package size={48} className="text-slate-700" />
           <p className="text-sm font-medium">No se encontraron materiales.</p>
         </div>
@@ -89,13 +89,13 @@ export default function Materials() {
               </div>
               <div className="flex flex-col gap-1 flex-1">
                 <span className="text-[10px] font-bold tracking-wider text-[var(--accent)] uppercase">{item.category}</span>
-                <h3 className="text-base font-bold text-slate-200 line-clamp-2 leading-tight">{item.item_name}</h3>
-                {item.sku && <span className="text-xs text-slate-500 font-medium mt-1 uppercase">SKU: {item.sku}</span>}
+                <h3 className="text-base font-bold text-[#e0e0e0] line-clamp-2 leading-tight">{item.item_name}</h3>
+                {item.sku && <span className="text-xs text-[#555555] font-medium mt-1 uppercase">SKU: {item.sku}</span>}
               </div>
-              <div className="pt-4 border-t border-slate-800 flex items-end justify-between mt-auto">
+              <div className="pt-4 border-t border-[#1a1a1a] flex items-end justify-between mt-auto">
                 <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-1">Precio / {item.unit || 'EA'}</span>
-                  <span className="text-xl font-bold text-slate-200">${(item.unit_price || 0).toFixed(2)}</span>
+                  <span className="text-xs font-semibold text-[#555555] uppercase tracking-widest mb-1">Precio / {item.unit || 'EA'}</span>
+                  <span className="text-xl font-bold text-[#e0e0e0]">${(item.unit_price || 0).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -105,3 +105,4 @@ export default function Materials() {
     </div>
   );
 }
+

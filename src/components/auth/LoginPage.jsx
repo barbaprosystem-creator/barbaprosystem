@@ -1,138 +1,173 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { LogIn, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage({ onAuth }) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]   = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       const result = await onAuth(email, password);
-      if (result?.error) {
-        setError(result.error.message || 'Credenciales inválidas');
-      }
-    } catch (err) {
-      setError('Error de conexión. Intenta de nuevo.');
+      if (result?.error) setError(result.error.message || 'Credenciales invÃ¡lidas');
+    } catch {
+      setError('Error de conexiÃ³n. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
   };
 
+  const quickUsers = [
+    { label: 'Admin',      email: 'admin@barba.com',      pw: 'Admin123!' },
+    { label: 'Vendedor',   email: 'ventas1@barba.com',    pw: 'Ventas123!' },
+    { label: 'Supervisor', email: 'supervisor@barba.com', pw: 'Super123!' },
+    { label: 'Oficina',    email: 'office@barba.com',     pw: 'Office123!' },
+  ];
+
   return (
     <div className="login-page">
-      <div className="login-card">
-        {/* Logo & Brand */}
-        <div className="login-brand">
-          <div className="login-logo-ring">
-            <img src="/logo-barba.png" alt="Barba Construction" style={{ width: 52, height: 'auto', objectFit: 'contain' }} />
+
+      {/* â”€â”€ LEFT â€” Brand Panel â”€â”€ */}
+      <div className="login-left">
+        <div className="login-brand-mark">
+          <img
+            src="/logo-barba.png"
+            alt="Barba Construction"
+            className="login-logo-img"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+          <div className="login-brand-text">
+            <h1>Barba Construction</h1>
+            <span>Pro System</span>
           </div>
-          <h1 className="login-title">BARBA PRO</h1>
-          <p className="login-subtitle">SYSTEM</p>
         </div>
 
-        {/* Error */}
-        {error && (
-          <div className="login-error">
-            <AlertCircle size={16} />
-            <span>{error}</span>
-          </div>
-        )}
+        <div className="login-headline">
+          GestiÃ³n<br />
+          <em>inteligente</em><br />
+          de obras
+        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="login-field">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@barba.com"
-              required
-              autoComplete="email"
-              autoFocus
-            />
+        <p className="login-tagline">
+          Estimaciones, proyectos, clientes y<br />
+          pagos â€” todo en un solo lugar.
+        </p>
+
+        <div className="login-services">
+          {['Roofing', 'Siding', 'Windows', 'Gutters'].map(s => (
+            <span key={s} className="login-service-tag">{s}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* â”€â”€ RIGHT â€” Form Panel â”€â”€ */}
+      <div className="login-right">
+        <div className="login-card">
+          <div className="login-card-header">
+            <div className="login-gold-line" />
+            <h2>Iniciar SesiÃ³n</h2>
+            <p>Accede a tu panel de control</p>
           </div>
 
-          <div className="login-field">
-            <label htmlFor="password">Password</label>
-            <div className="login-password-wrap">
+          {error && (
+            <div className="login-error">
+              <AlertCircle size={15} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="login-form">
+            <div className="login-field">
+              <label htmlFor="email">Correo</label>
               <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="usuario@barba.com"
                 required
-                autoComplete="current-password"
+                autoComplete="email"
+                autoFocus
               />
-              <button
-                type="button"
-                className="login-password-toggle"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+            </div>
+
+            <div className="login-field">
+              <label htmlFor="password">ContraseÃ±a</label>
+              <div className="login-password-wrap">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="login-submit" disabled={loading}>
+              {loading ? (
+                <Loader2 size={18} className="spin" />
+              ) : (
+                <>
+                  <LogIn size={17} />
+                  <span>Entrar</span>
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Access */}
+          <div className="quick-access">
+            <p className="quick-access-label">Acceso RÃ¡pido</p>
+            <div className="quick-access-buttons">
+              {quickUsers.map((u) => (
+                <button
+                  key={u.email}
+                  type="button"
+                  className="quick-access-btn"
+                  disabled={loading}
+                  onClick={async () => {
+                    setEmail(u.email);
+                    setPassword(u.pw);
+                    setError('');
+                    setLoading(true);
+                    try {
+                      const result = await onAuth(u.email, u.pw);
+                      if (result?.error) setError(result.error.message || 'Error');
+                    } catch {
+                      setError('Error de conexiÃ³n');
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  {u.label}
+                </button>
+              ))}
             </div>
           </div>
 
-          <button type="submit" className="login-submit" disabled={loading}>
-            {loading ? (
-              <Loader2 size={20} className="spin" />
-            ) : (
-              <>
-                <LogIn size={18} />
-                <span>Iniciar Sesión</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Quick Access — DEV ONLY */}
-        <div className="quick-access">
-          <p className="quick-access-label">Acceso Rápido</p>
-          <div className="quick-access-buttons">
-            {[
-              { label: '🔑 Admin', email: 'admin@barba.com', pw: 'Admin123!' },
-              { label: '👷 Vendedor', email: 'vendedor@barba.com', pw: 'barba2026!' },
-              { label: '🏗️ Supervisor', email: 'supervisor@barba.com', pw: 'barba2026!' },
-              { label: '🏢 Oficina', email: 'oficina@barba.com', pw: 'barba2026!' },
-            ].map((u) => (
-              <button
-                key={u.email}
-                type="button"
-                className="quick-access-btn"
-                disabled={loading}
-                onClick={async () => {
-                  setEmail(u.email);
-                  setPassword(u.pw);
-                  setError('');
-                  setLoading(true);
-                  try {
-                    const result = await onAuth(u.email, u.pw);
-                    if (result?.error) setError(result.error.message || 'Error');
-                  } catch { setError('Error de conexión'); }
-                  finally { setLoading(false); }
-                }}
-              >
-                {u.label}
-              </button>
-            ))}
-          </div>
+          <p className="login-footer">
+            Barba Construction Â© {new Date().getFullYear()}
+          </p>
         </div>
-
-        <p className="login-footer">
-          Barba Construction © {new Date().getFullYear()}
-        </p>
       </div>
     </div>
   );
 }
+

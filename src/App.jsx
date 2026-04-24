@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/auth/LoginPage';
 import RoleGuard from './components/common/RoleGuard';
@@ -6,7 +6,7 @@ import AdminLayout from './layouts/AdminLayout';
 import POSLayout from './layouts/POSLayout';
 import SupervisorLayout from './layouts/SupervisorLayout';
 
-// Pages — Admin
+// Pages â€” Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PricingSettings from './pages/admin/PricingSettings';
 import CRMPipeline from './pages/admin/CRMPipeline';
@@ -17,13 +17,13 @@ import CalendarPage from './pages/admin/CalendarPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 
-// Pages — Sales (POS)
+// Pages â€” Sales (POS)
 import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 
-// Pages — Supervisor
+// Pages â€” Supervisor
 import SupervisorProjects from './pages/supervisor/SupervisorProjects';
 import DailyReports from './pages/supervisor/DailyReports';
 import PhotoUpload from './pages/supervisor/PhotoUpload';
@@ -141,3 +141,4 @@ export default function App() {
     </Router>
   );
 }
+

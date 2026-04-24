@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 import { Plus, Save, Trash2, Tag, Search, Filter } from 'lucide-react';
@@ -205,3 +205,4 @@ export default function PricingSettings() {
     </div>
   );
 }
+

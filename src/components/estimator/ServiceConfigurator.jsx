@@ -1,4 +1,4 @@
-import { useEstimatorStore } from '../../store/useEstimatorStore';
+﻿import { useEstimatorStore } from '../../store/useEstimatorStore';
 import GutterConfigurator from './GutterConfigurator';
 import RoofingConfigurator from './RoofingConfigurator';
 import SidingConfigurator from './SidingConfigurator';
@@ -8,22 +8,22 @@ import { Droplets, Home, Layers, AppWindow, ChevronDown, ChevronUp, Tag } from '
 const SERVICES = [
   {
     id: 'roofing', label: 'Roofing', sub: 'Techos & Shingles',
-    icon: '🏠', color: '#f59e0b',
+    icon: 'ðŸ ', color: '#f59e0b',
     priceNote: 'precio por sq', unit: 'sq',
   },
   {
     id: 'siding', label: 'Siding', sub: 'Vinyl & Fiber Cement',
-    icon: '🏗️', color: '#10b981',
+    icon: 'ðŸ—ï¸', color: '#10b981',
     priceNote: 'precio por sq ft', unit: 'sqft',
   },
   {
-    id: 'windows', label: 'Windows', sub: 'Ventanas & Instalación',
-    icon: '🪟', color: '#8b5cf6',
+    id: 'windows', label: 'Windows', sub: 'Ventanas & InstalaciÃ³n',
+    icon: 'ðŸªŸ', color: '#8b5cf6',
     priceNote: 'precio por unidad', unit: 'ud',
   },
   {
     id: 'gutters', label: 'Gutters', sub: 'Canaletas & Bajantes',
-    icon: '💧', color: '#3b82f6',
+    icon: 'ðŸ’§', color: '#3b82f6',
     priceNote: 'precio por pie lineal', unit: 'LF',
   },
 ];
@@ -50,11 +50,11 @@ export default function ServiceConfigurator() {
   return (
     <div className="space-y-6">
       {/* Service Type Grid */}
-      <div className="bg-[var(--bg-card)] border border-slate-700/60 rounded-2xl p-8 space-y-6">
+      <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-8 space-y-6">
         <div>
-          <h2 className="text-lg font-bold text-slate-100">Selecciona el Tipo de Servicio</h2>
-          <p className="text-sm text-slate-400 mt-1">
-            Precios desde el catálogo actualizado · {loadingPrices ? 'Cargando...' : `${prices.length} items`}
+          <h2 className="text-lg font-bold text-[#f0f0f0]">Selecciona el Tipo de Servicio</h2>
+          <p className="text-sm text-[#888888] mt-1">
+            Precios desde el catÃ¡logo actualizado Â· {loadingPrices ? 'Cargando...' : `${prices.length} items`}
           </p>
         </div>
 
@@ -108,7 +108,7 @@ export default function ServiceConfigurator() {
                       <Tag size={10} color={isActive ? svc.color : '#6b7280'} />
                       <span style={{ fontSize: '12px', fontWeight: '700', color: isActive ? svc.color : '#9ca3af' }}>
                         ${range.min.toFixed(0)}
-                        {range.max !== range.min && `–$${range.max.toFixed(0)}`}
+                        {range.max !== range.min && `â€“$${range.max.toFixed(0)}`}
                       </span>
                     </div>
                     <p style={{ fontSize: '10px', color: '#4b5563', margin: '2px 0 0', textAlign: 'center' }}>
@@ -132,7 +132,7 @@ export default function ServiceConfigurator() {
 
       {/* Active Configurator */}
       {activeCategory && (
-        <div className="bg-[var(--bg-card)] border border-slate-700/60 rounded-2xl p-8"
+        <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-8"
           style={{ borderColor: SERVICES.find(s => s.id === activeCategory)?.color + '55' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
             <span style={{ fontSize: '20px' }}>{SERVICES.find(s => s.id === activeCategory)?.icon}</span>
@@ -146,3 +146,4 @@ export default function ServiceConfigurator() {
     </div>
   );
 }
+

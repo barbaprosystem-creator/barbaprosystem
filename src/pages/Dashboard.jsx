@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { MoreVertical, Phone, Calendar, ArrowRight, CheckCircle2 } from 'lucide-react';
 import './Dashboard.css';
 
@@ -84,3 +84,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

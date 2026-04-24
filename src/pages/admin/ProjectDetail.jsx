@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus } from 'lucide-react';
@@ -61,14 +61,14 @@ export default function ProjectDetail({ projectId, onBack }) {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center py-20 text-slate-500">
+    <div className="flex items-center justify-center py-20 text-[#555555]">
       <Loader2 size={28} className="animate-spin mr-3" />
       <span>Cargando proyecto...</span>
     </div>
   );
 
   if (!project) return (
-    <div className="text-center py-20 text-slate-500">Proyecto no encontrado.</div>
+    <div className="text-center py-20 text-[#555555]">Proyecto no encontrado.</div>
   );
 
   const status = STATUS_MAP[project.status] || STATUS_MAP.pending;
@@ -81,13 +81,13 @@ export default function ProjectDetail({ projectId, onBack }) {
       <div className="flex items-start gap-4">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200 hover:border-slate-500 transition-all text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] hover:text-[#e0e0e0] hover:border-[#444444] transition-all text-sm font-medium"
         >
           <ArrowLeft size={16} /> Proyectos
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <span className="text-xs font-bold text-[#555555] uppercase tracking-wider">
               PRJ-{String(project.project_number).padStart(4, '0')}
             </span>
             <span
@@ -97,47 +97,47 @@ export default function ProjectDetail({ projectId, onBack }) {
               {status.label}
             </span>
           </div>
-          <h1 className="text-2xl font-bold text-slate-100 mt-1 truncate">{project.title}</h1>
+          <h1 className="text-2xl font-bold text-[#f0f0f0] mt-1 truncate">{project.title}</h1>
         </div>
       </div>
 
       {/* Info cards row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {project.contact && (
-          <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-4 flex items-center gap-3">
+          <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center flex-none">
               <User size={18} className="text-violet-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 uppercase tracking-wider">Cliente</p>
-              <p className="text-sm font-bold text-slate-100 truncate">
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Cliente</p>
+              <p className="text-sm font-bold text-[#f0f0f0] truncate">
                 {project.contact.first_name} {project.contact.last_name}
               </p>
               {project.contact.phone && (
-                <p className="text-xs text-slate-400">{project.contact.phone}</p>
+                <p className="text-xs text-[#888888]">{project.contact.phone}</p>
               )}
             </div>
           </div>
         )}
 
         {project.address && (
-          <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-4 flex items-center gap-3">
+          <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center flex-none">
               <MapPin size={18} className="text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 uppercase tracking-wider">Dirección</p>
-              <p className="text-sm font-bold text-slate-100 truncate">{project.address}</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">DirecciÃ³n</p>
+              <p className="text-sm font-bold text-[#f0f0f0] truncate">{project.address}</p>
             </div>
           </div>
         )}
 
-        <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center flex-none">
             <DollarSign size={18} className="text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-slate-500 uppercase tracking-wider">Cobrado</p>
+            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Cobrado</p>
             <p className="text-sm font-bold text-emerald-400">{formatCurrency(totalPaid)}</p>
             {totalOwed > 0 && (
               <p className="text-xs text-amber-400">{formatCurrency(totalOwed)} pendiente</p>
@@ -145,24 +145,24 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         </div>
 
-        <div className="bg-slate-800/50 border border-slate-700/40 rounded-2xl p-4 flex items-center gap-3">
+        <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center flex-none">
             <Calendar size={18} className="text-blue-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-slate-500 uppercase tracking-wider">Inicio</p>
-            <p className="text-sm font-bold text-slate-100">
+            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Inicio</p>
+            <p className="text-sm font-bold text-[#f0f0f0]">
               {project.start_date ? formatDate(project.start_date) : 'Sin definir'}
             </p>
             {project.target_end_date && (
-              <p className="text-xs text-slate-400">Fin: {formatDate(project.target_end_date)}</p>
+              <p className="text-xs text-[#888888]">Fin: {formatDate(project.target_end_date)}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Tab navigation */}
-      <div className="flex gap-2 border-b border-slate-700/50 pb-0">
+      <div className="flex gap-2 border-b border-[#2a2a2a]/50 pb-0">
         {TABS.map(({ id, label, Icon }) => (
           <button
             key={id}
@@ -170,7 +170,7 @@ export default function ProjectDetail({ projectId, onBack }) {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl text-sm font-semibold border-b-2 transition-all ${
               activeTab === id
                 ? 'border-violet-500 text-violet-300 bg-violet-500/10'
-                : 'border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-800/50'
+                : 'border-transparent text-[#555555] hover:text-[#c0c0c0] hover:bg-[#1a1a1a]/50'
             }`}
           >
             <Icon size={15} />
@@ -180,14 +180,14 @@ export default function ProjectDetail({ projectId, onBack }) {
       </div>
 
       {/* Tab content */}
-      <div className="bg-slate-800/30 border border-slate-700/40 rounded-2xl p-6">
-        {/* ── PIPELINE TAB */}
+      <div className="bg-[#1a1a1a]/30 border border-[#2a2a2a]/40 rounded-2xl p-6">
+        {/* â”€â”€ PIPELINE TAB */}
         {activeTab === 'pipeline' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-slate-100">Pipeline Semanal de Obra</h3>
-                <p className="text-sm text-slate-400 mt-0.5">
+                <h3 className="text-base font-bold text-[#f0f0f0]">Pipeline Semanal de Obra</h3>
+                <p className="text-sm text-[#888888] mt-0.5">
                   Progreso por semanas del calendario.{' '}
                   {canEdit ? 'Click en una tarea para cambiar estado.' : ''}
                 </p>
@@ -201,12 +201,12 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* ── PAYMENTS TAB */}
+        {/* â”€â”€ PAYMENTS TAB */}
         {activeTab === 'payments' && (
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-slate-100">Historial de Pagos</h3>
+            <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
             {payments.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-8">No hay pagos registrados para este proyecto.</p>
+              <p className="text-sm text-[#555555] text-center py-8">No hay pagos registrados para este proyecto.</p>
             ) : (
               <div className="space-y-3">
                 {payments.map(pay => {
@@ -219,7 +219,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                       className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${
                         isDone ? 'bg-emerald-500/5 border-emerald-500/20' :
                         isOverdue ? 'bg-red-500/5 border-red-500/30' :
-                        'bg-slate-800/50 border-slate-700/40'
+                        'bg-[#1a1a1a]/50 border-[#2a2a2a]/40'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -231,17 +231,17 @@ export default function ProjectDetail({ projectId, onBack }) {
                            <Clock size={16} className="text-amber-400" />}
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-slate-200">
-                            {pay.payment_type === 'deposit' ? 'Depósito' :
+                          <p className="text-sm font-bold text-[#e0e0e0]">
+                            {pay.payment_type === 'deposit' ? 'DepÃ³sito' :
                              pay.payment_type === 'partial' ? 'Pago Parcial' : 'Pago Final'}
                           </p>
                           {pay.due_date && (
-                            <p className="text-xs text-slate-500">Vence: {formatDate(pay.due_date)}</p>
+                            <p className="text-xs text-[#555555]">Vence: {formatDate(pay.due_date)}</p>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <span className={`text-lg font-extrabold ${isDone ? 'text-emerald-400' : 'text-slate-100'}`}>
+                        <span className={`text-lg font-extrabold ${isDone ? 'text-emerald-400' : 'text-[#f0f0f0]'}`}>
                           {formatCurrency(pay.amount)}
                         </span>
                         {isPending && canEdit && (
@@ -261,22 +261,22 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         )}
 
-        {/* ── PHOTOS TAB */}
+        {/* â”€â”€ PHOTOS TAB */}
         {activeTab === 'photos' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-100">Fotos del Proyecto</h3>
+              <h3 className="text-base font-bold text-[#f0f0f0]">Fotos del Proyecto</h3>
             </div>
             {photos.length === 0 ? (
-              <div className="text-center py-12 text-slate-500">
+              <div className="text-center py-12 text-[#555555]">
                 <Camera size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No hay fotos todavía.</p>
+                <p className="text-sm">No hay fotos todavÃ­a.</p>
                 <p className="text-xs text-slate-600 mt-1">El supervisor puede subir fotos desde la app.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                 {photos.map(photo => (
-                  <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden bg-slate-800 border border-slate-700/40 group">
+                  <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden bg-[#1a1a1a] border border-[#2a2a2a]/40 group">
                     <img
                       src={supabase.storage.from('project-photos').getPublicUrl(photo.storage_path).data.publicUrl}
                       alt={photo.caption || 'Foto de proyecto'}
@@ -292,10 +292,10 @@ export default function ProjectDetail({ projectId, onBack }) {
                         photo.photo_type === 'before' ? 'bg-blue-500/80 text-white' :
                         photo.photo_type === 'after' ? 'bg-emerald-500/80 text-white' :
                         photo.photo_type === 'issue' ? 'bg-red-500/80 text-white' :
-                        'bg-slate-700/80 text-slate-300'
+                        'bg-[#2a2a2a]/80 text-[#c0c0c0]'
                       }`}>
                         {photo.photo_type === 'before' ? 'Antes' :
-                         photo.photo_type === 'after' ? 'Después' :
+                         photo.photo_type === 'after' ? 'DespuÃ©s' :
                          photo.photo_type === 'issue' ? 'Problema' : 'Progreso'}
                       </span>
                     </div>
@@ -309,3 +309,4 @@ export default function ProjectDetail({ projectId, onBack }) {
     </div>
   );
 }
+

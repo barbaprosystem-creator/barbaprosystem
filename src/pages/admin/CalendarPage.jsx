@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Users } from 'lucide-react';
 
-const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'];
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 const SALES_TYPES = {
   appointment: { label: 'Cita',           color: '#3b82f6' },
-  inspection:  { label: 'Inspección',     color: '#f59e0b' },
+  inspection:  { label: 'InspecciÃ³n',     color: '#f59e0b' },
   follow_up:   { label: 'Seguimiento',    color: '#8b5cf6' },
   other:       { label: 'Otro',           color: '#6b7280' },
 };
@@ -16,7 +16,7 @@ const SALES_TYPES = {
 const PROJECT_TYPES = {
   project_start: { label: 'Inicio Proyecto', color: '#10b981' },
   payment_due:   { label: 'Pago Vence',      color: '#ef4444' },
-  inspection:    { label: 'Inspección',      color: '#f59e0b' },
+  inspection:    { label: 'InspecciÃ³n',      color: '#f59e0b' },
   other:         { label: 'Otro',            color: '#6b7280' },
 };
 
@@ -232,7 +232,7 @@ export default function CalendarPage() {
 
       {/* Tab description */}
       <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-        {tabConfig.description} — <em>{tabConfig.privateNote}</em>
+        {tabConfig.description} â€” <em>{tabConfig.privateNote}</em>
       </p>
 
       {/* Month navigation */}
@@ -269,7 +269,7 @@ export default function CalendarPage() {
         <div className="modal-overlay" onClick={() => setShowForm(false)}>
           <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Nuevo Evento — {selDate}</h2>
+              <h2>Nuevo Evento â€” {selDate}</h2>
               <button className="modal-close" onClick={() => setShowForm(false)}><X size={20} /></button>
             </div>
             <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px', paddingLeft: '4px' }}>
@@ -280,7 +280,7 @@ export default function CalendarPage() {
             <form onSubmit={handleCreate} className="crm-form">
               <div className="crm-form-grid">
                 <div className="form-group full-width">
-                  <label>Título *</label>
+                  <label>TÃ­tulo *</label>
                   <input
                     value={form.title}
                     onChange={e => setForm({ ...form, title: e.target.value })}
@@ -320,3 +320,4 @@ export default function CalendarPage() {
     </div>
   );
 }
+

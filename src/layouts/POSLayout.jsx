@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom';
+﻿import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
   Calculator,
@@ -56,7 +56,7 @@ export default function POSLayout({ onSignOut, profile }) {
               <span className="admin-user-role">Vendedor</span>
             </div>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesión">
+          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar SesiÃ³n">
             <LogOut size={18} />
           </button>
         </div>
@@ -68,3 +68,4 @@ export default function POSLayout({ onSignOut, profile }) {
     </div>
   );
 }
+

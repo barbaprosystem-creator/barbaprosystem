@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+﻿import { Navigate } from 'react-router-dom';
 
 /**
  * RoleGuard - Protects routes based on user role.
@@ -25,3 +25,4 @@ export default function RoleGuard({ allowed, role, fallback, children }) {
 
   return children;
 }
+

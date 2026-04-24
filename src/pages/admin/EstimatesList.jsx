@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
@@ -30,7 +30,7 @@ export default function EstimatesList() {
   async function updateStatus(id, status) {
     await supabase.from('estimates').update({status,updated_at:new Date().toISOString()}).eq('id',id);
     
-    // Automatización: Crear proyecto si se aprueba el estimado
+    // AutomatizaciÃ³n: Crear proyecto si se aprueba el estimado
     if (status === 'approved') {
       const est = estimates.find(e => e.id === id);
       if (est) {
@@ -48,7 +48,7 @@ export default function EstimatesList() {
   }
 
   async function deleteEstimate(id) {
-    if(!confirm('¿Eliminar este estimado?')) return;
+    if(!confirm('Â¿Eliminar este estimado?')) return;
     await supabase.from('estimate_items').delete().eq('estimate_id',id);
     await supabase.from('estimates').delete().eq('id',id);
     fetchEstimates();
@@ -69,7 +69,7 @@ export default function EstimatesList() {
         <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
         <div className="crm-toolbar-right">
           <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-          <button className="btn-primary" onClick={() => alert('Constructor de Estimados — Próximamente')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => alert('Constructor de Estimados â€” PrÃ³ximamente')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
       <div className="estimate-tabs">
@@ -81,16 +81,16 @@ export default function EstimatesList() {
       </div>
       <div className="crm-list">
         <table>
-          <thead><tr><th>#</th><th>Cliente</th><th>Dirección</th><th>Total</th><th>Estado</th><th>Creado por</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>Cliente</th><th>DirecciÃ³n</th><th>Total</th><th>Estado</th><th>Creado por</th><th>Fecha</th><th>Acciones</th></tr></thead>
           <tbody>
             {filtered.map(est => (
               <tr key={est.id} className="crm-list-row">
                 <td className="est-number">EST-{String(est.estimate_number).padStart(4,'0')}</td>
                 <td className="lead-name-cell">{est.contact?.first_name} {est.contact?.last_name}</td>
-                <td>{est.contact?.address||'—'}</td>
+                <td>{est.contact?.address||'â€”'}</td>
                 <td className="est-total">{formatCurrency(est.grand_total)}</td>
                 <td><span className="stage-badge" style={{background:STATUS_MAP[est.status]?.color}}>{STATUS_MAP[est.status]?.label}</span></td>
-                <td>{est.creator?.full_name||'—'}</td>
+                <td>{est.creator?.full_name||'â€”'}</td>
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
                   {est.status==='draft' && <button className="icon-btn" title="Enviar" onClick={() => updateStatus(est.id,'sent')}><Send size={15}/></button>}
@@ -109,3 +109,4 @@ export default function EstimatesList() {
     </div>
   );
 }
+

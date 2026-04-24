@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Users, Plus, Trash2, Loader2, X, Shield, ShieldCheck, Eye, Pencil } from 'lucide-react';
 
@@ -32,14 +32,14 @@ export default function SettingsPage() {
   return (
     <div className="settings-page">
       <div className="crm-toolbar">
-        <div className="crm-toolbar-left"><h1>Configuración</h1></div>
+        <div className="crm-toolbar-left"><h1>ConfiguraciÃ³n</h1></div>
       </div>
 
       {/* User Management */}
       <div className="settings-section">
         <div className="settings-section-header">
           <div>
-            <h2><Users size={20}/> Gestión de Usuarios</h2>
+            <h2><Users size={20}/> GestiÃ³n de Usuarios</h2>
             <p>Administra los usuarios y sus roles en el sistema</p>
           </div>
         </div>
@@ -96,7 +96,7 @@ export default function SettingsPage() {
       {/* System Config */}
       <div className="settings-section">
         <div className="settings-section-header">
-          <h2><ShieldCheck size={20}/> Configuración del Sistema</h2>
+          <h2><ShieldCheck size={20}/> ConfiguraciÃ³n del Sistema</h2>
         </div>
         <div className="settings-grid">
           <div className="setting-item">
@@ -114,7 +114,7 @@ export default function SettingsPage() {
           <div className="setting-item">
             <label>Financiamiento</label>
             <a href="https://www.servifinancial.com" target="_blank" rel="noopener" className="btn-secondary" style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              Servi Financial ↗
+              Servi Financial â†—
             </a>
           </div>
         </div>
@@ -122,3 +122,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

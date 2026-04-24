@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, CheckCircle2, Clock, AlertCircle, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// ── Color coding: green=done, yellow=in_progress, red=pending
+// â”€â”€ Color coding: green=done, yellow=in_progress, red=pending
 const STATUS_CONFIG = {
   completed:   { label: 'Completado', color: '#10b981', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', Icon: CheckCircle2 },
   in_progress: { label: 'En Proceso', color: '#f59e0b', bg: 'bg-amber-500/20',   border: 'border-amber-500/40',   text: 'text-amber-300',   Icon: Clock },
@@ -10,14 +10,14 @@ const STATUS_CONFIG = {
 };
 
 const TASK_CATEGORIES = [
-  { id: 'demolition', label: 'Demolición' },
+  { id: 'demolition', label: 'DemoliciÃ³n' },
   { id: 'roofing',    label: 'Techos' },
   { id: 'siding',     label: 'Siding' },
   { id: 'windows',    label: 'Ventanas' },
   { id: 'gutters',    label: 'Canales' },
   { id: 'framing',    label: 'Framing' },
   { id: 'painting',   label: 'Pintura' },
-  { id: 'inspection', label: 'Inspección' },
+  { id: 'inspection', label: 'InspecciÃ³n' },
   { id: 'cleanup',    label: 'Limpieza' },
   { id: 'delivery',   label: 'Entrega' },
   { id: 'general',    label: 'General' },
@@ -55,7 +55,7 @@ function isCurrentWeek(week) {
   return now >= week.start && now <= week.end;
 }
 
-// ── Task chip inside a week cell
+// â”€â”€ Task chip inside a week cell
 function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
   const cfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
   const Icon = cfg.Icon;
@@ -73,10 +73,10 @@ function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
       title={canEdit ? 'Click para cambiar estado' : ''}
     >
       <Icon size={13} className={cfg.text + ' flex-none'} />
-      <span className="text-xs font-semibold text-slate-200 leading-tight truncate flex-1">{task.title}</span>
+      <span className="text-xs font-semibold text-[#e0e0e0] leading-tight truncate flex-1">{task.title}</span>
       {canEdit && (
         <button
-          className="opacity-0 group-hover:opacity-100 flex-none text-slate-500 hover:text-red-400 transition-opacity"
+          className="opacity-0 group-hover:opacity-100 flex-none text-[#555555] hover:text-red-400 transition-opacity"
           onClick={e => { e.stopPropagation(); onDelete(task.id); }}
         >
           <X size={11} />
@@ -86,7 +86,7 @@ function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
   );
 }
 
-// ── Add task form inside a week cell
+// â”€â”€ Add task form inside a week cell
 function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('general');
@@ -99,18 +99,18 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-2 p-2 bg-slate-900/80 rounded-xl border border-slate-600/50">
+    <form onSubmit={submit} className="flex flex-col gap-2 p-2 bg-[#0d0d0d]/80 rounded-xl border border-[#333333]/50">
       <input
         autoFocus
         value={title}
         onChange={e => setTitle(e.target.value)}
         placeholder="Nombre de tarea..."
-        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-violet-500"
+        className="w-full bg-[#1a1a1a] border border-[#333333] rounded-lg px-3 py-2 text-xs text-[#f0f0f0] placeholder-[#555555] focus:outline-none focus:border-[#F5C518]"
       />
       <select
         value={category}
         onChange={e => setCategory(e.target.value)}
-        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-violet-500"
+        className="w-full bg-[#1a1a1a] border border-[#333333] rounded-lg px-2 py-1.5 text-xs text-[#c0c0c0] focus:outline-none focus:border-[#F5C518]"
       >
         {TASK_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
       </select>
@@ -118,7 +118,7 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
         <button type="submit" className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-xs font-semibold text-white transition-colors">
           <Save size={11} /> Guardar
         </button>
-        <button type="button" onClick={onCancel} className="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-slate-300 transition-colors">
+        <button type="button" onClick={onCancel} className="flex-1 py-1.5 bg-[#2a2a2a] hover:bg-[#333333] rounded-lg text-xs text-[#c0c0c0] transition-colors">
           Cancelar
         </button>
       </div>
@@ -126,7 +126,7 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
   );
 }
 
-// ── Main Component
+// â”€â”€ Main Component
 export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = false }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -196,7 +196,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
   const pendingTasks = tasks.filter(t => t.status === 'pending').length;
 
   if (loading) return (
-    <div className="flex items-center justify-center py-12 text-slate-500">
+    <div className="flex items-center justify-center py-12 text-[#555555]">
       <div className="animate-spin rounded-full h-6 w-6 border-2 border-violet-500 border-t-transparent mr-3" />
       Cargando pipeline...
     </div>
@@ -210,8 +210,8 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
           {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
             <div key={key} className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full" style={{ background: cfg.color }} />
-              <span className="text-xs text-slate-400">{cfg.label}</span>
-              <span className="text-xs font-bold text-slate-300">
+              <span className="text-xs text-[#888888]">{cfg.label}</span>
+              <span className="text-xs font-bold text-[#c0c0c0]">
                 {key === 'completed' ? doneTasks : key === 'in_progress' ? wipTasks : pendingTasks}
               </span>
             </div>
@@ -221,16 +221,16 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
           {/* Week navigation */}
           <button
             onClick={() => setWeekOffset(w => w - 1)}
-            className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-400 hover:text-slate-200 transition-all"
+            className="p-1.5 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#444444] text-[#888888] hover:text-[#e0e0e0] transition-all"
           >
             <ChevronLeft size={16} />
           </button>
-          <span className="text-xs text-slate-400 font-medium">
-            {formatShortDate(weeks[0].start)} — {formatShortDate(weeks[weeks.length - 1].end)}
+          <span className="text-xs text-[#888888] font-medium">
+            {formatShortDate(weeks[0].start)} â€” {formatShortDate(weeks[weeks.length - 1].end)}
           </span>
           <button
             onClick={() => setWeekOffset(w => w + 1)}
-            className="p-1.5 rounded-lg bg-slate-800 border border-slate-700 hover:border-slate-500 text-slate-400 hover:text-slate-200 transition-all"
+            className="p-1.5 rounded-lg bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#444444] text-[#888888] hover:text-[#e0e0e0] transition-all"
           >
             <ChevronRight size={16} />
           </button>
@@ -248,7 +248,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
       {/* Progress bar overall */}
       {totalTasks > 0 && (
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden flex">
+          <div className="flex-1 h-2 bg-[#1a1a1a] rounded-full overflow-hidden flex">
             <div
               className="h-full bg-emerald-500 transition-all duration-500"
               style={{ width: `${(doneTasks / totalTasks) * 100}%` }}
@@ -262,7 +262,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
               style={{ width: `${(pendingTasks / totalTasks) * 100}%` }}
             />
           </div>
-          <span className="text-xs font-bold text-slate-300 whitespace-nowrap">
+          <span className="text-xs font-bold text-[#c0c0c0] whitespace-nowrap">
             {totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0}% completado
           </span>
         </div>
@@ -280,14 +280,14 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                 className={`rounded-xl p-3 border text-center ${
                   isCurrent
                     ? 'bg-violet-500/10 border-violet-500/40'
-                    : 'bg-slate-800/40 border-slate-700/40'
+                    : 'bg-[#1a1a1a]/40 border-[#2a2a2a]/40'
                 }`}
               >
-                <p className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-violet-400' : 'text-slate-500'}`}>
-                  {isCurrent ? '● Esta Semana' : `Semana ${i + 1 + weekOffset}`}
+                <p className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-violet-400' : 'text-[#555555]'}`}>
+                  {isCurrent ? 'â— Esta Semana' : `Semana ${i + 1 + weekOffset}`}
                 </p>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  {formatShortDate(week.start)} – {formatShortDate(week.end)}
+                <p className="text-xs text-[#888888] mt-0.5">
+                  {formatShortDate(week.start)} â€“ {formatShortDate(week.end)}
                 </p>
               </div>
             );
@@ -322,7 +322,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                   canEdit && (
                     <button
                       onClick={() => setAddingWeek(i)}
-                      className="flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-slate-700 text-slate-600 hover:border-violet-600/50 hover:text-violet-500 transition-all duration-200 text-xs"
+                      className="flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-[#2a2a2a] text-slate-600 hover:border-violet-600/50 hover:text-violet-500 transition-all duration-200 text-xs"
                     >
                       <Plus size={12} /> Tarea
                     </button>
@@ -335,11 +335,12 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
       </div>
 
       {totalTasks === 0 && !canEdit && (
-        <div className="text-center py-8 text-slate-500">
+        <div className="text-center py-8 text-[#555555]">
           <AlertCircle size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No hay tareas en el pipeline todavía.</p>
+          <p className="text-sm">No hay tareas en el pipeline todavÃ­a.</p>
         </div>
       )}
     </div>
   );
 }
+

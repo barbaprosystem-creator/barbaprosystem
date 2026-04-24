@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useEstimatorStore } from '../store/useEstimatorStore';
 import { supabase } from '../lib/supabase';
 import ServiceConfigurator from '../components/estimator/ServiceConfigurator';
@@ -60,7 +60,7 @@ function ClientSearch({ onSelect, onClear, selectedContact }) {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar cliente por nombre o teléfono..."
+          placeholder="Buscar cliente por nombre o telÃ©fono..."
           style={{
             background: 'none', border: 'none', outline: 'none',
             color: '#e2e8f0', fontSize: '14px', flex: 1,
@@ -98,7 +98,7 @@ function ClientSearch({ onSelect, onClear, selectedContact }) {
               <div>
                 <p style={{ margin: 0, fontWeight: '600', fontSize: '14px' }}>{c.first_name} {c.last_name}</p>
                 <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#6b7280' }}>
-                  {c.phone || '—'} {c.address ? `· ${c.address}` : ''}
+                  {c.phone || 'â€”'} {c.address ? `Â· ${c.address}` : ''}
                 </p>
               </div>
             </button>
@@ -150,8 +150,8 @@ export default function Estimator() {
           background: '#1e293b', borderRadius: '20px', padding: '48px 32px',
           border: '1px solid #374151',
         }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>✅</div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800' }}>¡Estimado Guardado!</h2>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>âœ…</div>
+          <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800' }}>Â¡Estimado Guardado!</h2>
           <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
             Estimado #{String(estimateNum).padStart(4, '0')} creado exitosamente.
           </p>
@@ -177,11 +177,11 @@ export default function Estimator() {
       {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-3xl font-bold tracking-tight">Nuevo Estimado</h1>
-        <p className="text-slate-400">Selecciona servicios y genera un presupuesto para el cliente</p>
+        <p className="text-[#888888]">Selecciona servicios y genera un presupuesto para el cliente</p>
       </div>
 
       {/* Client Selector */}
-      <div className="bg-[var(--bg-card)] border border-slate-700/60 rounded-2xl p-6">
+      <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-6">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <User size={18} color="#f97316" />
           <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Cliente (opcional)</h2>
@@ -222,3 +222,4 @@ export default function Estimator() {
     </div>
   );
 }
+
