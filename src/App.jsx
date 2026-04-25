@@ -42,32 +42,7 @@ function LoadingScreen() {
 export default function App() {
   const { session, profile, loading, signIn, signOut, role } = useAuth();
 
-  // DEV PREVIEW: ?preview=pos bypasses auth for local UI review
-  // We persist the flag in sessionStorage so it survives React Router redirects
-  if (new URLSearchParams(window.location.search).get('preview') === 'pos') {
-    sessionStorage.setItem('devPreview', 'pos');
-  }
-  const devPreview = sessionStorage.getItem('devPreview');
-  if (devPreview === 'pos') {
-    const mockProfile = { id: 'dev', full_name: 'Dev Vendedor', role: 'salesperson', is_active: true };
-    return (
-      <Router>
-        <Routes>
-          <Route path="/" element={<Navigate to="/pos/estimator" replace />} />
-          <Route path="/pos" element={<POSLayout setRole={null} onSignOut={() => sessionStorage.removeItem('devPreview')} profile={mockProfile} />}>
-            <Route index element={<Navigate to="estimator" replace />} />
-            <Route path="dashboard" element={<POSDashboard />} />
-            <Route path="estimator" element={<Estimator />} />
-            <Route path="clients" element={<Clients />} />
-            <Route path="materials" element={<Materials />} />
-          </Route>
-          <Route path="*" element={<Navigate to="/pos/estimator" replace />} />
-        </Routes>
-      </Router>
-    );
-  }
-
-  if (loading) return <LoadingScreen />;
+    if (loading) return <LoadingScreen />;
   if (!session) return <LoginPage onAuth={signIn} />;
   if (!profile) return <LoadingScreen />;
 

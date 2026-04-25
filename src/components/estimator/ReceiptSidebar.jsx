@@ -78,7 +78,7 @@ export default function ReceiptSidebar() {
           onChange={e => setSelectedClient(e.target.value)}
           className="w-full px-3 py-2.5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a]/60 text-[#f0f0f0] text-sm focus:outline-none focus:border-[#F5C518]/60 transition-colors"
         >
-          <option value="">âEUR" Seleccionar cliente âEUR"</option>
+          <option value="">-- Seleccionar cliente --</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
         </select>
       </div>

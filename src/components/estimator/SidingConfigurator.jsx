@@ -44,7 +44,7 @@ export default function SidingConfigurator() {
           <div className="bg-[#0d0d0d]/70 rounded-2xl p-5 border border-[#2a2a2a]/40 space-y-2">
             <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
-              Siding Ã¢EUR" {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
+              Siding - {MATERIALS.find(m => m.id === sidingConfig.material)?.label}
             </p>
             <p className="text-sm text-[#888888]">{sidingConfig.sqft || 0} Square Feet</p>
           </div>
