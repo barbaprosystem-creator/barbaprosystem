@@ -23,8 +23,11 @@ export default function SolarScanWidget() {
 
       autocomplete.addListener('place_changed', () => {
         const place = autocomplete.getPlace();
+        console.log("Place Selected:", place);
         if (place.formatted_address) {
           setAddress(place.formatted_address);
+        } else if (place.name) {
+          setAddress(place.name);
         }
       });
     };
