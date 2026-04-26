@@ -84,7 +84,7 @@ export default function ReportsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aun. Las acciones de los usuarios aparecerÃ¡n aqui.</p>
+          <p className="text-[#888888]" style={{padding:'2rem',textAlign:'center'}}>No hay actividad registrada aun. Las acciones de los usuarios apareceran aqui.</p>
         )}
       </div>
     </div>

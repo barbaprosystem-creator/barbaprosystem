@@ -105,9 +105,9 @@ export default function AdminDashboard() {
   }, []);
 
   const SOURCE_ICONS = {
-    google: 'ðŸ"', facebook: 'ðŸ"˜', instagram: 'ðŸ"¸',
-    tiktok: 'ðŸŽµ', referral: 'ðŸ¤', phone: 'ðŸ"ž',
-    walk_in: 'ðŸš¶', web: 'ðŸŒ', other: 'ðŸ"‹',
+    google: 'Google', facebook: 'Facebook', instagram: 'Instagram',
+    tiktok: 'TikTok', referral: 'Referido', phone: 'Telefono',
+    walk_in: 'Visita', web: 'Web', other: 'Otro',
   };
 
   const STAGE_COLORS = {
@@ -228,7 +228,7 @@ export default function AdminDashboard() {
                           <Phone size={10} /> {lead.phone}
                         </span>
                       )}
-                      <span style={{ fontSize: '11px' }}>{SOURCE_ICONS[lead.source] || 'ðŸ"‹'}</span>
+                      <span style={{ fontSize: '11px' }}>{SOURCE_ICONS[lead.source] || "Otro"}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>

@@ -2,18 +2,18 @@ import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const TYPES = [
-  { id: 'double_hung', label: 'Double Hung',    desc: 'MÃ¡s comun, dos paneles' },
+  { id: 'double_hung', label: 'Double Hung',    desc: 'Mas comun, dos paneles' },
   { id: 'single_hung', label: 'Single Hung',    desc: 'Panel inferior movible' },
   { id: 'casement',    label: 'Casement',       desc: 'Bisagra lateral, full-open' },
   { id: 'sliding',     label: 'Sliding',        desc: 'Deslizante horizontal' },
-  { id: 'picture',     label: 'Picture / Fixed', desc: 'Sin apertura, vista panorÃ¡mica' },
-  { id: 'bay',         label: 'Bay Window',     desc: 'Triple panel en Ã¡ngulo' },
+  { id: 'picture',     label: 'Picture / Fixed', desc: 'Sin apertura, vista panoramica' },
+  { id: 'bay',         label: 'Bay Window',     desc: 'Triple panel en angulo' },
 ];
 
 const SIZES = [
-  { id: 'small',  label: 'Pequeno',  desc: 'Hasta 24Ã - 36"' },
-  { id: 'medium', label: 'Mediano',  desc: '28Ã - 54" aprox.' },
-  { id: 'large',  label: 'Grande',   desc: '36Ã - 60" y mÃ¡s' },
+  { id: 'small',  label: 'Pequeno',  desc: 'Hasta 24" - 36"' },
+  { id: 'medium', label: 'Mediano',  desc: '28" - 54" aprox.' },
+  { id: 'large',  label: 'Grande',   desc: '36" - 60" y mas' },
 ];
 
 export default function WindowsConfigurator() {
@@ -76,7 +76,7 @@ export default function WindowsConfigurator() {
             <p className="text-xs text-[#555555] font-medium uppercase tracking-wider">Vista previa del item</p>
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
               {TYPES.find(t => t.id === windowsConfig.type)?.label}{' '}
-              Ã¢EUR" {SIZES.find(s => s.id === windowsConfig.size)?.label}
+              - {SIZES.find(s => s.id === windowsConfig.size)?.label}
             </p>
             <p className="text-sm text-[#888888]">{windowsConfig.quantity || 0} unidad(es)</p>
           </div>

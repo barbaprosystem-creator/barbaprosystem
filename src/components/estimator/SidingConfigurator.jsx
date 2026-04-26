@@ -5,7 +5,7 @@ const MATERIALS = [
   { id: 'vinyl',      label: 'Vinyl Siding',   desc: 'Bajo mantenimiento, durable' },
   { id: 'hardiplank', label: 'HardiePlank',    desc: 'Fibra de cemento, resistente' },
   { id: 'lp_smart',   label: 'LP SmartSide',  desc: 'Engineered wood, premium' },
-  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clÃ¡sico' },
+  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clasico' },
 ];
 
 export default function SidingConfigurator() {

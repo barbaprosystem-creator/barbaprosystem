@@ -2,11 +2,11 @@ import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const PROFILES = [
-  { id: 'k-style',    label: 'K-Style',    desc: 'MÃ¡s comun, angulado' },
-  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clÃ¡sico' },
+  { id: 'k-style',    label: 'K-Style',    desc: 'Mas comun, angulado' },
+  { id: 'half-round', label: 'Half-Round',  desc: 'Semicircular, clasico' },
 ];
 const SIZES = [
-  { val: '5', label: '5"', desc: 'Residencial estÃ¡ndar' },
+  { val: '5', label: '5"', desc: 'Residencial estandar' },
   { val: '6', label: '6"', desc: 'Residencial premium' },
   { val: '7', label: '7"', desc: 'Comercial / Grande' },
 ];

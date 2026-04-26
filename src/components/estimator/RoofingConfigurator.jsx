@@ -7,7 +7,7 @@ const MATERIALS = [
   { id: 'metal_steel',   label: 'Metal - Acero',     desc: 'Panel standing seam' },
   { id: 'metal_alum',    label: 'Metal - Aluminio',  desc: 'Liviano, anti-corrosion' },
   { id: 'tpo',           label: 'TPO / Flat',        desc: 'Techo plano comercial' },
-  { id: 'tile',          label: 'Teja / Tile',       desc: 'CerÃ¡mica o concreto' },
+  { id: 'tile',          label: 'Teja / Tile',       desc: 'Ceramica o concreto' },
 ];
 
 export default function RoofingConfigurator() {
