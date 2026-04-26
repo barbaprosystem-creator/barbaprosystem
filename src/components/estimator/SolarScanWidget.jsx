@@ -67,13 +67,18 @@ export default function SolarScanWidget() {
       const geoData = await geoRes.json();
       
       if (geoData.status !== 'OK' || !geoData.results.length) {
-        throw new Error('Dirección no encontrada');
+        throw new Error(geoData.error_message || `Error de Geocoding: ${geoData.status}. Revisa que la API 'Geocoding API' esté activa.`);
       }
 
       const { lat, lng } = geoData.results[0].geometry.location;
 
       // 2. Solar API
       const solarRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=HIGH&key=${apiKey}`);
+      
+      if (solarRes.status === 404) {
+        throw new Error('No hay cobertura satelital de Google Solar para esta ubicación exacta.');
+      }
+      
       const solarData = await solarRes.json();
 
       if (solarData.error) {
