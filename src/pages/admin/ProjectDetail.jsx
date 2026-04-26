@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
+import ProjectMaterialsTab from '../../components/projects/ProjectMaterialsTab';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
@@ -15,6 +16,7 @@ const STATUS_MAP = {
 
 const TABS = [
   { id: 'pipeline', label: 'Pipeline Semanal', Icon: BarChart3 },
+  { id: 'materials', label: 'Materiales (BOM)', Icon: PackageSearch },
   { id: 'payments', label: 'Pagos',            Icon: DollarSign },
   { id: 'photos',   label: 'Fotos',            Icon: Camera },
 ];
@@ -199,6 +201,11 @@ export default function ProjectDetail({ projectId, onBack }) {
               canEdit={canEdit}
             />
           </div>
+        )}
+
+        {/* MATERIALS TAB */}
+        {activeTab === 'materials' && (
+          <ProjectMaterialsTab projectId={projectId} />
         )}
 
         {/* PAYMENTS TAB */}

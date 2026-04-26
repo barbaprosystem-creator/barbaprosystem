@@ -10,6 +10,7 @@ import {
   LogOut,
   BarChart3,
   Tag,
+  PackageSearch,
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
+  { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo de Materiales' },
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 

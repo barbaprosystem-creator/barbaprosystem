@@ -16,6 +16,7 @@ import PaymentTracker from './pages/admin/PaymentTracker';
 import CalendarPage from './pages/admin/CalendarPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
+import MaterialsCatalog from './pages/admin/MaterialsCatalog';
 
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
@@ -76,6 +77,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="pricing" element={<PricingSettings />} />
+          <Route path="materials-catalog" element={<MaterialsCatalog />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
