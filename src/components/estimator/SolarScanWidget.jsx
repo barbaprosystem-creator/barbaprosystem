@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Satellite, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 
@@ -8,6 +8,46 @@ export default function SolarScanWidget() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const { setRoofingField } = useEstimatorStore();
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) return;
+
+    const initAutocomplete = () => {
+      if (!inputRef.current || !window.google) return;
+      const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, {
+        fields: ['formatted_address', 'geometry'],
+        types: ['address']
+      });
+
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+        if (place.formatted_address) {
+          setAddress(place.formatted_address);
+        }
+      });
+    };
+
+    if (window.google && window.google.maps) {
+      initAutocomplete();
+    } else {
+      const scriptId = 'google-maps-script';
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+        script.async = true;
+        script.defer = true;
+        script.onload = initAutocomplete;
+        document.head.appendChild(script);
+      } else {
+        // If script is already there but loading
+        const script = document.getElementById(scriptId);
+        script.addEventListener('load', initAutocomplete);
+      }
+    }
+  }, []);
 
   const handleScan = async () => {
     if (!address.trim()) return;
@@ -94,6 +134,7 @@ export default function SolarScanWidget() {
           <div className="relative flex-1">
             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555]" size={18} />
             <input 
+              ref={inputRef}
               type="text" 
               placeholder="Ej: 123 Main St, Louisville, KY" 
               value={address}
