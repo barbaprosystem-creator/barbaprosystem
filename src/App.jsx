@@ -83,7 +83,7 @@ export default function App() {
         <Route
           path="/pos"
           element={
-            <RoleGuard allowed={['admin', 'salesperson', 'office']} role={role}>
+            <RoleGuard allowed={['salesperson']} role={role}>
               <POSLayout setRole={null} onSignOut={signOut} profile={profile} />
             </RoleGuard>
           }
