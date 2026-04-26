@@ -7,7 +7,7 @@ const PIPELINE_STAGES = [
   { id: 'contacted',      label: 'Contactado',        color: '#f59e0b' },
   { id: 'appointment_set',label: 'Cita Agendada',     color: '#8b5cf6' },
   { id: 'estimate_sent',  label: 'Estimado Enviado',  color: '#06b6d4' },
-  { id: 'closed_won',     label: 'âÅ... Ganado',          color: '#10b981' },
+  { id: 'closed_won',     label: '✓ Ganado',          color: '#10b981' },
   { id: 'closed_lost',    label: 'Perdido',         color: '#ef4444' },
 ];
 

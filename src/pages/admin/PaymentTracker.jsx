@@ -163,7 +163,7 @@ function ReminderModal({ payment, onClose }) {
 
         {sent ? (
           <div style={{ textAlign: 'center' }}>
-            <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>âÅ...</div>
+            <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>✓</div>
             <p style={{ color: '#10b981', fontWeight: '600' }}>Recordatorio registrado</p>
             <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
               Cuando Twilio/Resend este configurado, se enviara automaticamente.

@@ -114,7 +114,7 @@ export default function SettingsPage() {
           <div className="setting-item">
             <label>Financiamiento</label>
             <a href="https://www.servifinancial.com" target="_blank" rel="noopener" className="btn-secondary" style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              Servi Financial â† - 
+              Servi Financial &rarr;
             </a>
           </div>
         </div>

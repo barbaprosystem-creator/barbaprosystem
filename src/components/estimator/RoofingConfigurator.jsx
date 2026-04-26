@@ -1,5 +1,6 @@
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
+import SolarScanWidget from './SolarScanWidget';
 
 const MATERIALS = [
   { id: 'architectural', label: 'Arquitectonico',    desc: 'Asphalt, 30-50 anos' },
@@ -15,6 +16,8 @@ export default function RoofingConfigurator() {
 
   return (
     <div className="space-y-8">
+      <SolarScanWidget />
+
       <div className="flex items-center gap-3">
         <span className="w-3 h-3 rounded-full bg-amber-400 flex-none" />
         <h3 className="text-xl font-bold text-[#f0f0f0]">Configuracion de Techos</h3>

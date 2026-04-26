@@ -150,7 +150,7 @@ export default function Estimator() {
           background: '#1e293b', borderRadius: '20px', padding: '48px 32px',
           border: '1px solid #374151',
         }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>âÅ...</div>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
           <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800' }}>!Estimado Guardado!</h2>
           <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
             Estimado #{String(estimateNum).padStart(4, '0')} creado exitosamente.

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, CheckCircle2, Clock, AlertCircle, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 
-// â"EURâ"EUR Color coding: green=done, yellow=in_progress, red=pending
+// -- Color coding: green=done, yellow=in_progress, red=pending
 const STATUS_CONFIG = {
   completed:   { label: 'Completado', color: '#10b981', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', Icon: CheckCircle2 },
   in_progress: { label: 'En Proceso', color: '#f59e0b', bg: 'bg-amber-500/20',   border: 'border-amber-500/40',   text: 'text-amber-300',   Icon: Clock },
@@ -55,7 +55,7 @@ function isCurrentWeek(week) {
   return now >= week.start && now <= week.end;
 }
 
-// â"EURâ"EUR Task chip inside a week cell
+// -- Task chip inside a week cell
 function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
   const cfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
   const Icon = cfg.Icon;
@@ -86,7 +86,7 @@ function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
   );
 }
 
-// â"EURâ"EUR Add task form inside a week cell
+// -- Add task form inside a week cell
 function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('general');
@@ -126,7 +126,7 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
   );
 }
 
-// â"EURâ"EUR Main Component
+// -- Main Component
 export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = false }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -226,7 +226,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
             <ChevronLeft size={16} />
           </button>
           <span className="text-xs text-[#888888] font-medium">
-            {formatShortDate(weeks[0].start)} âEUR" {formatShortDate(weeks[weeks.length - 1].end)}
+            {formatShortDate(weeks[0].start)} - {formatShortDate(weeks[weeks.length - 1].end)}
           </span>
           <button
             onClick={() => setWeekOffset(w => w + 1)}
@@ -284,10 +284,10 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                 }`}
               >
                 <p className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-violet-400' : 'text-[#555555]'}`}>
-                  {isCurrent ? 'â -  Esta Semana' : `Semana ${i + 1 + weekOffset}`}
+                  {isCurrent ? '• Esta Semana' : `Semana ${i + 1 + weekOffset}`}
                 </p>
                 <p className="text-xs text-[#888888] mt-0.5">
-                  {formatShortDate(week.start)} âEUR" {formatShortDate(week.end)}
+                  {formatShortDate(week.start)} - {formatShortDate(week.end)}
                 </p>
               </div>
             );

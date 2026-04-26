@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import {
-  DollarSign, Users, FileText, FolderKanban,
-  TrendingUp, Clock, AlertTriangle, CheckCircle,
-  Phone, MapPin, Bell,
+import { 
+  Users, Briefcase, FileText, DollarSign, Wallet, TrendingUp, AlertTriangle, Clock,
+  Calendar, CheckCircle, ChevronRight, Activity, ArrowUpRight, Bell, Calendar as CalIcon,
+  FolderKanban, Phone, MapPin
 } from 'lucide-react';
 
 function StatCard({ icon: Icon, label, value, accent, sub }) {
@@ -38,13 +38,13 @@ function AlertBanner({ payments }) {
       <Bell size={18} color="#ef4444" style={{ flexShrink: 0, marginTop: '2px' }} />
       <div style={{ flex: 1 }}>
         {overdue.length > 0 && (
-          <p style={{ margin: '0 0 4px', fontWeight: '700', color: '#ef4444', fontSize: '14px' }}>
-            ⚠️ {overdue.length} pago{overdue.length > 1 ? `s` : ``} vencido{overdue.length > 1 ? `s` : ``}
+          <p style={{ margin: '0 0 4px', fontWeight: '700', color: '#ef4444', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
+            <AlertTriangle size={14} className="mr-1.5" /> {overdue.length} pago{overdue.length > 1 ? `s` : ``} vencido{overdue.length > 1 ? `s` : ``}
           </p>
         )}
         {dueSoon.length > 0 && (
-          <p style={{ margin: 0, fontWeight: '600', color: '#f59e0b', fontSize: '13px' }}>
-            ⏳ {dueSoon.length} pago{dueSoon.length > 1 ? `s` : ``} vence en menos de 3 dias
+          <p style={{ margin: 0, fontWeight: '600', color: '#f59e0b', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+            <Clock size={14} className="mr-1.5" /> {dueSoon.length} pago{dueSoon.length > 1 ? `s` : ``} vence en menos de 3 dias
           </p>
         )}
       </div>

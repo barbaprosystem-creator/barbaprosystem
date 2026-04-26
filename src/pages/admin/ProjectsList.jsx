@@ -17,7 +17,7 @@ export default function ProjectsList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedProjectId, setSelectedProjectId] = useState(null); // â† detail view
+  const [selectedProjectId, setSelectedProjectId] = useState(null); // -> detail view
 
   useEffect(() => { fetchProjects(); }, []);
 

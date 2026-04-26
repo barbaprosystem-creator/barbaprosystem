@@ -6,7 +6,7 @@ import AdminLayout from './layouts/AdminLayout';
 import POSLayout from './layouts/POSLayout';
 import SupervisorLayout from './layouts/SupervisorLayout';
 
-// Pages âEUR" Admin
+// Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
 import PricingSettings from './pages/admin/PricingSettings';
 import CRMPipeline from './pages/admin/CRMPipeline';
@@ -17,13 +17,13 @@ import CalendarPage from './pages/admin/CalendarPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 
-// Pages âEUR" Sales (POS)
+// Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 
-// Pages âEUR" Supervisor
+// Pages - Supervisor
 import SupervisorProjects from './pages/supervisor/SupervisorProjects';
 import DailyReports from './pages/supervisor/DailyReports';
 import PhotoUpload from './pages/supervisor/PhotoUpload';

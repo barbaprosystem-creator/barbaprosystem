@@ -84,7 +84,7 @@ export default function Clients() {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {filtered.map((client) => {
-                  const s = statusMap[client.status] || { label: client.status || 'âEUR"', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
+                  const s = statusMap[client.status] || { label: client.status || '-', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                   return (
                     <tr key={client.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
                       <td className="py-4 px-6">
@@ -115,7 +115,7 @@ export default function Clients() {
                         </span>
                       </td>
                       <td className="py-4 px-6 text-sm text-[#888888]">
-                        {client.source || 'âEUR"'}
+                        {client.source || '-'}
                       </td>
                       <td className="py-4 px-6 text-sm text-[#888888] font-medium">
                         {new Date(client.created_at).toLocaleDateString('es', { month: 'short', day: 'numeric', year: 'numeric' })}
