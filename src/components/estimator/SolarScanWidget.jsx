@@ -6,27 +6,72 @@ export default function SolarScanWidget() {
   const [address, setAddress] = useState('');
   const [scanning, setScanning] = useState(false);
   const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
   const { setRoofingField } = useEstimatorStore();
 
-  const handleScan = () => {
+  const handleScan = async () => {
     if (!address.trim()) return;
     setScanning(true);
     setResult(null);
+    setError(null);
 
-    // Simulamos la llamada a Google Solar API (2 segundos)
-    setTimeout(() => {
-      const mockResult = {
-        areaSqFt: 3500,
-        squares: '35',
-        pitch: '6/12',
-        confidence: '98%',
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+      if (!apiKey) throw new Error('API Key no configurada en .env');
+
+      // 1. Geocoding
+      const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
+      const geoData = await geoRes.json();
+      
+      if (geoData.status !== 'OK' || !geoData.results.length) {
+        throw new Error('Dirección no encontrada');
+      }
+
+      const { lat, lng } = geoData.results[0].geometry.location;
+
+      // 2. Solar API
+      const solarRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=HIGH&key=${apiKey}`);
+      const solarData = await solarRes.json();
+
+      if (solarData.error) {
+         throw new Error(solarData.error.message || 'No hay datos satelitales para esta ubicación');
+      }
+
+      if (!solarData.solarPotential) {
+         throw new Error('No se pudo identificar el techo en esta ubicación');
+      }
+
+      const areaMeters = solarData.solarPotential.wholeRoofStats?.areaMeters2 || 0;
+      const areaSqFt = Math.round(areaMeters * 10.7639);
+      const squares = (areaSqFt / 100).toFixed(1);
+
+      // Calcular Pitch (inclinación) promedio basado en el segmento más grande
+      let pitchStr = 'N/A';
+      if (solarData.solarPotential.roofSegmentStats?.length > 0) {
+        const biggestSegment = solarData.solarPotential.roofSegmentStats.reduce((prev, current) => 
+          ((prev.stats?.areaMeters2 || 0) > (current.stats?.areaMeters2 || 0)) ? prev : current
+        );
+        const pitchDegrees = biggestSegment.pitchDegrees || 0;
+        const pitchRatio = Math.round(Math.tan(pitchDegrees * Math.PI / 180) * 12);
+        pitchStr = `${pitchRatio}/12`;
+      }
+
+      const finalResult = {
+        areaSqFt,
+        squares: squares.replace('.0', ''),
+        pitch: pitchStr,
+        confidence: 'Alta',
       };
       
-      setResult(mockResult);
-      // Actualizamos el estado del store del configurador
-      setRoofingField('squares', mockResult.squares);
+      setResult(finalResult);
+      setRoofingField('squares', finalResult.squares);
+      
+    } catch (err) {
+      console.error(err);
+      setError(err.message || 'Error al conectar con el satélite');
+    } finally {
       setScanning(false);
-    }, 2500);
+    }
   };
 
   return (
@@ -86,6 +131,15 @@ export default function SolarScanWidget() {
               </div>
             </div>
             <p className="text-sm font-semibold text-amber-400 animate-pulse">Obteniendo geometría del techo...</p>
+          </div>
+        )}
+
+        {error && !scanning && (
+          <div className="mt-6 border-t border-[#2a2a2a]/40 pt-5">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
+              <p className="text-red-400 font-bold text-sm mb-1">Error de Satélite</p>
+              <p className="text-[#888888] text-xs">{error}</p>
+            </div>
           </div>
         )}
 
