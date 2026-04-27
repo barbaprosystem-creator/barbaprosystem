@@ -12,18 +12,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    storageKey: 'barba-crm-auth-token', // Add custom storage key to prevent collisions and force fresh session
   },
   realtime: {
     // Disable realtime to prevent WebSocket DNS resolution hanging on init
     params: { eventsPerSecond: 10 },
     timeout: 4000,
-  },
-  global: {
-    fetch: (...args) => {
-      const [url, opts = {}] = args;
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 15000);
-      return fetch(url, { ...opts, signal: controller.signal }).finally(() => clearTimeout(id));
-    },
   },
 });

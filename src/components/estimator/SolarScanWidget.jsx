@@ -104,11 +104,14 @@ export default function SolarScanWidget() {
         pitchStr = `${pitchRatio}/12`;
       }
 
+      const mapImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=20&size=600x400&maptype=satellite&markers=color:red%7C${lat},${lng}&key=${apiKey}`;
+
       const finalResult = {
         areaSqFt,
         squares: squares.replace('.0', ''),
         pitch: pitchStr,
         confidence: 'Alta',
+        mapImageUrl
       };
       
       setResult(finalResult);
@@ -207,18 +210,38 @@ export default function SolarScanWidget() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 mt-5">
-              <div className="bg-[#0d0d0d] p-3 rounded-xl border border-[#2a2a2a]">
-                <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Área Total</p>
-                <p className="text-lg font-bold text-[#f0f0f0]">{result.areaSqFt} <span className="text-xs text-[#888]">sq ft</span></p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-5">
+              {/* Left Column: Stats */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="bg-[#0d0d0d] p-4 rounded-xl border border-[#2a2a2a] flex justify-between items-center">
+                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Área Total</p>
+                  <p className="text-lg font-bold text-[#f0f0f0]">{result.areaSqFt} <span className="text-xs text-[#888]">sq ft</span></p>
+                </div>
+                <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 flex justify-between items-center">
+                  <p className="text-xs text-amber-500/70 uppercase tracking-wider mb-1">Squares (Auto)</p>
+                  <p className="text-2xl font-black text-amber-400">{result.squares}</p>
+                </div>
+                <div className="bg-[#0d0d0d] p-4 rounded-xl border border-[#2a2a2a] flex justify-between items-center">
+                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Inclinación (Pitch)</p>
+                  <p className="text-lg font-bold text-[#f0f0f0]">{result.pitch}</p>
+                </div>
               </div>
-              <div className="bg-amber-500/10 p-3 rounded-xl border border-amber-500/30">
-                <p className="text-xs text-amber-500/70 uppercase tracking-wider mb-1">Squares (Auto)</p>
-                <p className="text-lg font-bold text-amber-400">{result.squares}</p>
-              </div>
-              <div className="bg-[#0d0d0d] p-3 rounded-xl border border-[#2a2a2a]">
-                <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Inclinación (Pitch)</p>
-                <p className="text-lg font-bold text-[#f0f0f0]">{result.pitch}</p>
+
+              {/* Right Column: Satellite Image */}
+              <div className="relative rounded-xl overflow-hidden border-2 border-[#2a2a2a] h-48 md:h-full min-h-[180px]">
+                {result.mapImageUrl && (
+                  <img 
+                    src={result.mapImageUrl} 
+                    alt="Vista Satelital del Techo" 
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl pointer-events-none" />
+                <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md">
+                  <p className="text-[10px] text-white/70 font-mono flex items-center gap-1">
+                    <Satellite size={10} /> SATÉLITE
+                  </p>
+                </div>
               </div>
             </div>
           </div>
