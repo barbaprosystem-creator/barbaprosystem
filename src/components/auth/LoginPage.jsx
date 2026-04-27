@@ -25,7 +25,6 @@ export default function LoginPage({ onAuth }) {
   const quickUsers = [
     { label: 'Admin',      email: 'admin@barba.com',      pw: 'Admin123!' },
     { label: 'Vendedor',   email: 'ventas1@barba.com',    pw: 'Ventas123!' },
-    { label: 'Supervisor', email: 'supervisor@barba.com', pw: 'Super123!' },
     { label: 'Oficina',    email: 'office@barba.com',     pw: 'Office123!' },
   ];
 

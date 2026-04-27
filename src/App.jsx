@@ -4,7 +4,6 @@ import LoginPage from './components/auth/LoginPage';
 import RoleGuard from './components/common/RoleGuard';
 import AdminLayout from './layouts/AdminLayout';
 import POSLayout from './layouts/POSLayout';
-import SupervisorLayout from './layouts/SupervisorLayout';
 
 // Pages - Admin
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -24,11 +23,7 @@ import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 
-// Pages - Supervisor
-import SupervisorProjects from './pages/supervisor/SupervisorProjects';
-import DailyReports from './pages/supervisor/DailyReports';
-import PhotoUpload from './pages/supervisor/PhotoUpload';
-import SupervisorCalendar from './pages/supervisor/SupervisorCalendar';
+
 
 // Loading spinner
 function LoadingScreen() {
@@ -51,7 +46,6 @@ export default function App() {
     admin: '/admin',
     office: '/admin',
     salesperson: '/pos/estimator',
-    supervisor: '/projects',
   };
 
   return (
@@ -97,20 +91,7 @@ export default function App() {
           <Route path="materials" element={<Materials />} />
         </Route>
 
-        {/* SUPERVISOR ROUTES */}
-        <Route
-          path="/projects"
-          element={
-            <RoleGuard allowed={['admin', 'supervisor', 'office']} role={role}>
-              <SupervisorLayout profile={profile} onSignOut={signOut} />
-            </RoleGuard>
-          }
-        >
-          <Route index element={<SupervisorProjects />} />
-          <Route path="reports" element={<DailyReports />} />
-          <Route path="photos" element={<PhotoUpload />} />
-          <Route path="calendar" element={<SupervisorCalendar />} />
-        </Route>
+
 
         {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to={roleHome[role] || '/'} replace />} />
