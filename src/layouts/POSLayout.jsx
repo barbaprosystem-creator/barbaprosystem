@@ -6,6 +6,7 @@ import {
   Users,
   LogOut,
   Settings,
+  Image as ImageIcon
 } from 'lucide-react';
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
   { to: '/pos/estimator', icon: Calculator, label: 'Nuevo Estimado', end: false },
   { to: '/pos/materials', icon: Package, label: 'Materiales', end: false },
   { to: '/pos/clients', icon: Users, label: 'Clientes', end: false },
+  { to: '/pos/showroom', icon: ImageIcon, label: 'Showroom', end: false },
 ];
 
 export default function POSLayout({ onSignOut, profile }) {

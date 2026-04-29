@@ -22,6 +22,7 @@ import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
+import Showroom from './pages/Showroom';
 
 
 
@@ -89,6 +90,7 @@ export default function App() {
           <Route path="estimator" element={<Estimator />} />
           <Route path="clients" element={<Clients />} />
           <Route path="materials" element={<Materials />} />
+          <Route path="showroom" element={<Showroom />} />
         </Route>
 
 
