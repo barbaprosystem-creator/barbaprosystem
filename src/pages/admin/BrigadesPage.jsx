@@ -12,10 +12,11 @@ import {
   MoreVertical,
   CheckCircle2,
   Clock,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 
-const MOCK_BRIGADES = [
+const INITIAL_BRIGADES = [
   {
     id: 1,
     name: "Brigada Alpha",
@@ -80,7 +81,46 @@ const MOCK_BRIGADES = [
 ];
 
 export default function BrigadesPage() {
+  const [brigades, setBrigades] = useState(INITIAL_BRIGADES);
   const [searchTerm, setSearchTerm] = useState('');
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [selectedBrigade, setSelectedBrigade] = useState(null);
+  const [newProject, setNewProject] = useState({
+    name: '',
+    address: '',
+    jobDescription: '',
+    estimatedCompletion: ''
+  });
+
+  const handleAssignClick = (brigade) => {
+    setSelectedBrigade(brigade);
+    setNewProject({
+      name: '',
+      address: '',
+      jobDescription: '',
+      estimatedCompletion: ''
+    });
+    setAssignModalOpen(true);
+  };
+
+  const handleAssignSubmit = (e) => {
+    e.preventDefault();
+    setBrigades(prev => prev.map(b => {
+      if (b.id === selectedBrigade.id) {
+        return {
+          ...b,
+          status: 'working',
+          currentProject: {
+            ...newProject,
+            startDate: new Date().toISOString().split('T')[0],
+            progress: 0
+          }
+        };
+      }
+      return b;
+    }));
+    setAssignModalOpen(false);
+  };
 
   const getStatusConfig = (status) => {
     switch (status) {
@@ -95,7 +135,7 @@ export default function BrigadesPage() {
     }
   };
 
-  const filteredBrigades = MOCK_BRIGADES.filter(b => 
+  const filteredBrigades = brigades.filter(b => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     b.foreman.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -225,7 +265,10 @@ export default function BrigadesPage() {
                     </div>
                     <p className="text-gray-300 font-medium">Brigada Disponible</p>
                     <p className="text-gray-500 text-sm mt-1">Lista para ser asignada a un nuevo proyecto.</p>
-                    <button className="mt-4 text-[#FACB00] font-bold text-sm hover:underline">
+                    <button 
+                      onClick={() => handleAssignClick(brigade)}
+                      className="mt-4 text-[#FACB00] font-bold text-sm hover:underline"
+                    >
                       Asignar Proyecto
                     </button>
                   </div>
@@ -243,6 +286,85 @@ export default function BrigadesPage() {
           );
         })}
       </div>
+
+      {/* Assign Project Modal */}
+      {assignModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b border-[#222]">
+              <h2 className="text-xl font-bold text-white">Asignar Proyecto</h2>
+              <button onClick={() => setAssignModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            <form onSubmit={handleAssignSubmit} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Brigada Seleccionada</label>
+                <div className="w-full bg-[#0a0a0a] border border-[#222] text-gray-300 rounded-lg px-4 py-2.5">
+                  {selectedBrigade?.name} - {selectedBrigade?.foreman}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Nombre del Proyecto</label>
+                <input 
+                  required
+                  type="text" 
+                  value={newProject.name}
+                  onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                  placeholder="Ej. Renovación Familia Pérez"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Dirección</label>
+                <input 
+                  required
+                  type="text" 
+                  value={newProject.address}
+                  onChange={(e) => setNewProject({...newProject, address: e.target.value})}
+                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                  placeholder="Ej. 123 Main St, Houston, TX"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Descripción del Trabajo</label>
+                <textarea 
+                  required
+                  value={newProject.jobDescription}
+                  onChange={(e) => setNewProject({...newProject, jobDescription: e.target.value})}
+                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors min-h-[80px]"
+                  placeholder="Ej. Instalación de Siding..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Fecha Estimada de Completación</label>
+                <input 
+                  required
+                  type="date" 
+                  value={newProject.estimatedCompletion}
+                  onChange={(e) => setNewProject({...newProject, estimatedCompletion: e.target.value})}
+                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                />
+              </div>
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setAssignModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-gray-400 bg-[#222] hover:bg-[#333] transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-black bg-[#FACB00] hover:bg-[#e0b600] transition-colors"
+                >
+                  Confirmar Asignación
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
