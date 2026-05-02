@@ -4,7 +4,7 @@ import {
   MapPin,
   CalendarCheck,
   Phone,
-  Tool,
+  Wrench,
   Users,
   Search,
   Filter,
@@ -149,7 +149,7 @@ export default function BrigadesPage() {
                   <div>
                     <h3 className="text-xl font-bold text-white">{brigade.name}</h3>
                     <div className="flex items-center gap-2 text-gray-400 text-sm mt-1">
-                      <Tool size={14} />
+                      <Wrench size={14} />
                       <span>{brigade.serviceType}</span>
                     </div>
                   </div>
