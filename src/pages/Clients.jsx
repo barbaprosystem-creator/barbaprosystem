@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Search, Plus, Mail, Phone, Eye, Edit2 } from 'lucide-react';
+import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2 } from 'lucide-react';
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+
+  // Modal state
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [newClient, setNewClient] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    source: 'Vendedor (Manual)',
+    status: 'nuevo'
+  });
 
   useEffect(() => {
     async function load() {
@@ -18,6 +29,26 @@ export default function Clients() {
     }
     load();
   }, []);
+
+  const handleSaveClient = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert([newClient])
+      .select();
+      
+    if (!error && data) {
+      setClients([data[0], ...clients]);
+      setShowModal(false);
+      setNewClient({ full_name: '', email: '', phone: '', source: 'Vendedor (Manual)', status: 'nuevo' });
+    } else {
+      console.error(error);
+      alert('Error al crear el cliente.');
+    }
+    setSaving(false);
+  };
 
   const filtered = clients.filter(c =>
     c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -35,7 +66,7 @@ export default function Clients() {
   };
 
   return (
-    <div className="admin-page p-6 lg:p-10 space-y-8">
+    <div className="admin-page p-6 lg:p-10 space-y-8 relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Mis Clientes</h1>
@@ -52,7 +83,10 @@ export default function Clients() {
               className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-600"
             />
           </div>
-          <button className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] hover:bg-orange-400 text-black font-semibold rounded-xl transition-all shadow-[0_0_15px_rgba(249,115,22,0.2)] active:scale-95 w-full sm:w-auto justify-center">
+          <button 
+            onClick={() => setShowModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] hover:bg-orange-400 text-black font-semibold rounded-xl transition-all shadow-[0_0_15px_rgba(249,115,22,0.2)] active:scale-95 w-full sm:w-auto justify-center"
+          >
             <Plus size={18} /> Nuevo Cliente
           </button>
         </div>
@@ -138,6 +172,86 @@ export default function Clients() {
           </div>
         )}
       </div>
+
+      {/* Modal: Nuevo Cliente */}
+      {showModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-5 border-b border-[#333] flex items-center justify-between bg-[#161616]">
+              <h2 className="text-xl font-bold text-white">Nuevo Cliente</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 hover:bg-[#222] rounded-xl text-[#888] hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveClient} className="p-6 space-y-5">
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#aaa]">Nombre Completo <span className="text-[var(--accent)]">*</span></label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ej. Juan Pérez"
+                  value={newClient.full_name}
+                  onChange={(e) => setNewClient({ ...newClient, full_name: e.target.value })}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#aaa]">Correo Electrónico</label>
+                <input
+                  type="email"
+                  placeholder="Ej. juan@correo.com"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#aaa]">Teléfono</label>
+                <input
+                  type="tel"
+                  placeholder="Ej. (555) 123-4567"
+                  value={newClient.phone}
+                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-[#aaa]">Fuente (Source)</label>
+                <input
+                  type="text"
+                  value={newClient.source}
+                  onChange={(e) => setNewClient({ ...newClient, source: e.target.value })}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="flex-1 py-3 px-4 border border-[#333] hover:bg-[#222] text-white font-medium rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 py-3 px-4 bg-[var(--accent)] hover:bg-orange-400 text-black font-semibold rounded-xl transition-colors flex items-center justify-center disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Guardar Cliente'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
