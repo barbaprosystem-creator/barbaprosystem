@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,8 +13,11 @@ import {
   Tag,
   PackageSearch,
   HardHat,
+  Menu,
+  X
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
+
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/crm', icon: Users, label: 'CRM Pipeline' },
@@ -29,9 +33,28 @@ const navItems = [
 ];
 
 export default function AdminLayout({ profile, onSignOut }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <div className="admin-layout">
-      <nav className="admin-sidebar">
+      {/* Mobile Header */}
+      <div className="mobile-header">
+        <div className="mobile-header-brand">
+          <img src="/logo-barba.png" alt="Barba Construction" className="mobile-header-logo" />
+          <span className="mobile-header-title">BARBA PRO</span>
+        </div>
+        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      <div 
+        className={`admin-sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      <nav className={`admin-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-header">
           <div className="admin-logo-mark">
             <img src="/logo-barba.png" alt="Barba Construction" style={{ width: 32, height: 'auto', objectFit: 'contain' }} />
@@ -40,6 +63,10 @@ export default function AdminLayout({ profile, onSignOut }) {
             <span className="admin-brand-name">BARBA PRO</span>
             <span className="admin-brand-role">Administracion</span>
           </div>
+          {/* Close button for mobile inside sidebar */}
+          <button className="md:hidden ml-auto p-1 text-[#888] hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
 
         <ul className="admin-nav">
@@ -48,6 +75,7 @@ export default function AdminLayout({ profile, onSignOut }) {
               <NavLink
                 to={item.to}
                 end={item.end}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   `admin-nav-item ${isActive ? 'active' : ''}`
                 }

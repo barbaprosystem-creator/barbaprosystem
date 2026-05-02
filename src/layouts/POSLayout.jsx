@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -6,7 +7,9 @@ import {
   Users,
   LogOut,
   Settings,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Menu,
+  X
 } from 'lucide-react';
 
 const navItems = [
@@ -18,9 +21,28 @@ const navItems = [
 ];
 
 export default function POSLayout({ onSignOut, profile }) {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   return (
     <div className="admin-layout">
-      <nav className="admin-sidebar pos-sidebar">
+      {/* Mobile Header */}
+      <div className="mobile-header">
+        <div className="mobile-header-brand">
+          <img src="/logo-barba.png" alt="Barba Construction" className="mobile-header-logo" />
+          <span className="mobile-header-title">BARBA PRO</span>
+        </div>
+        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+          <Menu size={24} />
+        </button>
+      </div>
+
+      {/* Overlay for mobile sidebar */}
+      <div 
+        className={`admin-sidebar-overlay ${isMobileMenuOpen ? 'open' : ''}`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      />
+
+      <nav className={`admin-sidebar pos-sidebar ${isMobileMenuOpen ? 'open' : ''}`}>
         <div className="admin-sidebar-header">
           <div className="admin-logo-mark">
             <img src="/logo-barba.png" alt="Barba Construction" style={{ width: 32, height: 'auto', objectFit: 'contain' }} />
@@ -29,6 +51,10 @@ export default function POSLayout({ onSignOut, profile }) {
             <span className="admin-brand-name">BARBA PRO</span>
             <span className="admin-brand-role">Ventas</span>
           </div>
+          {/* Close button for mobile inside sidebar */}
+          <button className="md:hidden ml-auto p-1 text-[#888] hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
+            <X size={20} />
+          </button>
         </div>
 
         <ul className="admin-nav">
@@ -37,6 +63,7 @@ export default function POSLayout({ onSignOut, profile }) {
               <NavLink
                 to={item.to}
                 end={item.end}
+                onClick={() => setIsMobileMenuOpen(false)}
                 className={({ isActive }) =>
                   `admin-nav-item ${isActive ? 'active' : ''}`
                 }
