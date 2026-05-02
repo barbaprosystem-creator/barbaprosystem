@@ -13,7 +13,7 @@ import {
   PackageSearch,
   HardHat,
 } from 'lucide-react';
-
+import GlobalChatbot from '../components/chat/GlobalChatbot';
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/crm', icon: Users, label: 'CRM Pipeline' },
@@ -78,6 +78,8 @@ export default function AdminLayout({ profile, onSignOut }) {
       <main className="admin-main">
         <Outlet />
       </main>
+
+      <GlobalChatbot />
     </div>
   );
 }

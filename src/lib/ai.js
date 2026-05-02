@@ -45,3 +45,46 @@ No uses markdown extraño, usa formato de texto limpio que se pueda insertar dir
     throw err;
   }
 }
+
+export async function askCopilot(messages, contextString = null) {
+  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error('Falta el Token: VITE_OPENAI_API_KEY no está configurado en tu archivo .env');
+  }
+
+  let systemMessage = `Eres "Barba Copilot", el asistente inteligente y oráculo operativo exclusivo de Barba Construction. 
+Tu misión es ayudar a la gerencia, vendedores y encargados de operaciones. 
+Responde siempre en español, con un tono ultra-profesional, resolutivo y eficiente. No des respuestas exageradamente largas, ve al grano.`;
+
+  if (contextString) {
+    systemMessage += `\n\nCONTEXTO ACTUAL DE LA CONVERSACIÓN:\nEl usuario está preguntando específicamente sobre esto:\n${contextString}\n\nUsa este contexto para responder a sus preguntas de forma precisa.`;
+  }
+
+  const payloadMessages = [
+    { role: 'system', content: systemMessage },
+    ...messages
+  ];
+
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: payloadMessages,
+        temperature: 0.3
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    
+    return data.choices[0].message.content;
+  } catch (err) {
+    console.error('Error llamando a la IA (Copilot):', err);
+    throw err;
+  }
+}
