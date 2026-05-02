@@ -173,12 +173,12 @@ export default function GlobalChatbot() {
         {context && (
           <div className="flex flex-col gap-4">
             {messages.map((msg, i) => (
-              <div key={i} className={\`flex \${msg.role === 'user' ? 'justify-end' : 'justify-start'}\`}>
-                <div className={\`max-w-[85%] p-3 rounded-xl text-sm \${
+              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] p-3 rounded-xl text-sm ${
                   msg.role === 'user' 
                     ? 'bg-[#FACB00] text-black rounded-tr-none font-medium' 
                     : 'bg-[#222] text-gray-200 rounded-tl-none'
-                }\`}>
+                }`}>
                   {msg.content}
                 </div>
               </div>
