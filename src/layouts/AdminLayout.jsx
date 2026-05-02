@@ -11,6 +11,7 @@ import {
   BarChart3,
   Tag,
   PackageSearch,
+  HardHat,
 } from 'lucide-react';
 
 const navItems = [
@@ -21,6 +22,7 @@ const navItems = [
   { to: '/admin/payments', icon: DollarSign, label: 'Pagos' },
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
+  { to: '/admin/brigades', icon: HardHat, label: 'Brigadas' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
   { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo de Materiales' },
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },

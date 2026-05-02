@@ -16,6 +16,7 @@ import CalendarPage from './pages/admin/CalendarPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import MaterialsCatalog from './pages/admin/MaterialsCatalog';
+import BrigadesPage from './pages/admin/BrigadesPage';
 
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
@@ -23,6 +24,7 @@ import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 import Showroom from './pages/Showroom';
+import PDFPreview from './pages/PDFPreview';
 
 
 
@@ -39,10 +41,29 @@ function LoadingScreen() {
 export default function App() {
   const { session, profile, loading, signIn, signOut, role } = useAuth();
 
-    if (loading) return <LoadingScreen />;
-  if (!session) return <LoginPage onAuth={signIn} />;
-  if (!profile) return <LoadingScreen />;
+  if (loading) return <LoadingScreen />;
 
+  // ==========================================
+  // UNAUTHENTICATED ROUTING (PUBLIC ROUTES)
+  // ==========================================
+  // If the user is not logged in, they can ONLY access public routes like the Proposal link.
+  // Otherwise, they are sent to the LoginPage.
+  if (!session || !profile) {
+    return (
+      <Router>
+        <Routes>
+          {/* Public Link for the Customer */}
+          <Route path="/p/:id" element={<PDFPreview />} />
+          {/* Anything else goes to Login */}
+          <Route path="*" element={<LoginPage onAuth={signIn} />} />
+        </Routes>
+      </Router>
+    );
+  }
+
+  // ==========================================
+  // AUTHENTICATED ROUTING (INTERNAL APP)
+  // ==========================================
   const roleHome = {
     admin: '/admin',
     office: '/admin',
@@ -52,6 +73,9 @@ export default function App() {
   return (
     <Router>
       <Routes>
+        {/* PUBLIC ROUTE ALSO AVAILABLE WHEN LOGGED IN */}
+        <Route path="/p/:id" element={<PDFPreview />} />
+
         {/* ROOT REDIRECT */}
         <Route path="/" element={<Navigate to={roleHome[role] || '/pos/estimator'} replace />} />
 
@@ -70,6 +94,7 @@ export default function App() {
           <Route path="projects" element={<ProjectsList />} />
           <Route path="payments" element={<PaymentTracker />} />
           <Route path="calendar" element={<CalendarPage />} />
+          <Route path="brigades" element={<BrigadesPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="pricing" element={<PricingSettings />} />
           <Route path="materials-catalog" element={<MaterialsCatalog />} />
@@ -91,9 +116,8 @@ export default function App() {
           <Route path="clients" element={<Clients />} />
           <Route path="materials" element={<Materials />} />
           <Route path="showroom" element={<Showroom />} />
+          <Route path="pdf-preview" element={<PDFPreview />} />
         </Route>
-
-
 
         {/* CATCH-ALL */}
         <Route path="*" element={<Navigate to={roleHome[role] || '/'} replace />} />

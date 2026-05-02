@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Trash2, Send, Save, FileText } from 'lucide-react';
+import { Trash2, Send, Save, FileText, Sparkles } from 'lucide-react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 import { supabase } from '../../lib/supabase';
+import AiProposalModal from './AiProposalModal';
 
 const SERVICE_COLORS = {
   roofing: 'text-amber-400',
@@ -17,22 +18,29 @@ export default function ReceiptSidebar() {
   const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [saving, setSaving] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const getClientName = () => {
+    const c = clients.find(cl => cl.id === selectedClient);
+    return c ? c.full_name : '';
+  };
 
   useEffect(() => {
     supabase.from('contacts').select('id, full_name').order('full_name')
       .then(({ data }) => setClients(data || []));
   }, []);
 
-  const handleSave = async (status) => {
+  const handleSave = async (status, aiProposalText = null) => {
     if (!selectedClient || receiptItems.length === 0) return;
     setSaving(true);
     const subtotal = getSubtotal();
     const tax     = getTax();
     const total   = getGrandTotal();
 
+    // En el futuro guardaremos aiProposalText en un campo 'notes' o 'ai_proposal' de la DB
     const { data: estimate, error } = await supabase
       .from('estimates')
-      .insert({ contact_id: selectedClient, status, subtotal, tax_amount: tax, total, tax_rate: taxRate })
+      .insert({ contact_id: selectedClient, status, subtotal, tax_amount: tax, total, tax_rate: taxRate, notes: aiProposalText })
       .select()
       .single();
 
@@ -134,24 +142,47 @@ export default function ReceiptSidebar() {
       </div>
 
       {/* Actions */}
-      <div className="p-5 pt-0 grid grid-cols-2 gap-3">
+      <div className="p-5 pt-0 flex flex-col gap-3">
         <button
-          onClick={() => handleSave('draft')}
+          onClick={() => setIsAiModalOpen(true)}
           disabled={saving || !selectedClient || receiptItems.length === 0}
-          className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a]/50 text-[#c0c0c0] text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600/20 to-blue-600/20 hover:from-purple-600/30 hover:to-blue-600/30 border border-purple-500/30 text-purple-300 text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(168,85,247,0.15)]"
         >
-          <Save size={16} />
-          Borrador
+          <Sparkles size={16} />
+          ✨ Generar Propuesta IA
         </button>
-        <button
-          onClick={() => handleSave('sent')}
-          disabled={saving || !selectedClient || receiptItems.length === 0}
-          className="flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
-        >
-          <Send size={16} />
-          Enviar
-        </button>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => handleSave('draft')}
+            disabled={saving || !selectedClient || receiptItems.length === 0}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a]/50 text-[#c0c0c0] text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Save size={16} />
+            Borrador
+          </button>
+          <button
+            onClick={() => handleSave('sent')}
+            disabled={saving || !selectedClient || receiptItems.length === 0}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
+          >
+            <Send size={16} />
+            Solo Enviar
+          </button>
+        </div>
       </div>
+
+      <AiProposalModal 
+        isOpen={isAiModalOpen} 
+        onClose={() => setIsAiModalOpen(false)}
+        items={receiptItems}
+        total={getGrandTotal()}
+        clientName={getClientName()}
+        onSaveAndSend={async (aiText) => {
+          setIsAiModalOpen(false);
+          await handleSave('sent', aiText);
+        }}
+      />
     </div>
   );
 }
