@@ -12,7 +12,8 @@ export default function PublicCatalogPage() {
   // Carrito de selección
   const [selectedItems, setSelectedItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [clientInfo, setClientInfo] = useState({ name: '', address: '' });
+  const [clientInfo, setClientInfo] = useState({ name: '', address: '', email: '' });
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -85,6 +86,55 @@ export default function PublicCatalogPage() {
     
     window.open(whatsappUrl, '_blank');
     setIsCartOpen(false);
+  };
+
+  const handleSendEmail = async () => {
+    if (!clientInfo.name || !clientInfo.email) {
+      alert('Por favor ingresa tu nombre y tu correo electrónico antes de enviar.');
+      return;
+    }
+
+    setIsSendingEmail(true);
+
+    let htmlBody = `<h2>Nueva Selección de Materiales de: ${clientInfo.name}</h2>`;
+    htmlBody += `<p><strong>Email del cliente:</strong> ${clientInfo.email}</p>`;
+    if (clientInfo.address) {
+      htmlBody += `<p><strong>Dirección:</strong> ${clientInfo.address}</p>`;
+    }
+    htmlBody += `<h3>Materiales Seleccionados:</h3><ul>`;
+    selectedItems.forEach((item) => {
+      htmlBody += `<li>${item.name} - $${Number(item.price).toFixed(2)}</li>`;
+    });
+    htmlBody += `</ul><br/><h3>Total Estimado: $${totalPrice.toFixed(2)}</h3>`;
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: 'barbaprosystem@gmail.com', 
+          subject: `Selección de Materiales - ${clientInfo.name}`,
+          html: htmlBody,
+          fromName: clientInfo.name
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('¡Selección enviada exitosamente por correo a la oficina!');
+        setIsCartOpen(false);
+      } else {
+        alert('Error al enviar: ' + (result.error || 'Desconocido'));
+      }
+    } catch (error) {
+      console.error('Error al enviar correo:', error);
+      alert('Hubo un error de conexión.');
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   if (loading) {
@@ -299,6 +349,15 @@ export default function PublicCatalogPage() {
                       </div>
                       <div>
                         <input 
+                          type="email" 
+                          placeholder="Tu Correo Electrónico *"
+                          value={clientInfo.email}
+                          onChange={(e) => setClientInfo({...clientInfo, email: e.target.value})}
+                          className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <input 
                           type="text" 
                           placeholder="Dirección del Proyecto (Opcional)"
                           value={clientInfo.address}
@@ -307,13 +366,28 @@ export default function PublicCatalogPage() {
                         />
                       </div>
                       
-                      <button 
-                        onClick={handleSendWhatsApp}
-                        className="w-full mt-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-[#25D366]/20"
-                      >
-                        <Send size={20} />
-                        Enviar por WhatsApp
-                      </button>
+                      <div className="flex flex-col gap-3 mt-4">
+                        <button 
+                          onClick={handleSendWhatsApp}
+                          className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-[#25D366]/20"
+                        >
+                          <Send size={20} />
+                          Enviar por WhatsApp
+                        </button>
+
+                        <button 
+                          onClick={handleSendEmail}
+                          disabled={isSendingEmail}
+                          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-blue-600/20"
+                        >
+                          {isSendingEmail ? (
+                            <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+                          ) : (
+                            <Send size={20} />
+                          )}
+                          Enviar Selección por Correo
+                        </button>
+                      </div>
                       <p className="text-xs text-center text-gray-500 mt-2">
                         Esto abrirá WhatsApp con tu selección para enviarla a nuestro equipo.
                       </p>
