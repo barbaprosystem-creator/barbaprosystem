@@ -130,7 +130,11 @@ export default function EstimatesList() {
                 <td>{est.creator?.full_name||'-'}</td>
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
-                  {est.status==='draft' && <button className="icon-btn" title="Enviar" onClick={() => updateStatus(est.id,'sent')}><Send size={15}/></button>}
+                  {(est.status==='draft' || est.status==='sent') && (
+                    <button className="icon-btn" title="Enviar por correo" onClick={() => updateStatus(est.id,'sent')}>
+                      <Send size={15}/>
+                    </button>
+                  )}
                   {est.status==='sent' && <>
                     <button className="icon-btn success" title="Aprobar" onClick={() => updateStatus(est.id,'approved')}><CheckCircle size={15}/></button>
                     <button className="icon-btn danger" title="Rechazar" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
