@@ -31,11 +31,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Faltan campos obligatorios: to, subject' });
     }
 
-    // Al no tener un dominio verificado configurado todavía, usaremos el correo de prueba de Resend
-    // Nota: "onboarding@resend.dev" solo puede enviar correos a la dirección de correo con la que te registraste en Resend.
-    // Una vez que verifiques tu dominio (ej. info@barbaconstruction.com), lo cambiaremos aquí.
+    // Usamos el dominio verificado barbaprosystem.com
     const { data, error } = await resend.emails.send({
-      from: `${fromName} <onboarding@resend.dev>`,
+      from: `${fromName} <info@barbaprosystem.com>`,
       to: [to],
       subject: subject,
       html: html || '',
