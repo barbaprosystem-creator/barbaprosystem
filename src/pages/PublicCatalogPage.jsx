@@ -1,0 +1,330 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+import { ShoppingCart, Check, X, Search, Link as LinkIcon, Send } from 'lucide-react';
+
+export default function PublicCatalogPage() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Carrito de selección
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [clientInfo, setClientInfo] = useState({ name: '', address: '' });
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('catalog_items')
+        .select('*')
+        .order('category', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      
+      setItems(data || []);
+      
+      // Extraer categorías únicas
+      const uniqueCategories = [...new Set(data.map(item => item.category))];
+      setCategories(['Todos', ...uniqueCategories]);
+      
+    } catch (error) {
+      console.error('Error fetching catalog items:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelection = (item) => {
+    const isSelected = selectedItems.some(i => i.id === item.id);
+    if (isSelected) {
+      setSelectedItems(prev => prev.filter(i => i.id !== item.id));
+    } else {
+      setSelectedItems(prev => [...prev, item]);
+    }
+  };
+
+  const filteredItems = items.filter(item => {
+    const matchesCategory = activeCategory === 'Todos' || item.category === activeCategory;
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPrice = selectedItems.reduce((sum, item) => sum + Number(item.price), 0);
+
+  const handleSendWhatsApp = () => {
+    if (!clientInfo.name) {
+      alert('Por favor ingresa tu nombre antes de enviar.');
+      return;
+    }
+
+    let message = `*NUEVA SELECCIÓN DE MATERIALES*%0A`;
+    message += `👤 *Cliente:* ${clientInfo.name}%0A`;
+    if (clientInfo.address) {
+      message += `📍 *Dirección:* ${clientInfo.address}%0A%0A`;
+    }
+    
+    message += `*MATERIALES SELECCIONADOS:*%0A`;
+    selectedItems.forEach((item, index) => {
+      message += `${index + 1}. ${item.name} - $${Number(item.price).toFixed(2)}%0A`;
+    });
+    
+    message += `%0A💰 *Total Estimado:* $${totalPrice.toFixed(2)}`;
+
+    // Reemplaza este número con el número de WhatsApp de la oficina
+    const phoneNumber = "15023383720"; 
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+    
+    window.open(whatsappUrl, '_blank');
+    setIsCartOpen(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#12131c] flex items-center justify-center text-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-400">Cargando catálogo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#12131c] text-white font-sans">
+      {/* Header */}
+      <header className="bg-[#1e1f2e] border-b border-[#34384c] sticky top-0 z-30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <img src="/logo-barba.png" alt="Barba Construction" className="h-10 w-auto object-contain" />
+            <div>
+              <h1 className="text-xl font-bold tracking-tight">Catálogo de Materiales</h1>
+              <p className="text-xs text-blue-400 font-medium">Barba Construction</p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setIsCartOpen(true)}
+            className="relative bg-blue-600 hover:bg-blue-700 p-3 rounded-full transition-colors"
+          >
+            <ShoppingCart size={24} />
+            {selectedItems.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full border-2 border-[#1e1f2e]">
+                {selectedItems.length}
+              </span>
+            )}
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Filtros */}
+        <div className="mb-8 flex flex-col md:flex-row gap-4 justify-between items-center">
+          <div className="w-full md:w-auto overflow-x-auto pb-2 flex gap-2 hide-scrollbar">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+                  activeCategory === cat 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-[#2a2d3d] text-gray-400 hover:bg-[#34384c] hover:text-white'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+          
+          <div className="w-full md:w-72 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
+            <input 
+              type="text" 
+              placeholder="Buscar material..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-[#2a2d3d] border border-[#34384c] rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
+            />
+          </div>
+        </div>
+
+        {/* Grid de Productos */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-24">
+          {filteredItems.map(item => {
+            const isSelected = selectedItems.some(i => i.id === item.id);
+            
+            return (
+              <div 
+                key={item.id} 
+                className={`bg-[#1e1f2e] rounded-2xl overflow-hidden border-2 transition-all duration-300 ${
+                  isSelected ? 'border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'border-[#34384c] hover:border-gray-500'
+                }`}
+              >
+                <div className="h-56 relative bg-[#2a2d3d]">
+                  {item.image_url ? (
+                    <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">Sin foto</div>
+                  )}
+                  
+                  {isSelected && (
+                    <div className="absolute top-3 right-3 bg-blue-500 text-white p-1.5 rounded-full shadow-lg">
+                      <Check size={20} strokeWidth={3} />
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-5">
+                  <div className="text-xs font-semibold tracking-wider text-blue-400 uppercase mb-1">{item.category}</div>
+                  <h3 className="text-lg font-bold text-white mb-2 leading-tight">{item.name}</h3>
+                  <div className="text-xl font-black text-white mb-3">${Number(item.price).toFixed(2)}</div>
+                  
+                  {item.description && (
+                    <p className="text-gray-400 text-sm mb-4 line-clamp-2">{item.description}</p>
+                  )}
+                  
+                  {item.purchase_url && (
+                    <a 
+                      href={item.purchase_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400 mb-4 transition-colors"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LinkIcon size={12} /> Ver en tienda
+                    </a>
+                  )}
+                  
+                  <button
+                    onClick={() => toggleSelection(item)}
+                    className={`w-full py-3 rounded-xl font-bold transition-all ${
+                      isSelected 
+                        ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20' 
+                        : 'bg-[#2a2d3d] text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {isSelected ? 'Quitar de la lista' : 'Añadir a mi selección'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {filteredItems.length === 0 && (
+          <div className="text-center py-20">
+            <h3 className="text-2xl font-bold text-white mb-2">No encontramos materiales</h3>
+            <p className="text-gray-400">Intenta buscar con otra palabra o categoría.</p>
+          </div>
+        )}
+      </main>
+
+      {/* Cart Modal */}
+      {isCartOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex justify-end">
+          <div className="w-full max-w-md bg-[#1e1f2e] h-full flex flex-col shadow-2xl animate-in slide-in-from-right">
+            <div className="p-6 border-b border-[#34384c] flex justify-between items-center bg-[#2a2d3d]">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <ShoppingCart size={24} />
+                Mi Selección ({selectedItems.length})
+              </h2>
+              <button 
+                onClick={() => setIsCartOpen(false)}
+                className="p-2 bg-[#1e1f2e] text-gray-400 hover:text-white rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectedItems.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                  <ShoppingCart size={64} className="mb-4 opacity-50" />
+                  <p className="text-lg font-medium">Tu selección está vacía</p>
+                  <p className="text-sm mt-2 text-center">Explora el catálogo y añade los materiales que te gusten para tu proyecto.</p>
+                  <button 
+                    onClick={() => setIsCartOpen(false)}
+                    className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium"
+                  >
+                    Explorar Catálogo
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {selectedItems.map(item => (
+                    <div key={item.id} className="flex gap-4 bg-[#2a2d3d] p-3 rounded-xl border border-[#34384c]">
+                      <div className="w-16 h-16 rounded-lg bg-[#1e1f2e] overflow-hidden flex-shrink-0">
+                        {item.image_url && <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-sm font-bold text-white truncate">{item.name}</h4>
+                        <p className="text-xs text-gray-400">{item.category}</p>
+                        <p className="text-sm font-semibold text-blue-400 mt-1">${Number(item.price).toFixed(2)}</p>
+                      </div>
+                      <button 
+                        onClick={() => toggleSelection(item)}
+                        className="text-gray-500 hover:text-red-500 self-start p-1"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+                  ))}
+                  
+                  <div className="mt-8 pt-6 border-t border-[#34384c]">
+                    <div className="flex justify-between items-end mb-6">
+                      <span className="text-gray-400 font-medium">Total Estimado</span>
+                      <span className="text-3xl font-black text-white">${totalPrice.toFixed(2)}</span>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Datos para el envío</h3>
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="Tu Nombre Completo *"
+                          value={clientInfo.name}
+                          onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
+                          className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <input 
+                          type="text" 
+                          placeholder="Dirección del Proyecto (Opcional)"
+                          value={clientInfo.address}
+                          onChange={(e) => setClientInfo({...clientInfo, address: e.target.value})}
+                          className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      
+                      <button 
+                        onClick={handleSendWhatsApp}
+                        className="w-full mt-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-4 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-[#25D366]/20"
+                      >
+                        <Send size={20} />
+                        Enviar por WhatsApp
+                      </button>
+                      <p className="text-xs text-center text-gray-500 mt-2">
+                        Esto abrirá WhatsApp con tu selección para enviarla a nuestro equipo.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

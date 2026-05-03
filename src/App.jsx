@@ -16,6 +16,7 @@ import CalendarPage from './pages/admin/CalendarPage';
 import ReportsPage from './pages/admin/ReportsPage';
 import SettingsPage from './pages/admin/SettingsPage';
 import MaterialsCatalog from './pages/admin/MaterialsCatalog';
+import CatalogAdminPage from './pages/admin/CatalogAdminPage';
 import BrigadesPage from './pages/admin/BrigadesPage';
 
 // Pages - Sales (POS)
@@ -25,6 +26,7 @@ import Clients from './pages/Clients';
 import Materials from './pages/Materials';
 import Showroom from './pages/Showroom';
 import PDFPreview from './pages/PDFPreview';
+import PublicCatalogPage from './pages/PublicCatalogPage';
 
 
 
@@ -54,6 +56,7 @@ export default function App() {
         <Routes>
           {/* Public Link for the Customer */}
           <Route path="/p/:id" element={<PDFPreview />} />
+          <Route path="/catalog" element={<PublicCatalogPage />} />
           {/* Anything else goes to Login */}
           <Route path="*" element={<LoginPage onAuth={signIn} />} />
         </Routes>
@@ -75,6 +78,7 @@ export default function App() {
       <Routes>
         {/* PUBLIC ROUTE ALSO AVAILABLE WHEN LOGGED IN */}
         <Route path="/p/:id" element={<PDFPreview />} />
+        <Route path="/catalog" element={<PublicCatalogPage />} />
 
         {/* ROOT REDIRECT */}
         <Route path="/" element={<Navigate to={roleHome[role] || '/pos/estimator'} replace />} />
@@ -98,6 +102,7 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="pricing" element={<PricingSettings />} />
           <Route path="materials-catalog" element={<MaterialsCatalog />} />
+          <Route path="interactive-catalog" element={<CatalogAdminPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

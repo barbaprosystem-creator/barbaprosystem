@@ -16,7 +16,8 @@ import {
   Menu,
   X,
   Eye,
-  EyeOff
+  EyeOff,
+  BookOpen
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 
@@ -30,7 +31,8 @@ const navItems = [
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
   { to: '/admin/brigades', icon: HardHat, label: 'Brigadas' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
-  { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo de Materiales' },
+  { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },
+  { to: '/admin/interactive-catalog', icon: BookOpen, label: 'Catálogo de Clientes' },
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 
