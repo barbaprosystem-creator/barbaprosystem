@@ -55,12 +55,16 @@ export const useEstimatorStore = create((set, get) => ({
   roofingClear: () => set(s => ({ roofingConfig: { ...s.roofingConfig, squares: '0' } })),
   addRoofingToReceipt: () => {
     const { roofingConfig, prices, addItem } = get();
-    const sq = parseFloat(roofingConfig.squares) || 0;
-    if (sq <= 0) return;
+    const inputSq = parseFloat(roofingConfig.squares) || 0;
+    if (inputSq <= 0) return;
+    
+    // Auto-add 2 extra squares for roofing as requested
+    const sq = inputSq + 2;
+    
     const labels = { architectural: 'Shingles Arquitectonicos', designer: 'Shingles Premium', metal_steel: 'Metal (Acero)', metal_alum: 'Metal (Aluminio)', tpo: 'TPO/Flat', tile: 'Teja/Tile' };
     const cat = prices.find(p => p.category?.toLowerCase() === 'roofing');
     const unitPrice = cat?.unit_price || cat?.sell_price || 350;
-    addItem({ service: 'roofing', name: `Techo  -  ${labels[roofingConfig.material]}`, details: `${sq} sq @ $${unitPrice.toFixed(2)}/sq`, quantity: sq, unitPrice, total: sq * unitPrice });
+    addItem({ service: 'roofing', name: `Techo  -  ${labels[roofingConfig.material]}`, details: `${sq} sq (Incluye 2 sq extra) @ $${unitPrice.toFixed(2)}/sq`, quantity: sq, unitPrice, total: sq * unitPrice });
   },
 
   // Siding

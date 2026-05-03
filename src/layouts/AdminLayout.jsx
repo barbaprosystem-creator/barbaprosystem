@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,7 +14,9 @@ import {
   PackageSearch,
   HardHat,
   Menu,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 
@@ -34,6 +36,18 @@ const navItems = [
 
 export default function AdminLayout({ profile, onSignOut }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPrivacyMode, setIsPrivacyMode] = useState(() => {
+    return localStorage.getItem('barba_privacy_mode') === 'true';
+  });
+
+  useEffect(() => {
+    if (isPrivacyMode) {
+      document.body.classList.add('privacy-mode');
+    } else {
+      document.body.classList.remove('privacy-mode');
+    }
+    localStorage.setItem('barba_privacy_mode', isPrivacyMode);
+  }, [isPrivacyMode]);
 
   return (
     <div className="admin-layout">
@@ -43,9 +57,18 @@ export default function AdminLayout({ profile, onSignOut }) {
           <img src="/logo-barba.png" alt="Barba Construction" className="mobile-header-logo" />
           <span className="mobile-header-title">BARBA PRO</span>
         </div>
-        <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
-          <Menu size={24} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            className="p-2 text-[#888] hover:text-white transition-colors"
+            onClick={() => setIsPrivacyMode(!isPrivacyMode)}
+            title={isPrivacyMode ? "Mostrar Precios" : "Ocultar Precios"}
+          >
+            {isPrivacyMode ? <EyeOff size={22} /> : <Eye size={22} />}
+          </button>
+          <button className="mobile-menu-btn" onClick={() => setIsMobileMenuOpen(true)}>
+            <Menu size={24} />
+          </button>
+        </div>
       </div>
 
       {/* Overlay for mobile sidebar */}
@@ -88,6 +111,14 @@ export default function AdminLayout({ profile, onSignOut }) {
         </ul>
 
         <div className="admin-sidebar-footer">
+          <button 
+            className="w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-xl text-sm font-semibold transition-all duration-200 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]"
+            onClick={() => setIsPrivacyMode(!isPrivacyMode)}
+          >
+            {isPrivacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
+            <span>{isPrivacyMode ? 'Mostrar Precios' : 'Ocultar Precios'}</span>
+          </button>
+
           <div className="admin-user-badge">
             <div className="admin-user-avatar">
               {profile?.full_name?.[0]?.toUpperCase() || 'A'}

@@ -1718,4 +1718,32 @@
 .pac-logo::after {
   display: none !important;
 }
-
+
+/* ===================================
+   PRIVACY MODE (Modo Oficina)
+   =================================== */
+body.privacy-mode .est-total,
+body.privacy-mode .summary-value,
+body.privacy-mode .sell-price,
+body.privacy-mode .project-price,
+body.privacy-mode .stat-value,
+body.privacy-mode .stat-card-value,
+body.privacy-mode .text-emerald-400,
+body.privacy-mode .text-amber-400 {
+  filter: blur(6px);
+  user-select: none;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+body.privacy-mode .est-total:hover,
+body.privacy-mode .summary-value:hover,
+body.privacy-mode .sell-price:hover,
+body.privacy-mode .project-price:hover,
+body.privacy-mode .stat-value:hover,
+body.privacy-mode .stat-card-value:hover,
+body.privacy-mode .text-emerald-400:hover,
+body.privacy-mode .text-amber-400:hover {
+  filter: none;
+  opacity: 1;
+}
