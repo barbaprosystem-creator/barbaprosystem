@@ -1,8 +1,5 @@
 import { Resend } from 'resend';
 
-// Inicializar Resend usando la variable de entorno que configuraremos en Vercel
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export default async function handler(req, res) {
   // Configuración de CORS para permitir peticiones desde el frontend
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -25,6 +22,12 @@ export default async function handler(req, res) {
   }
 
   try {
+    const apiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: 'La llave de Resend (RESEND_API_KEY) no está configurada en Vercel.' });
+    }
+    
+    const resend = new Resend(apiKey);
     const { to, subject, html, text, fromName = 'Barba Construction' } = req.body;
 
     if (!to || !subject) {
