@@ -1,9 +1,4 @@
 export async function generateProposalContext(clientName, items, total) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('Falta el Token: VITE_OPENAI_API_KEY no está configurado en tu archivo .env');
-  }
-
   const prompt = `
 Eres el asistente de ventas experto de Barba Construction, una empresa premium de roofing, siding y gutters.
 Tengo el siguiente estimado para el cliente: ${clientName || 'Cliente No Especificado'}
@@ -23,21 +18,19 @@ No uses markdown extraño, usa formato de texto limpio que se pueda insertar dir
 `;
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('/api/ai', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7
       })
     });
 
     const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) throw new Error(data.error);
     
     return data.choices[0].message.content;
   } catch (err) {
@@ -47,11 +40,6 @@ No uses markdown extraño, usa formato de texto limpio que se pueda insertar dir
 }
 
 export async function askCopilot(messages, contextString = null) {
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error('Falta el Token: VITE_OPENAI_API_KEY no está configurado en tu archivo .env');
-  }
-
   let systemMessage = `Eres "Barba Copilot", el asistente inteligente y oráculo operativo exclusivo de Barba Construction. 
 Tu misión es ayudar a la gerencia, vendedores y encargados de operaciones. 
 Responde siempre en español, con un tono ultra-profesional, resolutivo y eficiente. No des respuestas exageradamente largas, ve al grano.`;
@@ -66,21 +54,19 @@ Responde siempre en español, con un tono ultra-profesional, resolutivo y eficie
   ];
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('/api/ai', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
         messages: payloadMessages,
         temperature: 0.3
       })
     });
 
     const data = await response.json();
-    if (data.error) throw new Error(data.error.message);
+    if (data.error) throw new Error(data.error);
     
     return data.choices[0].message.content;
   } catch (err) {
