@@ -27,7 +27,7 @@ export default function ReceiptSidebar() {
   };
 
   useEffect(() => {
-    supabase.from('contacts').select('id, first_name, last_name').order('first_name')
+    supabase.from('contacts').select('id, first_name, last_name, email').order('first_name')
       .then(({ data }) => setClients(data || []));
   }, []);
 
@@ -57,9 +57,50 @@ export default function ReceiptSidebar() {
           service_type: item.service,
         }))
       );
+
+      // Si el estado es 'sent', enviar el correo al cliente
+      if (status === 'sent') {
+        const client = clients.find(c => c.id === selectedClient);
+        if (client && client.email) {
+          try {
+            await fetch('/api/send-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                to: client.email,
+                subject: 'Tu Propuesta de Proyecto - Barba Construction',
+                html: `
+                  <h2>Hola ${client.first_name},</h2>
+                  <p>Adjunto encontrarás la propuesta de tu proyecto:</p>
+                  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: serif;">
+                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Propuesta de servicios.'}
+                  </div>
+                  <h3>Resumen de Inversión</h3>
+                  <ul>
+                    ${receiptItems.map(item => `<li>${item.name} (${item.quantity}) - ${fmt(item.total)}</li>`).join('')}
+                  </ul>
+                  <p><strong>Subtotal:</strong> ${fmt(subtotal)}</p>
+                  <p><strong>Total Estimado:</strong> ${fmt(total)}</p>
+                  <p>Gracias por confiar en Barba Construction.</p>
+                `
+              })
+            });
+            alert('Estimado guardado y enviado por correo.');
+          } catch (err) {
+            console.error('Error al enviar el correo:', err);
+            alert('Estimado guardado, pero ocurrió un error al enviar el correo.');
+          }
+        } else {
+          alert('Estimado guardado, pero el cliente no tiene un correo electrónico registrado.');
+        }
+      } else {
+        alert('Estimado guardado como borrador.');
+      }
+    } else {
+      console.error(error);
+      alert('Error al guardar el estimado.');
     }
     setSaving(false);
-    if (!error) alert('Estimado guardado correctamente.');
   };
 
   const subtotal = getSubtotal();
