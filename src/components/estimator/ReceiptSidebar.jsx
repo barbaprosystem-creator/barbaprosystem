@@ -39,9 +39,20 @@ export default function ReceiptSidebar() {
     const total   = getGrandTotal();
 
     // En el futuro guardaremos aiProposalText en un campo 'notes' o 'ai_proposal' de la DB
+    const payload = { 
+      contact_id: selectedClient, 
+      status, 
+      subtotal, 
+      grand_total: total, 
+      notes: aiProposalText,
+      scope_of_work: receiptItems.map(i => `${i.name}: ${i.details}`).join('\n'),
+      work_type: [...new Set(receiptItems.map(i => i.service))].join(', '),
+      valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+    };
+
     const { data: estimate, error } = await supabase
       .from('estimates')
-      .insert({ contact_id: selectedClient, status, subtotal, tax_amount: tax, total, tax_rate: taxRate, notes: aiProposalText })
+      .insert(payload)
       .select()
       .single();
 
