@@ -39,7 +39,7 @@ export default function EstimatesList() {
         const { data: items } = await supabase.from('estimate_items').select('*').eq('estimate_id', id);
         const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
         
-        await fetch('/api/send-email', {
+        const response = await fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -61,10 +61,16 @@ export default function EstimatesList() {
             `
           })
         });
+        
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.error || 'Error desconocido al enviar el correo');
+        }
+        
         alert('Estimado enviado por correo correctamente.');
       } catch (err) {
         console.error('Error al enviar el correo:', err);
-        alert('El estado se actualizó pero hubo un error al enviar el correo.');
+        alert(`Error de Resend: ${err.message}\n\nNota: Si estás en modo prueba de Resend, solo puedes enviar correos a tu propia dirección verificada.`);
       }
     } else if (status === 'sent') {
       alert('Estimado marcado como enviado. (El cliente no tiene correo registrado para notificarle)');

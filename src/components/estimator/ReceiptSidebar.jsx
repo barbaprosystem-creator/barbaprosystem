@@ -63,7 +63,7 @@ export default function ReceiptSidebar() {
         const client = clients.find(c => c.id === selectedClient);
         if (client && client.email) {
           try {
-            await fetch('/api/send-email', {
+            const response = await fetch('/api/send-email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -85,10 +85,16 @@ export default function ReceiptSidebar() {
                 `
               })
             });
+
+            const result = await response.json();
+            if (!response.ok) {
+              throw new Error(result.error || 'Error desconocido al enviar el correo');
+            }
+
             alert('Estimado guardado y enviado por correo.');
           } catch (err) {
             console.error('Error al enviar el correo:', err);
-            alert('Estimado guardado, pero ocurrió un error al enviar el correo.');
+            alert(`Error de Resend: ${err.message}\n\nNota: Si estás en modo prueba de Resend, solo puedes enviar correos a tu propia dirección verificada.`);
           }
         } else {
           alert('Estimado guardado, pero el cliente no tiene un correo electrónico registrado.');
