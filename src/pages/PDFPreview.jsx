@@ -1,36 +1,56 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, Download, CheckCircle, CreditCard } from 'lucide-react';
+import { FileText, Download, CheckCircle, CreditCard, Loader } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export default function PDFPreview() {
+  const { id } = useParams();
   const canvasRef = useRef(null);
   const [isSigned, setIsSigned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
 
-  // Random data setup
-  const client = {
-    name: "Sr. Juan Pérez",
-    address: "123 Maple Street, Houston, TX 77002",
-    date: new Date().toLocaleDateString('es-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-    estimateId: "EST-8842-B"
-  };
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [estimateData, setEstimateData] = useState(null);
 
-  const aiText = `Gracias por confiar en Barba Construction para la renovación de su hogar. Hemos diseñado esta propuesta considerando los más altos estándares de calidad y durabilidad que caracterizan a nuestra empresa. 
+  useEffect(() => {
+    async function fetchEstimate() {
+      if (!id) {
+        setError("No se proporcionó un ID de estimado válido.");
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data: estimate, error: estErr } = await supabase
+          .from('estimates')
+          .select('*, contact:contacts(*)')
+          .eq('id', id)
+          .single();
+        
+        if (estErr) throw estErr;
 
-Para su propiedad, realizaremos la instalación de 20 squares de Siding de Vinilo Premium en color Charcoal, reemplazando la barrera de humedad y garantizando el aislamiento correcto. Además, instalaremos 150 pies lineales de Gutters K-Style sin costuras de 6 pulgadas para asegurar un drenaje perfecto y proteger los cimientos de su casa. 
+        const { data: items, error: itemsErr } = await supabase
+          .from('estimate_items')
+          .select('*')
+          .eq('estimate_id', id);
 
-En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de Excelencia. Puede revisar el detalle de inversión a continuación.`;
+        if (itemsErr) throw itemsErr;
 
-  const items = [
-    { name: "Siding de Vinilo Premium (Charcoal)", qty: "20 squares", price: 8500.00 },
-    { name: "Fascia y Soffit (Reparación)", qty: "50 ft", price: 1200.00 },
-    { name: "Gutters Seamless K-Style 6\"", qty: "150 ft", price: 1800.00 },
-  ];
-
-  const total = items.reduce((acc, item) => acc + item.price, 0);
+        setEstimateData({ estimate, contact: estimate.contact, items });
+      } catch (err) {
+        console.error("Error fetching estimate:", err);
+        setError("No pudimos cargar la información de la propuesta. Puede que el enlace no sea válido.");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchEstimate();
+  }, [id]);
 
   // Simple signature canvas drawing logic
   useEffect(() => {
+    if (loading || error) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -80,20 +100,51 @@ En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de
       canvas.removeEventListener('touchmove', draw);
       canvas.removeEventListener('touchend', stopDrawing);
     };
-  }, []);
+  }, [loading, error]);
 
-  const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+  const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
 
-  const handleAuthorize = () => {
+  const handleAuthorize = async () => {
     if (!isSigned || isProcessing) return;
     setIsProcessing(true);
     
-    // Simular guardado de firma en base de datos y redirección a Stripe
+    // Aquí podrías guardar la firma en Supabase como Base64 si lo deseas,
+    // o actualizar el estado del estimado a 'accepted'.
+    try {
+       await supabase.from('estimates').update({ status: 'accepted' }).eq('id', id);
+    } catch(e) {
+       console.error("Error al actualizar:", e);
+    }
+    
     setTimeout(() => {
       setIsProcessing(false);
       setPaymentSuccess(true);
     }, 2000);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white">
+        <Loader className="animate-spin text-[#FACB00] mb-4" size={48} />
+        <p className="text-gray-400">Cargando propuesta...</p>
+      </div>
+    );
+  }
+
+  if (error || !estimateData) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white p-8 text-center">
+        <FileText size={64} className="text-red-500 mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Propuesta No Encontrada</h2>
+        <p className="text-gray-400">{error}</p>
+      </div>
+    );
+  }
+
+  const { estimate, contact, items } = estimateData;
+  const dateFormatted = new Date(estimate.created_at || Date.now()).toLocaleDateString('es-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const total = estimate.grand_total || items.reduce((acc, item) => acc + (item.total || item.unit_price * item.quantity), 0);
+  const subtotal = estimate.subtotal || total;
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] print:bg-white p-8 print:p-0 flex flex-col items-center overflow-y-auto">
@@ -120,13 +171,14 @@ En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de
         {/* Print Header */}
         <div className="bg-[#111] print:bg-[#111] text-white p-8 flex justify-between items-start border-b-[6px] border-[#FACB00]" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
           <div>
-            <img src="/logo-barba.png" alt="Barba Construction" className="h-20 object-contain" />
-            <p className="text-xs text-gray-400 mt-4">123 Builder Lane, Houston TX<br/>(555) 123-4567<br/>info@barbaconstruction.com</p>
+            {/* Si no existe la imagen local, puedes usar texto como fallback */}
+            <h1 className="text-[#FACB00] text-2xl font-black tracking-widest uppercase">BARBA CONSTRUCTION</h1>
+            <p className="text-xs text-gray-400 mt-2">Excelencia en Roofing, Siding & Gutters<br/>(555) 123-4567<br/>info@barbaprosystem.com</p>
           </div>
           <div className="text-right">
             <h1 className="text-3xl font-light text-gray-300">ESTIMADO</h1>
-            <p className="text-[#FACB00] font-bold mt-1 text-lg">{client.estimateId}</p>
-            <p className="text-sm text-gray-400 mt-2">Fecha: {client.date}</p>
+            <p className="text-[#FACB00] font-bold mt-1 text-lg">#{estimate.id.split('-')[0].toUpperCase()}</p>
+            <p className="text-sm text-gray-400 mt-2">Fecha: {dateFormatted}</p>
           </div>
         </div>
 
@@ -136,19 +188,22 @@ En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de
           {/* Client Info */}
           <div className="mb-8">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Preparado para:</p>
-            <p className="text-xl font-bold">{client.name}</p>
-            <p className="text-gray-600 text-sm">{client.address}</p>
+            <p className="text-xl font-bold">{contact?.first_name} {contact?.last_name}</p>
+            <p className="text-gray-600 text-sm">{contact?.address || 'Dirección no especificada'}</p>
+            <p className="text-gray-600 text-sm">{contact?.email || ''} | {contact?.phone || ''}</p>
           </div>
 
           {/* AI Persuasive Text */}
-          <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-100">
-            <p className="text-xs font-bold text-[#FACB00] uppercase tracking-wider mb-3 flex items-center gap-2">
-              Propuesta del Proyecto generada por IA
-            </p>
-            <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap font-serif">
-              {aiText}
-            </p>
-          </div>
+          {estimate.notes && (
+            <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-100">
+              <p className="text-xs font-bold text-[#FACB00] uppercase tracking-wider mb-3 flex items-center gap-2">
+                Propuesta del Proyecto
+              </p>
+              <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap font-serif">
+                {estimate.notes}
+              </p>
+            </div>
+          )}
 
           {/* Line Items */}
           <div className="mb-10">
@@ -161,13 +216,21 @@ En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, idx) => (
+                {items && items.length > 0 ? items.map((item, idx) => (
                   <tr key={idx} className="border-b border-gray-100">
-                    <td className="py-4 px-2 font-medium">{item.name}</td>
-                    <td className="py-4 px-2 text-center text-gray-600">{item.qty}</td>
-                    <td className="py-4 px-2 text-right font-bold">{formatMoney(item.price)}</td>
+                    <td className="py-4 px-2 font-medium">
+                      {item.description}
+                      <br/>
+                      <span className="text-xs text-gray-500 font-normal">{item.details}</span>
+                    </td>
+                    <td className="py-4 px-2 text-center text-gray-600">{item.quantity}</td>
+                    <td className="py-4 px-2 text-right font-bold">{formatMoney(item.total || (item.unit_price * item.quantity))}</td>
                   </tr>
-                ))}
+                )) : (
+                  <tr className="border-b border-gray-100">
+                    <td className="py-4 px-2 font-medium" colSpan="3">Servicios incluidos en la cotización general.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
 
@@ -176,15 +239,11 @@ En Barba Construction, nuestro trabajo está respaldado por nuestra Garantía de
               <div className="w-64 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal:</span>
-                  <span>{formatMoney(total)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Impuestos (8.25%):</span>
-                  <span>{formatMoney(total * 0.0825)}</span>
+                  <span>{formatMoney(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-black text-[#111] pt-2 border-t-2 border-gray-800">
-                  <span>Total:</span>
-                  <span>{formatMoney(total * 1.0825)}</span>
+                  <span>Total Estimado:</span>
+                  <span>{formatMoney(total)}</span>
                 </div>
               </div>
             </div>

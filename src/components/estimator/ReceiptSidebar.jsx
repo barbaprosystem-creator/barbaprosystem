@@ -74,26 +74,71 @@ export default function ReceiptSidebar() {
         const client = clients.find(c => c.id === selectedClient);
         if (client && client.email) {
           try {
+            const proposalLink = `https://barbaprosystem.com/p/${estimate.id}`;
+            const htmlEmail = `
+              <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+                <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
+                  <h1 style="color: #F5C518; margin: 0; font-size: 24px; letter-spacing: 2px;">BARBA CONSTRUCTION</h1>
+                  <p style="color: #888888; font-size: 12px; margin-top: 10px;">Excelencia en Roofing, Siding & Gutters</p>
+                </div>
+                
+                <div style="padding: 40px 30px;">
+                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hola ${client.first_name},</h2>
+                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Adjunto encontrarás la propuesta detallada para tu proyecto. Queremos agradecerte por darnos la oportunidad de transformar tu hogar.</p>
+                  
+                  <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
+                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Encuentra los detalles de los servicios a continuación.'}
+                  </div>
+                  
+                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Resumen de Inversión</h3>
+                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                    ${receiptItems.map(item => `
+                      <tr>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
+                          <strong style="color: #111111;">${item.name}</strong><br/>
+                          <span style="font-size: 13px; color: #888888;">Cantidad: ${item.quantity}</span>
+                        </td>
+                        <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
+                          ${fmt(item.total)}
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </table>
+                  
+                  <div style="text-align: right; padding-top: 10px;">
+                    <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${fmt(subtotal)}</p>
+                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Total Estimado: <span style="color: #e65100;">${fmt(total)}</span></p>
+                  </div>
+
+                  <div style="text-align: center; margin: 40px 0;">
+                    <a href="${proposalLink}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
+                      Ver Estimado, Firmar y Autorizar
+                    </a>
+                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Haz clic en el botón para ver el PDF oficial, firmarlo y aprobar el proyecto.</p>
+                  </div>
+
+                  <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
+                  
+                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">Quedo a tu entera disposición para cualquier consulta o aclaración que puedas necesitar sobre esta propuesta.</p>
+                  <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
+                    Atentamente,<br/>
+                    <strong>Miguel Sosa</strong><br/>
+                    <span style="color: #666666;">Barba Construction</span>
+                  </p>
+                </div>
+                <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
+                  © ${new Date().getFullYear()} Barba Construction. Todos los derechos reservados.
+                </div>
+              </div>
+            `;
+
             const response = await fetch('/api/send-email', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 to: client.email,
-                subject: 'Tu Propuesta de Proyecto - Barba Construction',
-                html: `
-                  <h2>Hola ${client.first_name},</h2>
-                  <p>Adjunto encontrarás la propuesta de tu proyecto:</p>
-                  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: serif;">
-                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Propuesta de servicios.'}
-                  </div>
-                  <h3>Resumen de Inversión</h3>
-                  <ul>
-                    ${receiptItems.map(item => `<li>${item.name} (${item.quantity}) - ${fmt(item.total)}</li>`).join('')}
-                  </ul>
-                  <p><strong>Subtotal:</strong> ${fmt(subtotal)}</p>
-                  <p><strong>Total Estimado:</strong> ${fmt(total)}</p>
-                  <p>Gracias por confiar en Barba Construction.</p>
-                `
+                subject: `Tu Propuesta de Proyecto - Barba Construction`,
+                html: htmlEmail
               })
             });
 
