@@ -15,7 +15,7 @@ export default function Clients() {
     last_name: '',
     email: '',
     phone: '',
-    source: 'Vendedor (Manual)',
+    source: 'other',
     pipeline_status: 'new_lead'
   });
 
@@ -43,7 +43,7 @@ export default function Clients() {
     if (!error && data) {
       setClients([data[0], ...clients]);
       setShowModal(false);
-      setNewClient({ first_name: '', last_name: '', email: '', phone: '', source: 'Vendedor (Manual)', pipeline_status: 'new_lead' });
+      setNewClient({ first_name: '', last_name: '', email: '', phone: '', source: 'other', pipeline_status: 'new_lead' });
     } else {
       console.error(error);
       alert('Error al crear el cliente.');
@@ -239,12 +239,21 @@ export default function Clients() {
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-[#aaa]">Fuente (Source)</label>
-                <input
-                  type="text"
+                <select
                   value={newClient.source}
                   onChange={(e) => setNewClient({ ...newClient, source: e.target.value })}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+                >
+                  <option value="other">Otro (Manual)</option>
+                  <option value="web">Sitio Web</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="google">Google</option>
+                  <option value="phone">Teléfono</option>
+                  <option value="referral">Referido</option>
+                  <option value="walk_in">Visita (Walk-in)</option>
+                  <option value="tiktok">TikTok</option>
+                </select>
               </div>
 
               <div className="pt-2 flex gap-3">

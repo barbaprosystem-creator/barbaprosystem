@@ -21,12 +21,13 @@ export default function ReceiptSidebar() {
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const getClientName = () => {
+    if (!selectedClient) return '';
     const c = clients.find(cl => cl.id === selectedClient);
-    return c ? c.full_name : '';
+    return c ? `${c.first_name} ${c.last_name}` : '';
   };
 
   useEffect(() => {
-    supabase.from('contacts').select('id, full_name').order('full_name')
+    supabase.from('contacts').select('id, first_name, last_name').order('first_name')
       .then(({ data }) => setClients(data || []));
   }, []);
 
@@ -87,7 +88,7 @@ export default function ReceiptSidebar() {
           className="w-full px-3 py-2.5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a]/60 text-[#f0f0f0] text-sm focus:outline-none focus:border-[#F5C518]/60 transition-colors"
         >
           <option value="">-- Seleccionar cliente --</option>
-          {clients.map(c => <option key={c.id} value={c.id}>{c.full_name}</option>)}
+          {clients.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
         </select>
       </div>
 
