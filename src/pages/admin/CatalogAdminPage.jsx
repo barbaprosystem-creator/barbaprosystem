@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../lib/supabase';
 import { Plus, Edit2, Trash2, Image as ImageIcon, Link as LinkIcon, Share2, Upload } from 'lucide-react';
 
 export default function CatalogAdminPage() {

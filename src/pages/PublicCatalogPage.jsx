@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../lib/supabase';
 import { ShoppingCart, Check, X, Search, Link as LinkIcon, Send } from 'lucide-react';
 
 export default function PublicCatalogPage() {
