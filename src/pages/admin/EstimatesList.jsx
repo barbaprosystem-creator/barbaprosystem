@@ -21,27 +21,64 @@ export default function EstimatesList() {
   async function fetchEstimates() {
     setLoading(true);
     const { data } = await supabase.from('estimates')
-      .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address), creator:profiles!estimates_created_by_fkey(full_name)')
+      .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)')
       .order('created_at',{ascending:false});
     setEstimates(data||[]);
     setLoading(false);
   }
 
   async function updateStatus(id, status) {
+    const est = estimates.find(e => e.id === id);
+    if (!est) return;
+
     await supabase.from('estimates').update({status,updated_at:new Date().toISOString()}).eq('id',id);
     
+    // Enviar correo si el estado cambia a 'sent'
+    if (status === 'sent' && est.contact?.email) {
+      try {
+        const { data: items } = await supabase.from('estimate_items').select('*').eq('estimate_id', id);
+        const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+        
+        await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: est.contact.email,
+            subject: `Propuesta de Proyecto EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
+            html: `
+              <h2>Hola ${est.contact.first_name},</h2>
+              <p>Adjunto encontrarás la propuesta de tu proyecto:</p>
+              <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; font-family: serif;">
+                ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Propuesta de servicios detallada a continuación.'}
+              </div>
+              <h3>Resumen de Inversión</h3>
+              <ul>
+                ${(items || []).map(item => `<li>${item.description} (${item.quantity}) - ${formatMoney(item.total)}</li>`).join('')}
+              </ul>
+              <p><strong>Subtotal:</strong> ${formatMoney(est.subtotal || 0)}</p>
+              <p><strong>Total Estimado:</strong> ${formatMoney(est.total || 0)}</p>
+              <p>Gracias por confiar en Barba Construction.</p>
+            `
+          })
+        });
+        alert('Estimado enviado por correo correctamente.');
+      } catch (err) {
+        console.error('Error al enviar el correo:', err);
+        alert('El estado se actualizó pero hubo un error al enviar el correo.');
+      }
+    } else if (status === 'sent') {
+      alert('Estimado marcado como enviado. (El cliente no tiene correo registrado para notificarle)');
+    }
+
     // Automatizacion: Crear proyecto si se aprueba el estimado
     if (status === 'approved') {
-      const est = estimates.find(e => e.id === id);
-      if (est) {
-        await supabase.from('projects').insert([{
-          title: `Proyecto de ${est.contact?.first_name || 'Cliente'} - EST-${String(est.estimate_number).padStart(4,'0')}`,
-          contact_id: est.contact_id,
-          status: 'pending',
-          sold_price: est.grand_total,
-          address: est.contact?.address || 'Por confirmar'
-        }]);
-      }
+      await supabase.from('projects').insert([{
+        title: `Proyecto de ${est.contact?.first_name || 'Cliente'} - EST-${String(est.estimate_number).padStart(4,'0')}`,
+        contact_id: est.contact_id,
+        status: 'pending',
+        sold_price: est.total || est.grand_total,
+        address: est.contact?.address || 'Por confirmar'
+      }]);
     }
     
     fetchEstimates();
