@@ -11,11 +11,12 @@ export default function Clients() {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState({
-    full_name: '',
+    first_name: '',
+    last_name: '',
     email: '',
     phone: '',
     source: 'Vendedor (Manual)',
-    status: 'nuevo'
+    pipeline_status: 'new_lead'
   });
 
   useEffect(() => {
@@ -42,7 +43,7 @@ export default function Clients() {
     if (!error && data) {
       setClients([data[0], ...clients]);
       setShowModal(false);
-      setNewClient({ full_name: '', email: '', phone: '', source: 'Vendedor (Manual)', status: 'nuevo' });
+      setNewClient({ first_name: '', last_name: '', email: '', phone: '', source: 'Vendedor (Manual)', pipeline_status: 'new_lead' });
     } else {
       console.error(error);
       alert('Error al crear el cliente.');
@@ -51,18 +52,19 @@ export default function Clients() {
   };
 
   const filtered = clients.filter(c =>
-    c.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.first_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.last_name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase()) ||
     c.phone?.includes(search)
   );
 
   const statusMap = {
-    nuevo: { label: 'Nuevo', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-    contactado: { label: 'Contactado', cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-    cita: { label: 'Cita', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-    estimado_enviado: { label: 'Estimado', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
-    ganado: { label: 'Ganado', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-    perdido: { label: 'Perdido', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    new_lead: { label: 'Nuevo', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+    contacted: { label: 'Contactado', cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+    appointment: { label: 'Cita', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+    estimated: { label: 'Estimado', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+    won: { label: 'Ganado', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    lost: { label: 'Perdido', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
   };
 
   return (
@@ -118,15 +120,15 @@ export default function Clients() {
               </thead>
               <tbody className="divide-y divide-slate-800/50">
                 {filtered.map((client) => {
-                  const s = statusMap[client.status] || { label: client.status || '-', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
+                  const s = statusMap[client.pipeline_status] || { label: client.pipeline_status || '-', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                   return (
                     <tr key={client.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold text-sm">
-                            {client.full_name?.[0]?.toUpperCase() || '?'}
+                            {client.first_name?.[0]?.toUpperCase() || '?'}
                           </div>
-                          <span className="font-semibold text-[#e0e0e0]">{client.full_name}</span>
+                          <span className="font-semibold text-[#e0e0e0]">{client.first_name} {client.last_name}</span>
                         </div>
                       </td>
                       <td className="py-4 px-6">
@@ -188,16 +190,29 @@ export default function Clients() {
             </div>
             
             <form onSubmit={handleSaveClient} className="p-6 space-y-5">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-[#aaa]">Nombre Completo <span className="text-[var(--accent)]">*</span></label>
-                <input
-                  required
-                  type="text"
-                  placeholder="Ej. Juan Pérez"
-                  value={newClient.full_name}
-                  onChange={(e) => setNewClient({ ...newClient, full_name: e.target.value })}
-                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
-                />
+              <div className="flex gap-4">
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium text-[#aaa]">Nombre <span className="text-[var(--accent)]">*</span></label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ej. Juan"
+                    value={newClient.first_name}
+                    onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  />
+                </div>
+                <div className="space-y-1 flex-1">
+                  <label className="text-sm font-medium text-[#aaa]">Apellido <span className="text-[var(--accent)]">*</span></label>
+                  <input
+                    required
+                    type="text"
+                    placeholder="Ej. Pérez"
+                    value={newClient.last_name}
+                    onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                    className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
