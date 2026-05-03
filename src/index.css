@@ -1746,4 +1746,98 @@ body.privacy-mode .text-emerald-400:hover,
 body.privacy-mode .text-amber-400:hover {
   filter: none;
   opacity: 1;
-}
+}
+
+/* =========================================================
+   React Big Calendar Dark Theme Overrides
+   ========================================================= */
+
+.barba-big-calendar .rbc-calendar {
+  font-family: inherit;
+  color: #cbd5e1; /* slate-300 */
+}
+
+.barba-big-calendar .rbc-toolbar {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.barba-big-calendar .rbc-toolbar button {
+  color: #cbd5e1;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 6px 12px;
+  transition: all 0.2s;
+}
+
+.barba-big-calendar .rbc-toolbar button:hover {
+  background: #334155;
+  color: #fff;
+}
+
+.barba-big-calendar .rbc-toolbar button.rbc-active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #2563eb;
+  box-shadow: none;
+}
+
+.barba-big-calendar .rbc-month-view,
+.barba-big-calendar .rbc-time-view,
+.barba-big-calendar .rbc-agenda-view {
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+}
+
+.barba-big-calendar .rbc-header {
+  padding: 10px 0;
+  border-bottom: 1px solid #334155;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.barba-big-calendar .rbc-day-bg {
+  border-left: 1px solid #1e293b;
+}
+
+.barba-big-calendar .rbc-month-row {
+  border-top: 1px solid #1e293b;
+}
+
+.barba-big-calendar .rbc-off-range-bg {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.barba-big-calendar .rbc-today {
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+.barba-big-calendar .rbc-date-cell {
+  padding: 6px 8px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.barba-big-calendar .rbc-event {
+  margin: 2px 4px;
+}
+
+.barba-big-calendar .rbc-time-content {
+  border-top: 1px solid #334155;
+}
+
+.barba-big-calendar .rbc-timeslot-group {
+  border-bottom: 1px solid #1e293b;
+}
+
+.barba-big-calendar .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid #1e293b;
+}
+

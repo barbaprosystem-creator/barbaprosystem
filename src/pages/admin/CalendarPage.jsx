@@ -1,14 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ChevronLeft, ChevronRight, Plus, X, Briefcase, Users } from 'lucide-react';
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import { format, parse, startOfWeek, getDay } from 'date-fns';
+import { es } from 'date-fns/locale';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Plus, X, Briefcase, Users, CalendarSync, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
+import { useGoogleLogin } from '@react-oauth/google';
 
-const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const locales = {
+  'es': es,
+};
+
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek,
+  getDay,
+  locales,
+});
 
 const SALES_TYPES = {
   appointment: { label: 'Cita',           color: '#3b82f6' },
-  inspection:  { label: 'Inspeccion',     color: '#f59e0b' },
+  inspection:  { label: 'Inspección',     color: '#f59e0b' },
   follow_up:   { label: 'Seguimiento',    color: '#8b5cf6' },
   other:       { label: 'Otro',           color: '#6b7280' },
 };
@@ -16,7 +30,7 @@ const SALES_TYPES = {
 const PROJECT_TYPES = {
   project_start: { label: 'Inicio Proyecto', color: '#10b981' },
   payment_due:   { label: 'Pago Vence',      color: '#ef4444' },
-  inspection:    { label: 'Inspeccion',      color: '#f59e0b' },
+  inspection:    { label: 'Inspección',      color: '#f59e0b' },
   other:         { label: 'Otro',            color: '#6b7280' },
 };
 
@@ -43,156 +57,196 @@ const TAB_CONFIGS = {
   },
 };
 
-function CalendarGrid({ activeTab, cur, onDayClick }) {
-  const y = cur.getFullYear(), m = cur.getMonth();
-  const { eventTypes } = TAB_CONFIGS[activeTab];
-  const [events, setEvents] = useState([]);
-  const { profile, role } = useAuth();
-
-  useEffect(() => {
-    fetchEvents(y, m, activeTab);
-  }, [y, m, activeTab]);
-
-  async function fetchEvents(year, month, tab) {
-    const start = new Date(year, month, 1).toISOString();
-    const end   = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
-    let query = supabase
-      .from('calendar_events')
-      .select('*')
-      .eq('calendar_type', TAB_CONFIGS[tab].calendarType)
-      .gte('start_time', start)
-      .lte('start_time', end)
-      .order('start_time');
-
-    // Salesperson only sees their own events in sales calendar
-    if (tab === 'sales' && role === 'salesperson') {
-      query = query.eq('created_by', profile.id);
-    }
-
-    const { data } = await query;
-    setEvents(data || []);
-  }
-
-  const today = new Date();
-  const isToday = (d) => today.getFullYear() === y && today.getMonth() === m && today.getDate() === d;
-  const firstDay = new Date(y, m, 1).getDay();
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
-
-  const cells = [];
-  for (let i = 0; i < firstDay; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
-
-  function getDateStr(day) {
-    return `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  }
-
-  function getEventsForDay(day) {
-    const ds = getDateStr(day);
-    return events.filter(e => e.start_time?.substring(0, 10) === ds);
-  }
-
-  const accentClass = activeTab === 'sales' ? 'cal-day-accent-violet' : 'cal-day-accent-emerald';
-
-  return (
-    <div className="calendar-grid">
-      {WEEKDAYS.map(d => <div key={d} className="cal-weekday">{d}</div>)}
-      {cells.map((day, i) => {
-        if (!day) return <div key={`e${i}`} className="cal-day empty" />;
-        const de = getEventsForDay(day);
-        return (
-          <div
-            key={day}
-            className={`cal-day ${isToday(day) ? 'today' : ''} ${de.length ? 'has-events' : ''}`}
-            onClick={() => onDayClick(getDateStr(day))}
-          >
-            <span className="cal-day-number">{day}</span>
-            <div className="cal-day-events">
-              {de.slice(0, 2).map(ev => {
-                const typeColor = eventTypes[ev.event_type]?.color || '#6b7280';
-                const typeLabel = eventTypes[ev.event_type]?.label || ev.event_type;
-                return (
-                  <div
-                    key={ev.id}
-                    className="cal-event-dot"
-                    style={{ background: typeColor }}
-                    title={ev.title}
-                  >
-                    <span className="cal-event-label">{ev.title}</span>
-                  </div>
-                );
-              })}
-              {de.length > 2 && <span className="cal-more">+{de.length - 2}</span>}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function CalendarPage() {
   const { profile, role } = useAuth();
   const [activeTab, setActiveTab] = useState('sales');
-  const [cur, setCur] = useState(new Date());
+  const [events, setEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [selDate, setSelDate] = useState(null);
-  const [form, setForm] = useState({ title: '', event_type: 'appointment', description: '' });
+  const [form, setForm] = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date() });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [googleRefreshToken, setGoogleRefreshToken] = useState(null);
 
-  const y = cur.getFullYear(), m = cur.getMonth();
+  // Intentar cargar el refresh token del usuario
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.google_refresh_token) {
+        setGoogleRefreshToken(user.user_metadata.google_refresh_token);
+      }
+    });
+  }, []);
+
+  const loginGoogle = useGoogleLogin({
+    flow: 'auth-code',
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+    onSuccess: async (codeResponse) => {
+      try {
+        const res = await fetch('/api/calendar-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: codeResponse.code }),
+        });
+        
+        if (!res.ok) throw new Error('Error al intercambiar el código');
+        
+        const tokens = await res.json();
+        if (tokens.refresh_token) {
+          await supabase.auth.updateUser({
+            data: { google_refresh_token: tokens.refresh_token }
+          });
+          setGoogleRefreshToken(tokens.refresh_token);
+          alert('¡Calendario de Google sincronizado con éxito!');
+        } else {
+          alert('Tu cuenta de Google ya estaba sincronizada. Si quieres forzar una reconexión, revoca el acceso desde tu cuenta de Google.');
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Hubo un error configurando tu calendario.');
+      }
+    },
+    onError: err => console.error('Error Google Login', err),
+  });
+
   const tabConfig = TAB_CONFIGS[activeTab];
-
-  // Only admin/office can see projects calendar
   const canAccessProjects = role === 'admin' || role === 'office';
 
-  function handleDayClick(dateStr) {
-    setSelDate(dateStr);
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '' });
-    setShowForm(true);
-  }
+  const fetchEvents = useCallback(async () => {
+    let query = supabase
+      .from('calendar_events')
+      .select('*')
+      .eq('calendar_type', tabConfig.calendarType);
 
-  async function handleCreate(e) {
+    if (activeTab === 'sales' && role === 'salesperson') {
+      query = query.eq('created_by', profile?.id);
+    }
+
+    const { data } = await query;
+    if (data) {
+      // Formatear para react-big-calendar
+      const formatted = data.map(ev => ({
+        id: ev.id,
+        title: ev.title,
+        start: new Date(ev.start_time),
+        // Si no tiene end_time, por defecto dura 1 hora visualmente
+        end: ev.end_time ? new Date(ev.end_time) : new Date(new Date(ev.start_time).getTime() + 60 * 60 * 1000),
+        event_type: ev.event_type,
+        desc: ev.description
+      }));
+      setEvents(formatted);
+    }
+  }, [activeTab, profile?.id, role, tabConfig.calendarType]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  const handleSelectSlot = ({ start, end }) => {
+    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end });
+    setShowForm(true);
+  };
+
+  const handleCreate = async (e) => {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
-    await supabase.from('calendar_events').insert({
-      title: form.title,
-      event_type: form.event_type,
-      description: form.description,
-      start_time: new Date(selDate).toISOString(),
-      all_day: true,
-      created_by: user.id,
-      calendar_type: tabConfig.calendarType,
-      // For sales events, assign to current user
-      assigned_to: activeTab === 'sales' ? user.id : null,
-    });
-    setShowForm(false);
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '' });
-    // Trigger re-fetch in CalendarGrid by changing cur slightly then back
-    setCur(new Date(cur));
-  }
+    setIsSyncing(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // 1. Guardar en Base de Datos Supabase (CRM)
+      const { data: insertedEvent, error } = await supabase.from('calendar_events').insert({
+        title: form.title,
+        event_type: form.event_type,
+        description: form.description,
+        start_time: form.start.toISOString(),
+        all_day: false,
+        created_by: user.id,
+        calendar_type: tabConfig.calendarType,
+        assigned_to: activeTab === 'sales' ? user.id : null,
+      }).select().single();
+
+      if (error) throw error;
+
+      // 2. Sincronizar con Google Calendar API a través de la Serverless Function
+      try {
+        const googleEvent = {
+          summary: `[${tabConfig.eventTypes[form.event_type]?.label}] ${form.title}`,
+          description: form.description,
+          start: { dateTime: form.start.toISOString() },
+          end: { dateTime: form.end.toISOString() },
+          user_refresh_token: googleRefreshToken // Si existe, usa el calendario del vendedor en vez del robot
+        };
+
+        // Esta llamada funcionará en producción (Vercel) o usando Vercel Dev localmente.
+        await fetch('/api/calendar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(googleEvent)
+        });
+      } catch (gErr) {
+        console.warn('Google Sync Warning (Funciona nativamente en Vercel):', gErr);
+      }
+
+      setShowForm(false);
+      fetchEvents();
+    } catch (err) {
+      console.error(err);
+      alert('Error guardando el evento en la base de datos.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const eventStyleGetter = (event) => {
+    const backgroundColor = tabConfig.eventTypes[event.event_type]?.color || '#6b7280';
+    return {
+      style: {
+        backgroundColor,
+        borderRadius: '6px',
+        opacity: 0.95,
+        color: 'white',
+        border: '0px',
+        display: 'block',
+        padding: '2px 6px',
+        fontSize: '13px'
+      }
+    };
+  };
 
   return (
-    <div className="calendar-page">
-      <div className="crm-toolbar">
-        <div className="crm-toolbar-left">
-          <h1>Calendario</h1>
+    <div className="calendar-page h-full flex flex-col p-4 md:p-8">
+      <div className="crm-toolbar flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold">Calendario</h1>
+          <p className="text-sm text-slate-400 flex items-center gap-2 mt-1">
+            <CalendarSync size={14} className="text-blue-400" /> Sincronización Profesional Activa
+          </p>
         </div>
-        <div className="crm-toolbar-right">
+        <div className="flex gap-3">
           <button
-            className="btn-primary"
-            onClick={() => {
-              setSelDate(new Date().toISOString().split('T')[0]);
-              setForm({ title: '', event_type: tabConfig.defaultType, description: '' });
-              setShowForm(true);
-            }}
+            onClick={() => loginGoogle()}
+            className={`btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition ${
+              googleRefreshToken 
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                : 'bg-white text-slate-900 hover:bg-slate-100'
+            }`}
+          >
+            {googleRefreshToken ? <CheckCircle2 size={18} /> : <LinkIcon size={18} />}
+            <span className="hidden md:inline">
+              {googleRefreshToken ? 'Calendario Sincronizado' : 'Conectar Google'}
+            </span>
+          </button>
+          
+          <button
+            className="btn-primary flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
+            onClick={() => handleSelectSlot({ start: new Date(), end: new Date() })}
           >
             <Plus size={18} />
-            <span>Nuevo Evento</span>
+            <span className="hidden md:inline">Nuevo Evento</span>
           </button>
         </div>
       </div>
 
-      {/* Dual Tab Selector */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid rgba(100,116,139,0.3)', paddingBottom: '0' }}>
+      {/* Tabs Selector */}
+      <div className="flex gap-2 mb-6 border-b border-slate-700">
         {Object.entries(TAB_CONFIGS).map(([id, cfg]) => {
           if (id === 'projects' && !canAccessProjects) return null;
           const Icon = cfg.Icon;
@@ -201,96 +255,75 @@ export default function CalendarPage() {
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '12px 12px 0 0',
-                border: 'none',
-                borderBottom: isActive
-                  ? `2px solid ${id === 'sales' ? '#8b5cf6' : '#10b981'}`
-                  : '2px solid transparent',
-                background: isActive
-                  ? id === 'sales' ? 'rgba(139,92,246,0.1)' : 'rgba(16,185,129,0.1)'
-                  : 'transparent',
-                color: isActive
-                  ? id === 'sales' ? '#c4b5fd' : '#6ee7b7'
-                  : '#64748b',
-                fontWeight: isActive ? '700' : '500',
-                fontSize: '14px',
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
+              className={`flex items-center gap-2 px-5 py-3 rounded-t-xl font-medium transition-colors ${
+                isActive 
+                  ? id === 'sales' ? 'bg-violet-500/10 text-violet-300 border-b-2 border-violet-500' : 'bg-emerald-500/10 text-emerald-300 border-b-2 border-emerald-500'
+                  : 'text-slate-400 hover:text-slate-200 border-b-2 border-transparent'
+              }`}
             >
-              <Icon size={16} />
+              <Icon size={18} />
               {cfg.label}
             </button>
           );
         })}
       </div>
 
-      {/* Tab description */}
-      <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
-        {tabConfig.description} - <em>{tabConfig.privateNote}</em>
-      </p>
-
-      {/* Month navigation */}
-      <div className="calendar-nav">
-        <button className="cal-nav-btn" onClick={() => setCur(new Date(y, m - 1, 1))}>
-          <ChevronLeft size={20} />
-        </button>
-        <h2 className="cal-month-label">{MONTHS[m]} {y}</h2>
-        <button className="cal-nav-btn" onClick={() => setCur(new Date(y, m + 1, 1))}>
-          <ChevronRight size={20} />
-        </button>
+      {/* Main Calendar View */}
+      <div className="flex-1 bg-slate-900 rounded-xl p-4 shadow-xl border border-slate-800" style={{ minHeight: '600px' }}>
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: '100%' }}
+          culture="es"
+          messages={{
+            next: "Sig",
+            previous: "Ant",
+            today: "Hoy",
+            month: "Mes",
+            week: "Semana",
+            day: "Día",
+            agenda: "Agenda",
+            date: "Fecha",
+            time: "Hora",
+            event: "Evento",
+            noEventsInRange: "No hay eventos en este rango."
+          }}
+          selectable
+          onSelectSlot={handleSelectSlot}
+          eventPropGetter={eventStyleGetter}
+          className="barba-big-calendar"
+        />
       </div>
 
-      {/* Legend */}
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '12px' }}>
-        {Object.entries(tabConfig.eventTypes).map(([key, val]) => (
-          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: val.color }} />
-            <span style={{ fontSize: '11px', color: '#94a3b8' }}>{val.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar Grid */}
-      <CalendarGrid
-        key={`${activeTab}-${y}-${m}`}
-        activeTab={activeTab}
-        cur={cur}
-        onDayClick={handleDayClick}
-      />
-
-      {/* Modal: New Event */}
+      {/* Event Creation Modal */}
       {showForm && (
-        <div className="modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Nuevo Evento - {selDate}</h2>
-              <button className="modal-close" onClick={() => setShowForm(false)}><X size={20} /></button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <CalendarSync className="text-blue-400"/> Nuevo Evento
+              </h2>
+              <button className="text-slate-400 hover:text-white" onClick={() => setShowForm(false)}><X size={20} /></button>
             </div>
-            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px', paddingLeft: '4px' }}>
-              Calendario: <strong style={{ color: activeTab === 'sales' ? '#c4b5fd' : '#6ee7b7' }}>
-                {tabConfig.label}
-              </strong>
-            </p>
-            <form onSubmit={handleCreate} className="crm-form">
-              <div className="crm-form-grid">
-                <div className="form-group full-width">
-                  <label>Titulo *</label>
+            
+            <form onSubmit={handleCreate}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Título *</label>
                   <input
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
                     value={form.title}
                     onChange={e => setForm({ ...form, title: e.target.value })}
                     required
-                    placeholder="Ej: Cita con cliente"
+                    placeholder="Ej: Inspección Residencial"
                   />
                 </div>
-                <div className="form-group">
-                  <label>Tipo</label>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Tipo de Evento</label>
                   <select
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
                     value={form.event_type}
                     onChange={e => setForm({ ...form, event_type: e.target.value })}
                   >
@@ -299,19 +332,22 @@ export default function CalendarPage() {
                     ))}
                   </select>
                 </div>
-                <div className="form-group full-width">
-                  <label>Notas</label>
+                <div>
+                  <label className="block text-sm font-medium text-slate-400 mb-1">Notas (Sincronizadas con Google)</label>
                   <textarea
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
                     value={form.description}
                     onChange={e => setForm({ ...form, description: e.target.value })}
                     rows={3}
-                    placeholder="Detalles del evento..."
+                    placeholder="Detalles que verá el equipo en sus celulares..."
                   />
                 </div>
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary">Crear Evento</button>
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-slate-700">
+                <button type="button" className="px-5 py-2 text-slate-300 hover:bg-slate-700 rounded-lg font-medium" onClick={() => setShowForm(false)}>Cancelar</button>
+                <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2" disabled={isSyncing}>
+                  {isSyncing ? 'Sincronizando...' : 'Guardar y Sincronizar'}
+                </button>
               </div>
             </form>
           </div>
@@ -320,4 +356,3 @@ export default function CalendarPage() {
     </div>
   );
 }
-
