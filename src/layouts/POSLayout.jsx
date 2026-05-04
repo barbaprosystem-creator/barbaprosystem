@@ -15,7 +15,6 @@ import {
 const navItems = [
   { to: '/pos/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: false },
   { to: '/pos/estimator', icon: Calculator, label: 'Nuevo Estimado', end: false },
-  { to: '/pos/materials', icon: Package, label: 'Materiales', end: false },
   { to: '/pos/clients', icon: Users, label: 'Clientes', end: false },
   { to: '/pos/showroom', icon: ImageIcon, label: 'Showroom', end: false },
 ];

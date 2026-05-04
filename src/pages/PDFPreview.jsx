@@ -14,6 +14,19 @@ export default function PDFPreview() {
   const [error, setError] = useState(null);
   const [estimateData, setEstimateData] = useState(null);
 
+  const parseNotesAndPhotos = (notes) => {
+    if (!notes) return { text: '', photos: [] };
+    const marker = '[FOTOS DE INSPECCIÓN]';
+    const splitIndex = notes.indexOf(marker);
+    if (splitIndex === -1) return { text: notes, photos: [] };
+    
+    const textPart = notes.substring(0, splitIndex).trim();
+    const photosPart = notes.substring(splitIndex + marker.length).trim();
+    const photos = photosPart.split('\n').map(l => l.trim()).filter(l => l.startsWith('http'));
+    
+    return { text: textPart, photos };
+  };
+
   useEffect(() => {
     async function fetchEstimate() {
       if (!id) {
@@ -191,15 +204,31 @@ export default function PDFPreview() {
             <p className="text-gray-600 text-sm">{contact?.email || ''} | {contact?.phone || ''}</p>
           </div>
 
-          {/* AI Persuasive Text */}
-          {estimate.notes && (
+          {/* AI Persuasive Text & Scope */}
+          {(estimate.notes || estimate.scope_of_work) && (
             <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-100">
               <p className="text-xs font-bold text-[#FACB00] uppercase tracking-wider mb-3 flex items-center gap-2">
                 Propuesta del Proyecto
               </p>
               <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap font-serif">
-                {estimate.notes}
+                {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).text}
               </p>
+            </div>
+          )}
+
+          {/* Jobsite Photos */}
+          {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).photos.length > 0 && (
+            <div className="mb-10">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
+                Fotos de Inspección y Área de Trabajo
+              </p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).photos.map((url, i) => (
+                  <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    <img src={url} alt={`Inspección ${i+1}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

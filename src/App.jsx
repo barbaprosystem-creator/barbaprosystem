@@ -23,7 +23,6 @@ import BrigadesPage from './pages/admin/BrigadesPage';
 import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
 import Clients from './pages/Clients';
-import Materials from './pages/Materials';
 import Showroom from './pages/Showroom';
 import PDFPreview from './pages/PDFPreview';
 import PublicCatalogPage from './pages/PublicCatalogPage';
@@ -131,7 +130,6 @@ export default function App() {
           <Route path="dashboard" element={<POSDashboard />} />
           <Route path="estimator" element={<Estimator />} />
           <Route path="clients" element={<Clients />} />
-          <Route path="materials" element={<Materials />} />
           <Route path="showroom" element={<Showroom />} />
           <Route path="pdf-preview" element={<PDFPreview />} />
         </Route>

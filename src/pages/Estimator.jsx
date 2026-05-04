@@ -3,6 +3,7 @@ import { useEstimatorStore } from '../store/useEstimatorStore';
 import { supabase } from '../lib/supabase';
 import ServiceConfigurator from '../components/estimator/ServiceConfigurator';
 import ReceiptSidebar from '../components/estimator/ReceiptSidebar';
+import JobsitePhotos from '../components/estimator/JobsitePhotos';
 import { User, Search, CheckCircle, Loader2, X, FileText } from 'lucide-react';
 
 function ClientSearch({ onSelect, onClear, selectedContact }) {
@@ -112,6 +113,7 @@ function ClientSearch({ onSelect, onClear, selectedContact }) {
 export default function Estimator() {
   const { fetchPrices, receiptItems, getGrandTotal, getSubtotal, clearReceipt } = useEstimatorStore();
   const [contact, setContact] = useState(null);
+  const [photos, setPhotos] = useState([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [estimateNum, setEstimateNum] = useState(null);
@@ -123,6 +125,32 @@ export default function Estimator() {
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+        let photoUrls = [];
+        if (photos.length > 0) {
+          for (const p of photos) {
+            try {
+              const fileExt = p.file.name.split('.').pop() || 'jpg';
+              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+              const filePath = `${user?.id || 'public'}/${fileName}`;
+              
+              const { error: uploadError } = await supabase.storage.from('jobsite_photos').upload(filePath, p.file);
+              if (!uploadError) {
+                const { data } = supabase.storage.from('jobsite_photos').getPublicUrl(filePath);
+                photoUrls.push(data.publicUrl);
+              } else {
+                console.error('Error uploading photo:', uploadError);
+              }
+            } catch (e) {
+              console.error('Upload catch error:', e);
+            }
+          }
+        }
+
+        let finalScope = receiptItems.map(i => `${i.name}: ${i.details}`).join('\n');
+        if (photoUrls.length > 0) {
+          finalScope += '\n\n[FOTOS DE INSPECCIÓN]\n' + photoUrls.join('\n');
+        }
+
       const payload = {
         contact_id: contact?.id || null,
         created_by: user?.id,
@@ -130,7 +158,7 @@ export default function Estimator() {
         work_type: [...new Set(receiptItems.map(i => i.service))].join(', '),
         subtotal: getSubtotal(),
         grand_total: getGrandTotal(),
-        scope_of_work: receiptItems.map(i => `${i.name}: ${i.details}`).join('\n'),
+        scope_of_work: finalScope,
         valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       };
       const { data, error } = await supabase.from('estimates').insert(payload).select('estimate_number').single();
@@ -138,6 +166,7 @@ export default function Estimator() {
       setEstimateNum(data.estimate_number);
       setSaved(true);
       clearReceipt();
+      setPhotos([]);
     } catch (err) { alert('Error al guardar: ' + err.message); }
     finally { setSaving(false); }
   };
@@ -192,6 +221,8 @@ export default function Estimator() {
           onClear={() => setContact(null)}
         />
       </div>
+
+      <JobsitePhotos photos={photos} setPhotos={setPhotos} />
 
       {/* Main 2-column layout */}
       <div className="flex flex-col xl:flex-row gap-6 items-start">
