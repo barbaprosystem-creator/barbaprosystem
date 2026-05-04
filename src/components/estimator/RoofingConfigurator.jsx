@@ -3,12 +3,11 @@ import Numpad from './Numpad';
 import SolarScanWidget from './SolarScanWidget';
 
 const MATERIALS = [
-  { id: 'architectural', label: 'Arquitectonico',    desc: 'Asphalt, 30-50 anos' },
-  { id: 'designer',      label: 'Premium/Designer',  desc: 'Dimension alta, lifetime' },
-  { id: 'metal_steel',   label: 'Metal - Acero',     desc: 'Panel standing seam' },
-  { id: 'metal_alum',    label: 'Metal - Aluminio',  desc: 'Liviano, anti-corrosion' },
-  { id: 'tpo',           label: 'TPO / Flat',        desc: 'Techo plano comercial' },
-  { id: 'tile',          label: 'Teja / Tile',       desc: 'Ceramica o concreto' },
+  { id: 'asphalt',     label: 'Asphalt Roof',        desc: '$350 / SQ' },
+  { id: 'asphalt_ins', label: 'Asphalt (Insurance)', desc: '$400 / SQ' },
+  { id: 'metal',       label: 'Metal Roof',          desc: '$1,000 / SQ' },
+  { id: 'tpo',         label: 'TPO Roof',            desc: '$1,200 / SQ' },
+  { id: 'plywood',     label: 'Plywood Replacement', desc: '$90 / sheet' },
 ];
 
 export default function RoofingConfigurator() {
@@ -51,14 +50,16 @@ export default function RoofingConfigurator() {
             <p className="text-[#f0f0f0] font-bold text-lg leading-snug">
               Techo - {MATERIALS.find(m => m.id === roofingConfig.material)?.label}
             </p>
-            <p className="text-sm text-[#888888]">{roofingConfig.squares || 0} Squares (1 sq = 100 sqft)</p>
+            <p className="text-sm text-[#888888]">
+              {roofingConfig.squares || 0} {roofingConfig.material === 'plywood' ? 'Sheets' : 'Squares (1 sq = 100 sqft)'}
+            </p>
           </div>
         </div>
 
         {/* Numpad */}
         <Numpad
           value={roofingConfig.squares}
-          unit="Squares (100 sqft)"
+          unit={roofingConfig.material === 'plywood' ? 'Sheets' : 'Squares (100 sqft)'}
           onAppend={roofingAppend}
           onBackspace={roofingBackspace}
           onClear={roofingClear}

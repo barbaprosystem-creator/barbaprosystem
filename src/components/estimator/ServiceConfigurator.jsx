@@ -3,13 +3,21 @@ import GutterConfigurator from './GutterConfigurator';
 import RoofingConfigurator from './RoofingConfigurator';
 import SidingConfigurator from './SidingConfigurator';
 import WindowsConfigurator from './WindowsConfigurator';
-import { Droplets, Home, Layers, AppWindow, Tag } from 'lucide-react';
+import DoorsConfigurator from './DoorsConfigurator';
+import FencesConfigurator from './FencesConfigurator';
+import HVACConfigurator from './HVACConfigurator';
+import PlumbingConfigurator from './PlumbingConfigurator';
+import { Droplets, Home, Layers, AppWindow, Tag, DoorOpen, Fence, Wind, Wrench } from 'lucide-react';
 
 const SERVICES = [
   { id: 'roofing', label: 'Roofing',  sub: 'Techos and Shingles',       Icon: Home,      color: '#f59e0b', priceNote: 'precio por sq',        unit: 'sq'   },
   { id: 'siding',  label: 'Siding',   sub: 'Vinyl and Fiber Cement',     Icon: Layers,    color: '#10b981', priceNote: 'precio por sq ft',      unit: 'sqft' },
   { id: 'windows', label: 'Windows',  sub: 'Ventanas e Instalacion',     Icon: AppWindow, color: '#8b5cf6', priceNote: 'precio por unidad',     unit: 'ud'   },
   { id: 'gutters', label: 'Gutters',  sub: 'Canaletas y Bajantes',       Icon: Droplets,  color: '#3b82f6', priceNote: 'precio por pie lineal', unit: 'LF'   },
+  { id: 'doors',   label: 'Doors',    sub: 'Puertas de Entrada y Patio', Icon: DoorOpen,  color: '#fb7185', priceNote: 'precio por unidad',     unit: 'ud'   },
+  { id: 'fences',  label: 'Fences',   sub: 'Cercas (Vinyl, Wood, Alum)', Icon: Fence,     color: '#34d399', priceNote: 'precio por pie lineal', unit: 'LF'   },
+  { id: 'hvac',    label: 'HVAC',     sub: 'Calefaccion y Aire',         Icon: Wind,      color: '#22d3ee', priceNote: 'precio por sistema',    unit: 'ud'   },
+  { id: 'plumbing',label: 'Plumbing', sub: 'Plomeria y Chimeneas',       Icon: Wrench,    color: '#60a5fa', priceNote: 'precio por servicio',   unit: 'ud'   },
 ];
 
 const CONFIGURATORS = {
@@ -17,6 +25,10 @@ const CONFIGURATORS = {
   siding:  <SidingConfigurator />,
   windows: <WindowsConfigurator />,
   gutters: <GutterConfigurator />,
+  doors:   <DoorsConfigurator />,
+  fences:  <FencesConfigurator />,
+  hvac:    <HVACConfigurator />,
+  plumbing:<PlumbingConfigurator />,
 };
 
 export default function ServiceConfigurator() {

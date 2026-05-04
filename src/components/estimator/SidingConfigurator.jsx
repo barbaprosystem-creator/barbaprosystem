@@ -2,10 +2,10 @@ import { useEstimatorStore } from '../../store/useEstimatorStore';
 import Numpad from './Numpad';
 
 const MATERIALS = [
-  { id: 'vinyl',      label: 'Vinyl Siding',   desc: 'Bajo mantenimiento, durable' },
-  { id: 'hardiplank', label: 'HardiePlank',    desc: 'Fibra de cemento, resistente' },
-  { id: 'lp_smart',   label: 'LP SmartSide',  desc: 'Engineered wood, premium' },
-  { id: 'wood',       label: 'Madera Natural', desc: 'Cedar / pine, clasico' },
+  { id: 'vinyl_horiz', label: 'Vinyl Siding (Horiz)', desc: '$580 / SQ' },
+  { id: 'vinyl_vert',  label: 'Vinyl Siding (Vert)',  desc: '$850 / SQ' },
+  { id: 'hardie',      label: 'Hardie Board',         desc: '$1,500 / SQ' },
+  { id: 'wood',        label: 'Wood Siding',          desc: '$2,000 / SQ' },
 ];
 
 export default function SidingConfigurator() {
