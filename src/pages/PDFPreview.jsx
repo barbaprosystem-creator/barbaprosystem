@@ -22,22 +22,20 @@ export default function PDFPreview() {
         return;
       }
       try {
-        const { data: estimate, error: estErr } = await supabase
-          .from('estimates')
-          .select('*, contact:contacts(*)')
-          .eq('id', id)
-          .single();
+        const { data: payload, error: rpcErr } = await supabase
+          .rpc('get_estimate_payload', { p_estimate_id: id });
         
-        if (estErr) throw estErr;
+        if (rpcErr) throw rpcErr;
 
-        const { data: items, error: itemsErr } = await supabase
-          .from('estimate_items')
-          .select('*')
-          .eq('estimate_id', id);
+        if (!payload || !payload.estimate) {
+          throw new Error("No se encontró el estimado.");
+        }
 
-        if (itemsErr) throw itemsErr;
-
-        setEstimateData({ estimate, contact: estimate.contact, items });
+        setEstimateData({
+          estimate: payload.estimate,
+          contact: payload.contact,
+          items: payload.items || []
+        });
       } catch (err) {
         console.error("Error fetching estimate:", err);
         setError("No pudimos cargar la información de la propuesta. Puede que el enlace no sea válido.");
