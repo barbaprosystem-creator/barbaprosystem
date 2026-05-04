@@ -27,8 +27,9 @@ import Materials from './pages/Materials';
 import Showroom from './pages/Showroom';
 import PDFPreview from './pages/PDFPreview';
 import PublicCatalogPage from './pages/PublicCatalogPage';
-
-
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import EULA from './pages/EULA';
 
 // Loading spinner
 function LoadingScreen() {
@@ -57,6 +58,12 @@ export default function App() {
           {/* Public Link for the Customer */}
           <Route path="/p/:id" element={<PDFPreview />} />
           <Route path="/catalog" element={<PublicCatalogPage />} />
+          
+          {/* Legal Pages for Integrations */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/eula" element={<EULA />} />
+
           {/* Anything else goes to Login */}
           <Route path="*" element={<LoginPage onAuth={signIn} />} />
         </Routes>
@@ -79,6 +86,11 @@ export default function App() {
         {/* PUBLIC ROUTE ALSO AVAILABLE WHEN LOGGED IN */}
         <Route path="/p/:id" element={<PDFPreview />} />
         <Route path="/catalog" element={<PublicCatalogPage />} />
+        
+        {/* Legal Pages for Integrations */}
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/eula" element={<EULA />} />
 
         {/* ROOT REDIRECT */}
         <Route path="/" element={<Navigate to={roleHome[role] || '/pos/estimator'} replace />} />
