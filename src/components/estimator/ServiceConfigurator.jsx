@@ -34,13 +34,7 @@ const CONFIGURATORS = {
 export default function ServiceConfigurator() {
   const { activeCategory, setActiveCategory, prices, loadingPrices } = useEstimatorStore();
 
-  const getPriceRange = (category) => {
-    const items = prices.filter(p => p.category?.toLowerCase() === category && p.is_active);
-    if (!items.length) return null;
-    const min = Math.min(...items.map(p => parseFloat(p.sell_price)));
-    const max = Math.max(...items.map(p => parseFloat(p.sell_price)));
-    return { min, max };
-  };
+
 
   return (
     <div className='space-y-6'>
@@ -48,13 +42,13 @@ export default function ServiceConfigurator() {
         <div>
           <h2 className='text-lg font-bold text-[#f0f0f0]'>Selecciona el Tipo de Servicio</h2>
           <p className='text-sm text-[#888888] mt-1'>
-            Precios desde el catalogo - {loadingPrices ? 'Cargando...' : prices.length + ' items'}
+            Configura el estimado según el catálogo oficial 2026
           </p>
         </div>
         <div className='grid grid-cols-2 lg:grid-cols-4 gap-4'>
           {SERVICES.map((svc) => {
             const isActive = activeCategory === svc.id;
-            const range = getPriceRange(svc.id);
+
             const IconComp = svc.Icon;
             return (
               <button
@@ -82,23 +76,7 @@ export default function ServiceConfigurator() {
                   </p>
                   <p style={{ fontSize: '11px', color: '#6b7280', margin: 0 }}>{svc.sub}</p>
                 </div>
-                {range && (
-                  <div style={{
-                    background: isActive ? svc.color + '20' : '#0f172a', borderRadius: '8px',
-                    padding: '6px 10px', width: '100%',
-                    border: '1px solid ' + (isActive ? svc.color + '33' : '#374151'),
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                      <Tag size={10} color={isActive ? svc.color : '#6b7280'} />
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: isActive ? svc.color : '#9ca3af' }}>
-                        {'$' + range.min.toFixed(0) + (range.max !== range.min ? ' - $' + range.max.toFixed(0) : '')}
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '10px', color: '#4b5563', margin: '2px 0 0', textAlign: 'center' }}>
-                      {svc.priceNote}
-                    </p>
-                  </div>
-                )}
+
                 {isActive && (
                   <div style={{
                     position: 'absolute', bottom: '-1px', left: '50%', transform: 'translateX(-50%)',
