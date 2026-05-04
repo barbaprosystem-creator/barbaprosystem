@@ -257,9 +257,14 @@ export default function PDFPreview() {
               <CreditCard size={32} className="text-blue-500 mb-3" />
               <h4 className="font-bold text-blue-900 mb-2">Opciones de Financiamiento</h4>
               <p className="text-xs text-blue-700 mb-4">Aprobación en minutos. Paga en cómodas cuotas a través de nuestro socio financiero.</p>
-              <button className="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full">
+              <a 
+                href="#" 
+                target="_blank" 
+                rel="noreferrer"
+                className="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full inline-block"
+              >
                 Solicitar Financiamiento
-              </button>
+              </a>
             </div>
 
             {/* Signature Block */}
@@ -313,8 +318,8 @@ export default function PDFPreview() {
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={40} />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">¡Propuesta Autorizada!</h2>
-            <p className="text-gray-600 mb-6">Su firma ha sido guardada de forma segura. En un escenario real, sería redirigido a la pasarela de pagos (Stripe) ahora mismo.</p>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">¡Propuesta Aprobada!</h2>
+            <p className="text-gray-600 mb-6">Su firma ha sido guardada. En breve, recibirá su factura oficial a través de <strong>QuickBooks</strong> para realizar su pago inicial y asegurar su proyecto.</p>
             <button 
               onClick={() => setPaymentSuccess(false)}
               className="bg-[#111] text-[#FACB00] font-bold py-3 px-6 rounded-lg w-full hover:bg-black transition-colors">
