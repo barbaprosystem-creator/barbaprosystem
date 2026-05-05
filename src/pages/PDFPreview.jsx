@@ -284,15 +284,15 @@ export default function PDFPreview() {
             {/* Financing Block */}
             <div className="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex flex-col justify-center items-center text-center print:hidden">
               <CreditCard size={32} className="text-blue-500 mb-3" />
-              <h4 className="font-bold text-blue-900 mb-2">Opciones de Financiamiento</h4>
-              <p className="text-xs text-blue-700 mb-4">Aprobación en minutos. Paga en cómodas cuotas a través de nuestro socio financiero.</p>
+              <h4 className="font-bold text-blue-900 mb-2">Financiamiento con Servi Financial</h4>
+              <p className="text-xs text-blue-700 mb-4">Aprobación en minutos. Paga en cómodas cuotas a través de Servi Financial.</p>
               <a 
                 href="#" 
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full inline-block"
               >
-                Solicitar Financiamiento
+                Solicitar en Servi Financial
               </a>
             </div>
 
