@@ -36,7 +36,21 @@ export default function JobsitePhotos({ photos, setPhotos }) {
 
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
         <button
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => document.getElementById('camera-input').click()}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            padding: '12px 20px', background: '#f97316', borderRadius: '12px',
+            border: 'none', color: '#fff', fontWeight: '600', cursor: 'pointer',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#ea580c'}
+          onMouseLeave={e => e.currentTarget.style.background = '#f97316'}
+        >
+          <Camera size={18} /> Tomar Foto
+        </button>
+        
+        <button
+          onClick={() => document.getElementById('gallery-input').click()}
           style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '12px 20px', background: '#374151', borderRadius: '12px',
@@ -46,14 +60,22 @@ export default function JobsitePhotos({ photos, setPhotos }) {
           onMouseEnter={e => e.currentTarget.style.background = '#4b5563'}
           onMouseLeave={e => e.currentTarget.style.background = '#374151'}
         >
-          <Camera size={18} /> Tomar / Subir Fotos
+          <ImageIcon size={18} /> Subir de Galería
         </button>
+
         <input
+          id="camera-input"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          onChange={handleFileChange}
+          style={{ display: 'none' }}
+        />
+        <input
+          id="gallery-input"
           type="file"
           accept="image/*"
           multiple
-          capture="environment"
-          ref={fileInputRef}
           onChange={handleFileChange}
           style={{ display: 'none' }}
         />
