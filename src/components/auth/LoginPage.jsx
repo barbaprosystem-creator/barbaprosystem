@@ -22,11 +22,7 @@ export default function LoginPage({ onAuth }) {
     }
   };
 
-  const quickUsers = [
-    { label: 'Admin',      email: 'admin@barba.com',      pw: 'Admin123!' },
-    { label: 'Vendedor',   email: 'ventas1@barba.com',    pw: 'Ventas123!' },
-    { label: 'Oficina',    email: 'office@barba.com',     pw: 'Office123!' },
-  ];
+
 
   return (
     <div className="login-page">
@@ -130,36 +126,7 @@ export default function LoginPage({ onAuth }) {
             </button>
           </form>
 
-          {/* Quick Access */}
-          <div className="quick-access">
-            <p className="quick-access-label">Acceso Rapido</p>
-            <div className="quick-access-buttons">
-              {quickUsers.map((u) => (
-                <button
-                  key={u.email}
-                  type="button"
-                  className="quick-access-btn"
-                  disabled={loading}
-                  onClick={async () => {
-                    setEmail(u.email);
-                    setPassword(u.pw);
-                    setError('');
-                    setLoading(true);
-                    try {
-                      const result = await onAuth(u.email, u.pw);
-                      if (result?.error) setError(result.error.message || 'Error');
-                    } catch {
-                      setError('Error de conexion');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                >
-                  {u.label}
-                </button>
-              ))}
-            </div>
-          </div>
+
 
           <p className="login-footer">
             Barba Construction &copy; {new Date().getFullYear()}
