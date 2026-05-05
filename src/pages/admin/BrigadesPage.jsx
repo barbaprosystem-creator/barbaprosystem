@@ -16,69 +16,7 @@ import {
   X
 } from 'lucide-react';
 
-const INITIAL_BRIGADES = [
-  {
-    id: 1,
-    name: "Brigada Alpha",
-    foreman: "Carlos Ruiz",
-    phone: "(555) 123-4567",
-    serviceType: "Siding & Gutters",
-    membersCount: 4,
-    status: "working", // working, available, delayed
-    currentProject: {
-      name: "Renovación Familia Smith",
-      address: "123 Maple Street, Houston, TX 77002",
-      jobDescription: "Instalación de 20 squares de Siding de Vinilo y Gutters.",
-      startDate: "2026-04-28",
-      estimatedCompletion: "2026-05-03",
-      progress: 75
-    }
-  },
-  {
-    id: 2,
-    name: "Brigada Beta",
-    foreman: "Luis Mendoza",
-    phone: "(555) 987-6543",
-    serviceType: "Roofing",
-    membersCount: 6,
-    status: "working",
-    currentProject: {
-      name: "Techo Comercial Downtown",
-      address: "880 Commerce Blvd, Houston, TX 77010",
-      jobDescription: "Reemplazo completo de techo de metal arquitectónico.",
-      startDate: "2026-04-20",
-      estimatedCompletion: "2026-05-05",
-      progress: 60
-    }
-  },
-  {
-    id: 3,
-    name: "Brigada Delta",
-    foreman: "Miguel Ángel",
-    phone: "(555) 456-7890",
-    serviceType: "Remodeling",
-    membersCount: 3,
-    status: "available",
-    currentProject: null
-  },
-  {
-    id: 4,
-    name: "Brigada Omega",
-    foreman: "José Hernández",
-    phone: "(555) 222-3333",
-    serviceType: "Fences & Decks",
-    membersCount: 4,
-    status: "delayed",
-    currentProject: {
-      name: "Deck Residencial Heights",
-      address: "442 Heights Blvd, Houston, TX 77007",
-      jobDescription: "Construcción de Deck de madera tratada.",
-      startDate: "2026-05-01",
-      estimatedCompletion: "2026-05-04",
-      progress: 10
-    }
-  }
-];
+const INITIAL_BRIGADES = [];
 
 export default function BrigadesPage() {
   const [brigades, setBrigades] = useState(INITIAL_BRIGADES);
