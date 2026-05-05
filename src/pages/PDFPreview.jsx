@@ -287,7 +287,7 @@ export default function PDFPreview() {
               <h4 className="font-bold text-blue-900 mb-2">Financiamiento con Servi Financial</h4>
               <p className="text-xs text-blue-700 mb-4">Aprobación en minutos. Paga en cómodas cuotas a través de Servi Financial.</p>
               <a 
-                href="#" 
+                href="https://www.svcfin.com/" 
                 target="_blank" 
                 rel="noreferrer"
                 className="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full inline-block"
