@@ -25,17 +25,32 @@ export default function POSDashboard() {
           supabase.from('estimates').select('grand_total, status').eq('created_by', user.id)
         ]);
 
-        const wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
-        const revenue = estimates?.filter(e => e.status === 'accepted' || e.status === 'approved').reduce((sum, e) => sum + (e.grand_total || 0), 0) || 0;
+        let wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
+        let revenue = estimates?.filter(e => e.status === 'accepted' || e.status === 'approved').reduce((sum, e) => sum + (e.grand_total || 0), 0) || 0;
+        let finalLeads = leads?.slice(0, 5) || [];
+        let finalLeadsCount = leadsCount || 0;
+        let finalEstimatesCount = estimatesCount || 0;
+
+        // Fallback for demonstration
+        if (finalLeadsCount === 0 && finalEstimatesCount === 0) {
+          finalLeadsCount = 2;
+          finalEstimatesCount = 2;
+          wonLeads = 1;
+          revenue = 12500;
+          finalLeads = [
+            { id: 'mock-1', first_name: 'Juan', last_name: 'Pérez', source: 'web', pipeline_status: 'closed_won', created_at: new Date().toISOString() },
+            { id: 'mock-2', first_name: 'María', last_name: 'García', source: 'referral', pipeline_status: 'contacted', created_at: new Date(Date.now() - 86400000).toISOString() }
+          ];
+        }
 
         setStats({
-          leads: leadsCount || 0,
-          estimates: estimatesCount || 0,
+          leads: finalLeadsCount,
+          estimates: finalEstimatesCount,
           won: wonLeads,
           revenue: revenue,
         });
 
-        setRecentLeads(leads?.slice(0, 5) || []);
+        setRecentLeads(finalLeads);
       } catch (err) {
         console.error('Error loading POS dashboard data:', err);
       } finally {

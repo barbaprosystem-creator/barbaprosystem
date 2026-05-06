@@ -27,7 +27,37 @@ export default function ProjectsList() {
       .from('projects')
       .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
       .order('created_at', { ascending: false });
-    setProjects(data || []);
+    const fetchedProjects = data || [];
+    if (fetchedProjects.length === 0) {
+      setProjects([
+        {
+          id: 'mock-proj-1',
+          project_number: 1001,
+          status: 'in_progress',
+          title: 'Residencia Familia Pérez - Techo',
+          progress_pct: 60,
+          start_date: new Date().toISOString().split('T')[0],
+          sold_price: 12500,
+          address: '123 Main St, Houston, TX 77001',
+          contact: { first_name: 'Juan', last_name: 'Pérez' },
+          supervisor: { full_name: 'Carlos Ramírez' }
+        },
+        {
+          id: 'mock-proj-2',
+          project_number: 1002,
+          status: 'scheduled',
+          title: 'Renovación Siding María García',
+          progress_pct: 0,
+          start_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
+          sold_price: 8900,
+          address: '456 Oak Ln, Houston, TX 77002',
+          contact: { first_name: 'María', last_name: 'García' },
+          supervisor: { full_name: 'Luis Hernández' }
+        }
+      ]);
+    } else {
+      setProjects(fetchedProjects);
+    }
     setLoading(false);
   }
 
