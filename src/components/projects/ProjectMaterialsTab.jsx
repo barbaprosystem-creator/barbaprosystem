@@ -32,8 +32,8 @@ export default function ProjectMaterialsTab({ projectId }) {
   async function fetchOrder() {
     setLoading(true);
 
-    if (projectId === 'mock-1' || projectId === 'mock-2') {
-      const isMock1 = projectId === 'mock-1';
+    if (projectId === 'mock-proj-1' || projectId === 'mock-proj-2') {
+      const isMock1 = projectId === 'mock-proj-1';
       setProjectData({
         title: isMock1 ? 'Residencia Familia Pérez' : 'Renovación Siding María',
         contact: { first_name: isMock1 ? 'Juan' : 'María', last_name: isMock1 ? 'Pérez' : 'Gómez', address: isMock1 ? '123 Main St, Springfield' : '456 Oak Ave, Springfield' }

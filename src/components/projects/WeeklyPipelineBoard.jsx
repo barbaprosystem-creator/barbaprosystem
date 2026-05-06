@@ -145,7 +145,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
   async function fetchTasks() {
     setLoading(true);
 
-    if (projectId === 'mock-1' || projectId === 'mock-2') {
+    if (projectId === 'mock-proj-1' || projectId === 'mock-proj-2') {
       const startStr = startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0];
       const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
       setTasks([

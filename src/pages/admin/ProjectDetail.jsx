@@ -39,8 +39,8 @@ export default function ProjectDetail({ projectId, onBack }) {
     setLoading(true);
 
     // MOCK FALLBACK LOGIC
-    if (projectId === 'mock-1' || projectId === 'mock-2') {
-      const isMock1 = projectId === 'mock-1';
+    if (projectId === 'mock-proj-1' || projectId === 'mock-proj-2') {
+      const isMock1 = projectId === 'mock-proj-1';
       
       setProject({
         id: projectId,
