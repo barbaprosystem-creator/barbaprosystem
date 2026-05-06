@@ -16,7 +16,35 @@ import {
   X
 } from 'lucide-react';
 
-const INITIAL_BRIGADES = [];
+const INITIAL_BRIGADES = [
+  {
+    id: 'brigade-1',
+    name: 'Brigada Alfa',
+    foreman: 'Carlos Ramírez',
+    serviceType: 'Roofing',
+    phone: '(555) 123-4567',
+    membersCount: 5,
+    status: 'working',
+    currentProject: {
+      name: 'Residencia Familia Pérez',
+      address: '123 Main St, Houston, TX',
+      jobDescription: 'Instalación de techo nuevo (Architectural Shingles 30yr).',
+      estimatedCompletion: '2026-05-15',
+      progress: 60
+    }
+  },
+  {
+    id: 'brigade-2',
+    name: 'Brigada Siding Pro',
+    foreman: 'Luis Hernández',
+    serviceType: 'Siding',
+    phone: '(555) 987-6543',
+    membersCount: 4,
+    status: 'available',
+    currentProject: null
+  }
+];
+
 
 export default function BrigadesPage() {
   const [brigades, setBrigades] = useState(INITIAL_BRIGADES);
