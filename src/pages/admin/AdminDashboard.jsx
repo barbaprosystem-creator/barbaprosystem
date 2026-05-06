@@ -64,30 +64,55 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // CARGA INSTANTANEA CON MOCK DATA PARA MEJORAR RENDIMIENTO
-    setStats({
-      totalLeads: 10, activeProjects: 2, estimatesSent: 0,
-      totalRevenue: 42500, pendingPayments: 36610, closedThisMonth: 3,
-      overduePayments: 1500, wonLeads: 3,
-    });
-    
-    setRecentLeads([
-      { id: '1', first_name: 'John', last_name: 'Doe', phone: '(502) 555-0101', pipeline_status: 'new_lead', source: 'web', created_at: new Date().toISOString() },
-      { id: '2', first_name: 'Sarah', last_name: 'Smith', phone: '(502) 555-0102', pipeline_status: 'contacted', source: 'google', created_at: new Date(Date.now() - 86400000).toISOString() },
-      { id: '3', first_name: 'Mike', last_name: 'Johnson', phone: '(502) 555-0103', pipeline_status: 'appointment_set', source: 'referral', created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-    ]);
-    
-    setActiveProjects([
-      { id: '1', title: 'Roof Replacement - Thompson', status: 'in_progress', progress_pct: 35, sold_price: 18500, project_number: 1, address: '123 Main St, Louisville' },
-      { id: '2', title: 'Siding Repair - Davis', status: 'in_progress', progress_pct: 10, sold_price: 24000, project_number: 2, address: '456 Oak Ln, Louisville' },
-    ]);
-    
-    setPayments([
-      { id: '1', amount: 1500, status: 'overdue', due_date: new Date(Date.now() - 86400000).toISOString() },
-      { id: '2', amount: 36610, status: 'pending', due_date: new Date(Date.now() + 86400000 * 2).toISOString() },
-    ]);
-    
-    setLoading(false);
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        const [
+          { data: leads, count: leadsCount },
+          { data: projects, count: projectsCount },
+          { count: estimatesCount },
+          { data: payments }
+        ] = await Promise.all([
+          supabase.from('contacts').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
+          supabase.from('projects').select('*', { count: 'exact' }).in('status', ['in_progress', 'scheduled']).order('start_date', { ascending: true }),
+          supabase.from('estimates').select('*', { count: 'exact' }).eq('status', 'sent'),
+          supabase.from('payments').select('*').in('status', ['pending', 'overdue'])
+        ]);
+
+        const totalRevenue = projects?.reduce((sum, p) => sum + (p.sold_price || 0), 0) || 0;
+        const pendingPayments = payments?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+        const overduePayments = payments?.filter(p => p.status === 'overdue').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+        const wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
+
+        setStats({
+          totalLeads: leadsCount || 0,
+          activeProjects: projectsCount || 0,
+          estimatesSent: estimatesCount || 0,
+          totalRevenue,
+          pendingPayments,
+          closedThisMonth: wonLeads, 
+          overduePayments,
+          wonLeads
+        });
+
+        setRecentLeads(leads?.slice(0, 5) || []);
+        setActiveProjects(projects?.slice(0, 5) || []);
+        
+        const sortedPayments = payments?.sort((a, b) => {
+          if (a.status === 'overdue' && b.status !== 'overdue') return -1;
+          if (b.status === 'overdue' && a.status !== 'overdue') return 1;
+          return new Date(a.due_date || 0) - new Date(b.due_date || 0);
+        }) || [];
+        setPayments(sortedPayments.slice(0, 5));
+
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDashboardData();
   }, []);
 
   const SOURCE_ICONS = {

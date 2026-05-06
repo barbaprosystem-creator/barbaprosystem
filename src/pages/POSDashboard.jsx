@@ -2,27 +2,49 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 export default function POSDashboard() {
+  const { user } = useAuth();
   const [stats, setStats] = useState({ leads: 0, estimates: 0, won: 0, revenue: 0 });
   const [recentLeads, setRecentLeads] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // CARGA INSTANTANEA CON MOCK DATA PARA MEJORAR RENDIMIENTO
-    setStats({
-      leads: 12,
-      estimates: 4,
-      won: 2,
-      revenue: 18500,
-    });
-    setRecentLeads([
-      { id: '1', full_name: 'John Doe', status: 'nuevo', source: 'web', created_at: new Date().toISOString() },
-      { id: '2', full_name: 'Sarah Smith', status: 'contactado', source: 'google', created_at: new Date(Date.now() - 86400000).toISOString() },
-      { id: '3', full_name: 'Mike Johnson', status: 'cita', source: 'referral', created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-    ]);
-    setLoading(false);
-  }, []);
+    async function loadData() {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const [
+          { data: leads, count: leadsCount },
+          { count: estimatesCount },
+          { data: estimates }
+        ] = await Promise.all([
+          supabase.from('contacts').select('*', { count: 'exact' }).eq('assigned_to', user.id).order('created_at', { ascending: false }),
+          supabase.from('estimates').select('*', { count: 'exact' }).eq('created_by', user.id),
+          supabase.from('estimates').select('grand_total, status').eq('created_by', user.id)
+        ]);
+
+        const wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
+        const revenue = estimates?.filter(e => e.status === 'accepted' || e.status === 'approved').reduce((sum, e) => sum + (e.grand_total || 0), 0) || 0;
+
+        setStats({
+          leads: leadsCount || 0,
+          estimates: estimatesCount || 0,
+          won: wonLeads,
+          revenue: revenue,
+        });
+
+        setRecentLeads(leads?.slice(0, 5) || []);
+      } catch (err) {
+        console.error('Error loading POS dashboard data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [user]);
 
   const kpis = [
     { label: 'Mis Leads', value: stats.leads, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
