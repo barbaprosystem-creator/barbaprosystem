@@ -144,6 +144,19 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
 
   async function fetchTasks() {
     setLoading(true);
+
+    if (projectId === 'mock-1' || projectId === 'mock-2') {
+      const startStr = startDate ? startDate.split('T')[0] : new Date().toISOString().split('T')[0];
+      const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+      setTasks([
+        { id: `task-1-${projectId}`, project_id: projectId, title: 'Demolición Inicial', task_category: 'demolition', status: 'completed', week_start: startStr, week_end: startStr },
+        { id: `task-2-${projectId}`, project_id: projectId, title: 'Instalación Principal', task_category: 'siding', status: 'in_progress', week_start: startStr, week_end: startStr },
+        { id: `task-3-${projectId}`, project_id: projectId, title: 'Limpieza y Revisión', task_category: 'cleanup', status: 'pending', week_start: nextWeek, week_end: nextWeek },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     const { data } = await supabase
       .from('project_tasks')
       .select('*')

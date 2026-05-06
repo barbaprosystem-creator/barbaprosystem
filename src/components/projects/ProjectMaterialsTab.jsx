@@ -31,6 +31,22 @@ export default function ProjectMaterialsTab({ projectId }) {
 
   async function fetchOrder() {
     setLoading(true);
+
+    if (projectId === 'mock-1' || projectId === 'mock-2') {
+      const isMock1 = projectId === 'mock-1';
+      setProjectData({
+        title: isMock1 ? 'Residencia Familia Pérez' : 'Renovación Siding María',
+        contact: { first_name: isMock1 ? 'Juan' : 'María', last_name: isMock1 ? 'Pérez' : 'Gómez', address: isMock1 ? '123 Main St, Springfield' : '456 Oak Ave, Springfield' }
+      });
+      setOrder({ id: `order-${projectId}`, project_id: projectId, status: 'draft', total_estimated_cost: isMock1 ? 4500 : 2300, created_at: new Date().toISOString() });
+      setItems([
+        { id: `item-1-${projectId}`, order_id: `order-${projectId}`, material_id: 'm1', calculated_quantity: 20.5, manual_adjustment: 0, final_quantity: 21, unit_price: 150, total_price: 3150, material: { name: 'Siding CertainTeed Monogram', unit_of_measure: 'Square' } },
+        { id: `item-2-${projectId}`, order_id: `order-${projectId}`, material_id: 'm2', calculated_quantity: 45, manual_adjustment: 5, final_quantity: 50, unit_price: 27, total_price: 1350, material: { name: 'OSB Plywood 7/16', unit_of_measure: 'Sheet' } }
+      ]);
+      setLoading(false);
+      return;
+    }
+
     const { data: orders } = await supabase
       .from('material_orders')
       .select('*')
