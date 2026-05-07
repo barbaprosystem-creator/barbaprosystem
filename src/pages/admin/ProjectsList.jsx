@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight } from 'lucide-react';
+import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
 
@@ -18,6 +18,13 @@ export default function ProjectsList() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedProjectId, setSelectedProjectId] = useState(null); // -> detail view
+  
+  // Manual project creation
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newProject, setNewProject] = useState({
+    title: '', address: '', sold_price: 0, status: 'pending', start_date: ''
+  });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -61,6 +68,29 @@ export default function ProjectsList() {
     setLoading(false);
   }
 
+  const handleCreateSubmit = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const payload = {
+        title: newProject.title,
+        address: newProject.address,
+        sold_price: Number(newProject.sold_price),
+        status: newProject.status,
+        start_date: newProject.start_date || null
+      };
+      const { error } = await supabase.from('projects').insert([payload]);
+      if (error) throw error;
+      setCreateModalOpen(false);
+      setNewProject({ title: '', address: '', sold_price: 0, status: 'pending', start_date: '' });
+      fetchProjects();
+    } catch (err) {
+      alert('Error creando proyecto: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // If a project is selected, render the detail view
   if (selectedProjectId) {
     return (
@@ -96,6 +126,9 @@ export default function ProjectsList() {
             <Search size={16} />
             <input placeholder="Buscar proyecto..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <button className="btn-primary" onClick={() => setCreateModalOpen(true)}>
+            <Plus size={18} /><span>Nuevo Proyecto</span>
+          </button>
         </div>
       </div>
 
@@ -173,10 +206,55 @@ export default function ProjectsList() {
           <div className="projects-empty">
             <TrendingUp size={48} />
             <p>No hay proyectos{filterStatus !== 'all' ? ` con estado "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
-            <p className="text-sm">Los proyectos se crean cuando un estimado es aprobado</p>
+            <p className="text-sm">Los proyectos se crean automáticamente al aprobar estimados, o puedes crearlos manualmente.</p>
           </div>
         )}
       </div>
+
+      {/* Create Project Modal */}
+      {createModalOpen && (
+        <div className="modal-overlay" onClick={() => setCreateModalOpen(false)}>
+          <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Nuevo Proyecto Manual</h2>
+              <button className="modal-close" onClick={() => setCreateModalOpen(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleCreateSubmit} className="crm-form">
+              <div className="crm-form-grid">
+                <div className="form-group full-width">
+                  <label>Título del Proyecto *</label>
+                  <input required value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})} placeholder="Ej. Cambio de techo Familia Smith" />
+                </div>
+                <div className="form-group full-width">
+                  <label>Dirección</label>
+                  <input value={newProject.address} onChange={e => setNewProject({...newProject, address: e.target.value})} placeholder="Dirección de la obra" />
+                </div>
+                <div className="form-group">
+                  <label>Precio de Venta ($)</label>
+                  <input type="number" min="0" step="0.01" value={newProject.sold_price} onChange={e => setNewProject({...newProject, sold_price: e.target.value})} />
+                </div>
+                <div className="form-group">
+                  <label>Estado</label>
+                  <select value={newProject.status} onChange={e => setNewProject({...newProject, status: e.target.value})}>
+                    {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Fecha de Inicio</label>
+                  <input type="date" value={newProject.start_date} onChange={e => setNewProject({...newProject, start_date: e.target.value})} />
+                </div>
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn-secondary" onClick={() => setCreateModalOpen(false)}>Cancelar</button>
+                <button type="submit" className="btn-primary" disabled={saving}>
+                  {saving ? <Loader2 size={18} className="spin" /> : null}
+                  Crear Proyecto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
