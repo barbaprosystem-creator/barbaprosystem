@@ -17,20 +17,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const auth = new google.auth.GoogleAuth({
-      credentials: {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        // Reemplazamos los saltos de linea literales \n por saltos reales
-        private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-      },
-      scopes: SCOPES,
-    });
+    let auth;
+    let calendarId = req.query.calendarId || process.env.GOOGLE_CALENDAR_ID || 'primary';
+
+    const userRefreshToken = req.body?.user_refresh_token || req.query?.user_refresh_token;
+
+    if (userRefreshToken) {
+      // Usar calendario personal del vendedor
+      auth = new google.auth.OAuth2(
+        process.env.VITE_GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET
+      );
+      auth.setCredentials({ refresh_token: userRefreshToken });
+      calendarId = 'primary'; // Para el calendario personal, siempre es 'primary'
+    } else {
+      // Usar cuenta de servicio global
+      auth = new google.auth.GoogleAuth({
+        credentials: {
+          client_email: process.env.GOOGLE_CLIENT_EMAIL,
+          private_key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+        },
+        scopes: SCOPES,
+      });
+    }
 
     const calendar = google.calendar({ version: 'v3', auth });
-    
-    // Si no enviamos un ID de calendario desde el front, usamos el del sistema o el primary de la cuenta de servicio
-    // (Nota: es ideal compartir un calendario con la cuenta de servicio y usar su ID aquí)
-    const calendarId = req.query.calendarId || process.env.GOOGLE_CALENDAR_ID || 'primary';
 
     if (req.method === 'GET') {
       // Obtener eventos
