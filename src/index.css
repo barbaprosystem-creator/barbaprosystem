@@ -103,6 +103,28 @@
     background-color: var(--bg-secondary);
     color: var(--text-primary);
   }
+
+  /* Custom Dark Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-primary); 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #333333; 
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #555555; 
+  }
+  
+  /* For Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #333333 var(--bg-primary);
+  }
 }
 
 
