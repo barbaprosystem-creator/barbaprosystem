@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, CheckCircle2, Clock, AlertCircle, X, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, CheckCircle2, Clock, AlertCircle, X, Save, ChevronLeft, ChevronRight, FastForward } from 'lucide-react';
 
-// -- Color coding: green=done, yellow=in_progress, red=pending
+// -- Color coding: green=done, yellow=in_progress, gray=pending, red=delayed
 const STATUS_CONFIG = {
   completed:   { label: 'Completado', color: '#10b981', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', Icon: CheckCircle2 },
   in_progress: { label: 'En Proceso', color: '#f59e0b', bg: 'bg-amber-500/20',   border: 'border-amber-500/40',   text: 'text-amber-300',   Icon: Clock },
-  pending:     { label: 'Pendiente',  color: '#ef4444', bg: 'bg-red-500/20',     border: 'border-red-500/40',     text: 'text-red-300',     Icon: AlertCircle },
+  pending:     { label: 'Pendiente',  color: '#6b7280', bg: 'bg-slate-500/20',   border: 'border-slate-500/40',   text: 'text-slate-300',   Icon: Clock },
+  delayed:     { label: 'Retrasado',  color: '#ef4444', bg: 'bg-red-500/20',     border: 'border-red-500/40',     text: 'text-red-300',     Icon: AlertCircle },
 };
 
 const TASK_CATEGORIES = [
@@ -56,31 +57,44 @@ function isCurrentWeek(week) {
 }
 
 // -- Task chip inside a week cell
-function TaskChip({ task, canEdit, onStatusChange, onDelete }) {
+function TaskChip({ task, canEdit, onStatusChange, onDelete, onShift }) {
   const cfg = STATUS_CONFIG[task.status] || STATUS_CONFIG.pending;
   const Icon = cfg.Icon;
 
   const cycleStatus = () => {
     if (!canEdit) return;
-    const order = ['pending', 'in_progress', 'completed'];
+    const order = ['pending', 'in_progress', 'completed', 'delayed'];
     const next = order[(order.indexOf(task.status) + 1) % order.length];
     onStatusChange(task.id, next);
   };
 
   return (
-    <div className={`group relative flex items-center gap-2 px-3 py-2 rounded-xl border ${cfg.bg} ${cfg.border} transition-all duration-200 cursor-pointer hover:scale-[1.02]`}
+    <div className={`group relative flex flex-col gap-1 px-3 py-2 rounded-xl border ${cfg.bg} ${cfg.border} transition-all duration-200 cursor-pointer hover:scale-[1.02]`}
       onClick={cycleStatus}
       title={canEdit ? 'Click para cambiar estado' : ''}
     >
-      <Icon size={13} className={cfg.text + ' flex-none'} />
-      <span className="text-xs font-semibold text-[#e0e0e0] leading-tight truncate flex-1">{task.title}</span>
+      <div className="flex items-center gap-2">
+        <Icon size={13} className={cfg.text + ' flex-none'} />
+        <span className="text-xs font-semibold text-[#e0e0e0] leading-tight flex-1">{task.title}</span>
+      </div>
       {canEdit && (
-        <button
-          className="opacity-0 group-hover:opacity-100 flex-none text-[#555555] hover:text-red-400 transition-opacity"
-          onClick={e => { e.stopPropagation(); onDelete(task.id); }}
-        >
-          <X size={11} />
-        </button>
+        <div className="opacity-0 group-hover:opacity-100 flex items-center justify-end gap-2 mt-1 transition-opacity">
+          <button
+            title="Adelantar 1 semana"
+            className="text-[#555555] hover:text-blue-400 p-1"
+            onClick={e => { e.stopPropagation(); onShift(task.id, -1); }}
+          ><ChevronLeft size={14} /></button>
+          <button
+            title="Atrasar 1 semana (Retraso)"
+            className="text-[#555555] hover:text-orange-400 p-1"
+            onClick={e => { e.stopPropagation(); onShift(task.id, 1); }}
+          ><ChevronRight size={14} /></button>
+          <button
+            title="Eliminar"
+            className="text-[#555555] hover:text-red-400 p-1 ml-1"
+            onClick={e => { e.stopPropagation(); onDelete(task.id); }}
+          ><X size={14} /></button>
+        </div>
       )}
     </div>
   );
@@ -190,6 +204,33 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
   async function deleteTask(taskId) {
     await supabase.from('project_tasks').delete().eq('id', taskId);
     setTasks(prev => prev.filter(t => t.id !== taskId));
+  }
+
+  async function shiftTask(taskId, direction) {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    const newStart = new Date(task.week_start);
+    newStart.setDate(newStart.getDate() + (direction * 7));
+    const newEnd = new Date(task.week_end);
+    newEnd.setDate(newEnd.getDate() + (direction * 7));
+
+    let newTitle = task.title;
+    if (direction > 0 && !newTitle.includes('(Retrasado)')) {
+      newTitle = newTitle.replace(' (Adelantado)', '') + ' (Retrasado)';
+    } else if (direction < 0 && !newTitle.includes('(Adelantado)')) {
+      newTitle = newTitle.replace(' (Retrasado)', '') + ' (Adelantado)';
+    }
+
+    const updates = {
+      week_start: newStart.toISOString().split('T')[0],
+      week_end: newEnd.toISOString().split('T')[0],
+      title: newTitle,
+      status: direction > 0 ? 'delayed' : task.status // Auto-mark delayed if shifted right
+    };
+
+    await supabase.from('project_tasks').update(updates).eq('id', taskId);
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates } : t));
   }
 
   // Get tasks that belong to a given week
@@ -320,6 +361,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                     canEdit={canEdit}
                     onStatusChange={updateStatus}
                     onDelete={deleteTask}
+                    onShift={shiftTask}
                   />
                 ))}
 
