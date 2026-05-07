@@ -129,6 +129,8 @@ export default function App() {
           <Route index element={<Navigate to="estimator" replace />} />
           <Route path="dashboard" element={<POSDashboard />} />
           <Route path="estimator" element={<Estimator />} />
+          <Route path="pipeline" element={<CRMPipeline />} />
+          <Route path="calendar" element={<CalendarPage />} />
           <Route path="clients" element={<Clients />} />
           <Route path="showroom" element={<Showroom />} />
           <Route path="pdf-preview" element={<PDFPreview />} />

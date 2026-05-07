@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 const PIPELINE_STAGES = [
   { id: 'new_lead',       label: 'Nuevo',            color: '#3b82f6' },
@@ -32,11 +33,12 @@ const QUALITY = {
 const srcMap = Object.fromEntries(SOURCES.map(s => [s.id, s]));
 
 function ContactForm({ contact, onSave, onClose, salespeople }) {
+  const { profile } = useAuth();
   const [form, setForm] = useState(contact || {
     first_name: '', last_name: '', email: '', phone: '',
     address: '', city: '', state: 'KY', zip: '',
     source: 'phone', pipeline_status: 'new_lead',
-    assigned_to: '', lead_quality: 'warm', notes: '',
+    assigned_to: profile?.role === 'salesperson' ? profile.id : '', lead_quality: 'warm', notes: '',
   });
   const [saving, setSaving] = useState(false);
 
@@ -126,13 +128,15 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
                 <option value="cold">Frio</option>
               </select>
             </div>
-            <div className="form-group">
-              <label>Asignar a</label>
-              <select value={form.assigned_to || ''} onChange={e => set('assigned_to', e.target.value || null)}>
-                <option value="">Sin asignar</option>
-                {salespeople.map(sp => <option key={sp.id} value={sp.id}>{sp.full_name}</option>)}
-              </select>
-            </div>
+            {profile?.role !== 'salesperson' && (
+              <div className="form-group">
+                <label>Asignar a</label>
+                <select value={form.assigned_to || ''} onChange={e => set('assigned_to', e.target.value || null)}>
+                  <option value="">Sin asignar</option>
+                  {salespeople.map(sp => <option key={sp.id} value={sp.id}>{sp.full_name}</option>)}
+                </select>
+              </div>
+            )}
             {contact?.id && (
               <div className="form-group">
                 <label>Origen</label>
@@ -193,6 +197,7 @@ function LeadCard({ lead, onClick }) {
 }
 
 export default function CRMPipeline() {
+  const { profile } = useAuth();
   const [contacts, setContacts] = useState([]);
   const [salespeople, setSalespeople] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -203,14 +208,20 @@ export default function CRMPipeline() {
   const [filterSource, setFilterSource] = useState('all');
   const [filterQuality, setFilterQuality] = useState('all');
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (profile) fetchData(); }, [profile]);
 
   async function fetchData() {
     setLoading(true);
+    let query = supabase.from('contacts')
+      .select('*, assigned_profile:profiles!contacts_assigned_to_fkey(full_name)')
+      .order('created_at', { ascending: false });
+      
+    if (profile?.role === 'salesperson') {
+      query = query.eq('assigned_to', profile.id);
+    }
+
     const [cRes, pRes] = await Promise.all([
-      supabase.from('contacts')
-        .select('*, assigned_profile:profiles!contacts_assigned_to_fkey(full_name)')
-        .order('created_at', { ascending: false }),
+      query,
       supabase.from('profiles').select('id,full_name,role').in('role', ['salesperson', 'admin']),
     ]);
     setContacts(cRes.data || []);

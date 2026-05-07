@@ -282,18 +282,13 @@ export default function PDFPreview() {
           <div className="grid grid-cols-2 gap-8 border-t border-gray-200 pt-8 mt-12">
             
             {/* Financing Block */}
-            <div className="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex flex-col justify-center items-center text-center print:hidden">
+            <div className="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex flex-col justify-center items-center text-center">
               <CreditCard size={32} className="text-blue-500 mb-3" />
-              <h4 className="font-bold text-blue-900 mb-2">Financiamiento con Servi Financial</h4>
-              <p className="text-xs text-blue-700 mb-4">Aprobación en minutos. Paga en cómodas cuotas a través de Servi Financial.</p>
-              <a 
-                href="https://www.svcfin.com/" 
-                target="_blank" 
-                rel="noreferrer"
-                className="bg-blue-600 text-white font-bold py-2.5 px-6 rounded-lg shadow-md hover:bg-blue-700 transition-colors w-full inline-block"
-              >
-                Solicitar en Servi Financial
-              </a>
+              <h4 className="font-bold text-blue-900 mb-2">Financiamiento</h4>
+              <p className="text-sm text-blue-800 font-medium leading-relaxed">
+                El financiamiento para este proyecto se tramita de manera presencial en nuestras oficinas.
+              </p>
+              <p className="text-xs text-blue-600 mt-2">Visítenos para procesar su solicitud con Servi Financial de forma rápida y segura.</p>
             </div>
 
             {/* Signature Block */}
