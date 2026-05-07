@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
