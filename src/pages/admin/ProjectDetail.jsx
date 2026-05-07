@@ -3,8 +3,10 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
-import ProjectMaterialsTab from '../../components/projects/ProjectMaterialsTab';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
+import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
+import ProjectDocumentsTab from '../../components/projects/ProjectDocumentsTab';
+import ProjectMaterialsTab from '../../components/projects/ProjectMaterialsTab';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
@@ -21,6 +23,7 @@ const TABS = [
   { id: 'accounting', label: 'Contabilidad',   Icon: DollarSign },
   { id: 'payments', label: 'Pagos del Cliente', Icon: DollarSign },
   { id: 'photos',   label: 'Fotos',            Icon: Camera },
+  { id: 'documents',label: 'Documentos',       Icon: FileText },
 ];
 
 export default function ProjectDetail({ projectId, onBack }) {
@@ -335,47 +338,12 @@ export default function ProjectDetail({ projectId, onBack }) {
 
         {/* PHOTOS TAB */}
         {activeTab === 'photos' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-[#f0f0f0]">Fotos del Proyecto</h3>
-            </div>
-            {photos.length === 0 ? (
-              <div className="text-center py-12 text-[#555555]">
-                <Camera size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No hay fotos todavia.</p>
-                <p className="text-xs text-slate-600 mt-1">El supervisor puede subir fotos desde la app.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                {photos.map(photo => (
-                  <div key={photo.id} className="relative aspect-square rounded-2xl overflow-hidden bg-[#1a1a1a] border border-[#2a2a2a]/40 group">
-                    <img
-                      src={supabase.storage.from('project-photos').getPublicUrl(photo.storage_path).data.publicUrl}
-                      alt={photo.caption || 'Foto de proyecto'}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {photo.caption && (
-                      <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent">
-                        <p className="text-xs text-white truncate">{photo.caption}</p>
-                      </div>
-                    )}
-                    <div className="absolute top-2 right-2">
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        photo.photo_type === 'before' ? 'bg-blue-500/80 text-white' :
-                        photo.photo_type === 'after' ? 'bg-emerald-500/80 text-white' :
-                        photo.photo_type === 'issue' ? 'bg-red-500/80 text-white' :
-                        'bg-[#2a2a2a]/80 text-[#c0c0c0]'
-                      }`}>
-                        {photo.photo_type === 'before' ? 'Antes' :
-                         photo.photo_type === 'after' ? 'Despues' :
-                         photo.photo_type === 'issue' ? 'Problema' : 'Progreso'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ProjectPhotosTab projectId={projectId} />
+        )}
+
+        {/* DOCUMENTS TAB */}
+        {activeTab === 'documents' && (
+          <ProjectDocumentsTab projectId={projectId} />
         )}
       </div>
     </div>
