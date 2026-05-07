@@ -8,13 +8,15 @@ ${items.map(i => `- ${i.name} (${i.quantity}): $${i.total.toFixed(2)}`).join('\n
 
 Total Estimado: $${total.toFixed(2)}
 
-Tu tarea: Genera un texto persuasivo y muy profesional (en español) para el cliente, estructurado en:
-1. Un saludo cálido y agradecimiento por elegir a Barba Construction.
-2. Resumen ejecutivo de lo que se va a hacer (basado en los ítems, pero explicado de forma elegante).
-3. Nuestra Garantía de Calidad y compromiso de excelencia profesional.
-4. Un llamado a la acción invitando a firmar este documento y realizar el pago inicial.
+Tu tarea: Genera un texto persuasivo, muy profesional y CORTO (en español) para el cliente.
+DEBE SER BREVE Y DIRECTO AL GRANO (Máximo 2 párrafos cortos, no más de 50-70 palabras en total).
 
-No uses markdown extraño, usa formato de texto limpio que se pueda insertar directo en un PDF. Usa un tono premium, seguro y confiable.
+Estructura requerida:
+1. Saludo cálido y agradecimiento por elegir a Barba Construction.
+2. Resumen ejecutivo conciso de los trabajos a realizar.
+3. Llamado a la acción rápido invitando a firmar el documento.
+
+IMPORTANTE: Sé extremadamente conciso. No agregues relleno ni largas explicaciones. No uses markdown extraño, usa formato de texto limpio que se pueda insertar directo en un PDF. Usa un tono premium y seguro.
 `;
 
   try {

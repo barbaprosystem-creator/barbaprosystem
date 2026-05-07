@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Trash2, Send, Save, FileText, Sparkles } from 'lucide-react';
 import { useEstimatorStore } from '../../store/useEstimatorStore';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 import AiProposalModal from './AiProposalModal';
 
 const SERVICE_COLORS = {
@@ -15,6 +16,7 @@ const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency:
 
 export default function ReceiptSidebar() {
   const { receiptItems, removeItem, taxRate, setTaxRate, getSubtotal, getTax, getGrandTotal } = useEstimatorStore();
+  const { profile } = useAuth();
   const [clients, setClients] = useState([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [saving, setSaving] = useState(false);
@@ -47,7 +49,8 @@ export default function ReceiptSidebar() {
       notes: aiProposalText,
       scope_of_work: receiptItems.map(i => `${i.name}: ${i.details}`).join('\n'),
       work_type: [...new Set(receiptItems.map(i => i.service))].join(', '),
-      valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0]
+      valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+      created_by: profile?.id
     };
 
     const { data: estimate, error } = await supabase
