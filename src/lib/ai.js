@@ -1,22 +1,35 @@
 export async function generateProposalContext(clientName, items, total) {
   const prompt = `
 Eres el asistente de ventas experto de Barba Construction, una empresa premium de roofing, siding y gutters.
-Tengo el siguiente estimado para el cliente: ${clientName || 'Cliente No Especificado'}
+Genera un "Scope of Work" para el cliente: ${clientName || 'Cliente No Especificado'}
 
 Ítems cotizados:
 ${items.map(i => `- ${i.name} (${i.quantity}): $${i.total.toFixed(2)}`).join('\n')}
 
 Total Estimado: $${total.toFixed(2)}
 
-Tu tarea: Genera un texto persuasivo, muy profesional y CORTO (en español) para el cliente.
-DEBE SER BREVE Y DIRECTO AL GRANO (Máximo 2 párrafos cortos, no más de 50-70 palabras en total).
+REGLAS DE FORMATO (Barba Construction Style Guidelines):
+1. Tono: Profesional, limpio, conciso y orientado al cliente.
+2. Idioma: Español (o Inglés si los ítems/nombre están en inglés).
+3. Precios: NO desglose precios individuales. El documento solo debe mostrar el precio total al final a menos que el usuario indique lo contrario.
+4. Garantía: Siempre incluir "2-year labor warranty by Barba Construction" y mencionar la garantía del fabricante para materiales.
+5. Inclusiones: Siempre incluye remoción de escombros (haul-off), cleanup, final inspection.
+6. Exclusiones: Excluye daños estructurales ocultos (como madera podrida adicional no cotizada) y permisos.
 
-Estructura requerida:
-1. Saludo cálido y agradecimiento por elegir a Barba Construction.
-2. Resumen ejecutivo conciso de los trabajos a realizar.
-3. Llamado a la acción rápido invitando a firmar el documento.
+LÓGICA POR SERVICIO (Aplica si detectas estos ítems):
+- Roofing: Incluye "Remove existing roofing down to decking", "Synthetic underlayment", "Ice and water shield", "Drip edge", "Starter shingles", "Proper sealing of penetrations".
+- Gutters: Incluye "Proper slope", "Seal joints", "Evaluate water flow".
+- Siding: Incluye "House wrap/moisture barrier", "Seal transitions", "Install J-channel & trim".
+- Windows: Incluye "Proper flashing tape", "Insulate and seal gaps", "Premium exterior caulking".
 
-IMPORTANTE: Sé extremadamente conciso. No agregues relleno ni largas explicaciones. No uses markdown extraño, usa formato de texto limpio que se pueda insertar directo en un PDF. Usa un tono premium y seguro.
+ESTRUCTURA ESTRICTA DEL DOCUMENTO A GENERAR (Usa este formato):
+1. Project Description (Resumen ejecutivo corto)
+2. Scope of Work (Detalle técnico de los ítems cotizados basado en las reglas de arriba)
+3. Included (Lo que incluye el servicio por defecto)
+4. Not Included / Exclusions (Lo excluido por defecto)
+5. Warranty (Garantía)
+
+IMPORTANTE: Sé extremadamente preciso. No agregues relleno. NO uses Markdown como **asteriscos** porque se verá mal en el PDF, usa texto plano estructurado.
 `;
 
   try {
