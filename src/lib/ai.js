@@ -143,3 +143,55 @@ Utiliza EXCLUSIVAMENTE esta información de precios para cualquier estimación, 
     throw err;
   }
 }
+export async function extractReceiptData(base64Image, mimeType) {
+  const prompt = `
+Eres un asistente de contabilidad especializado en analizar recibos y facturas de construcción.
+Extrae la siguiente información de la imagen proporcionada y devuélvela en un objeto JSON estricto:
+- total: el monto total a pagar o pagado (solo el número, sin símbolo de dólar).
+- vendor: el nombre de la tienda, proveedor o contratista (ej. Home Depot, Lowe's, ABC Supply).
+- date: la fecha de la factura en formato YYYY-MM-DD.
+- items: un arreglo de strings con los nombres cortos de los ítems principales comprados (máximo 5 ítems).
+
+Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
+{
+  "total": "150.25",
+  "vendor": "Home Depot",
+  "date": "2026-05-07",
+  "items": ["Madera 2x4", "Clavos", "Pintura"]
+}
+`;
+
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: prompt },
+              { type: 'image_url', image_url: { url: `data:${mimeType};base64,${base64Image}` } }
+            ]
+          }
+        ],
+        temperature: 0.1
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    
+    const content = data.choices[0].message.content;
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0]);
+    }
+    throw new Error('La respuesta de la IA no contenía JSON válido.');
+  } catch (err) {
+    console.error('Error extrayendo datos del recibo:', err);
+    throw err;
+  }
+}

@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
 import ProjectMaterialsTab from '../../components/projects/ProjectMaterialsTab';
+import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
@@ -17,7 +18,8 @@ const STATUS_MAP = {
 const TABS = [
   { id: 'pipeline', label: 'Pipeline Semanal', Icon: BarChart3 },
   { id: 'materials', label: 'Materiales (BOM)', Icon: PackageSearch },
-  { id: 'payments', label: 'Pagos',            Icon: DollarSign },
+  { id: 'accounting', label: 'Contabilidad',   Icon: DollarSign },
+  { id: 'payments', label: 'Pagos del Cliente', Icon: DollarSign },
   { id: 'photos',   label: 'Fotos',            Icon: Camera },
 ];
 
@@ -251,6 +253,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                   {canEdit ? 'Click en una tarea para cambiar estado.' : ''}
                 </p>
               </div>
+              </div>
             </div>
             <WeeklyPipelineBoard
               projectId={projectId}
@@ -263,6 +266,11 @@ export default function ProjectDetail({ projectId, onBack }) {
         {/* MATERIALS TAB */}
         {activeTab === 'materials' && (
           <ProjectMaterialsTab projectId={projectId} />
+        )}
+
+        {/* ACCOUNTING TAB */}
+        {activeTab === 'accounting' && (
+          <ProjectAccountingTab projectId={projectId} />
         )}
 
         {/* PAYMENTS TAB */}
