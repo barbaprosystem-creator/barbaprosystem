@@ -47,7 +47,7 @@ export default function ProjectPhotosTab({ projectId }) {
       const filePath = `${projectId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('project-photos')
+        .from('jobsite_photos')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
@@ -64,7 +64,7 @@ export default function ProjectPhotosTab({ projectId }) {
       fetchPhotos();
     } catch (err) {
       console.error(err);
-      alert('Error subiendo foto. Asegúrate de tener el storage "project-photos" configurado en Supabase.');
+      alert('Error subiendo foto. Asegúrate de tener el storage "jobsite_photos" configurado en Supabase.');
     } finally {
       setUploading(false);
       e.target.value = null;
@@ -74,7 +74,7 @@ export default function ProjectPhotosTab({ projectId }) {
   const deletePhoto = async (id, path) => {
     if (!confirm('¿Seguro que deseas eliminar esta foto?')) return;
     
-    await supabase.storage.from('project-photos').remove([path]);
+    await supabase.storage.from('jobsite_photos').remove([path]);
     await supabase.from('project_photos').delete().eq('id', id);
     fetchPhotos();
   };
@@ -110,7 +110,7 @@ export default function ProjectPhotosTab({ projectId }) {
           {photoList.map(photo => (
             <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden border border-[#222] group bg-[#111]">
               <img
-                src={supabase.storage.from('project-photos').getPublicUrl(photo.storage_path).data.publicUrl}
+                src={supabase.storage.from('jobsite_photos').getPublicUrl(photo.storage_path).data.publicUrl}
                 alt="Foto"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
