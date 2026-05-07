@@ -256,7 +256,6 @@ export default function ProjectDetail({ projectId, onBack }) {
                   {canEdit ? 'Click en una tarea para cambiar estado.' : ''}
                 </p>
               </div>
-              </div>
             </div>
             <WeeklyPipelineBoard
               projectId={projectId}
