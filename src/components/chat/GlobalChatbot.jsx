@@ -167,6 +167,4 @@ export default function GlobalChatbot() {
       </form>
     </div>
   );
-}iv>
-  );
 }
