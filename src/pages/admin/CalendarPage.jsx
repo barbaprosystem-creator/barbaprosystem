@@ -62,8 +62,13 @@ export default function CalendarPage() {
   const [activeTab, setActiveTab] = useState('sales');
   const [events, setEvents] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date() });
+  const [form, setForm] = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date(), assigned_to: '' });
   const [isSyncing, setIsSyncing] = useState(false);
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    supabase.from('profiles').select('id, full_name, role').then(({ data }) => setUsers(data || []));
+  }, []);
   const [googleRefreshToken, setGoogleRefreshToken] = useState(null);
 
   // Intentar cargar el refresh token del usuario
@@ -140,7 +145,7 @@ export default function CalendarPage() {
   }, [fetchEvents]);
 
   const handleSelectSlot = ({ start, end }) => {
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end });
+    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '' });
     setShowForm(true);
   };
 
@@ -160,7 +165,7 @@ export default function CalendarPage() {
         all_day: false,
         created_by: user.id,
         calendar_type: tabConfig.calendarType,
-        assigned_to: activeTab === 'sales' ? user.id : null,
+        assigned_to: form.assigned_to || null,
       }).select().single();
 
       if (error) throw error;
@@ -320,17 +325,36 @@ export default function CalendarPage() {
                     placeholder="Ej: Inspección Residencial"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">Tipo de Evento</label>
-                  <select
-                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
-                    value={form.event_type}
-                    onChange={e => setForm({ ...form, event_type: e.target.value })}
-                  >
-                    {Object.entries(tabConfig.eventTypes).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1">Tipo de Evento</label>
+                    <select
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                      value={form.event_type}
+                      onChange={e => setForm({ ...form, event_type: e.target.value })}
+                    >
+                      {Object.entries(tabConfig.eventTypes).map(([k, v]) => (
+                        <option key={k} value={k}>{v.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-1">
+                      {activeTab === 'sales' ? 'Asignar Vendedor' : 'Asignar Brigada/Staff'}
+                    </label>
+                    <select
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                      value={form.assigned_to}
+                      onChange={e => setForm({ ...form, assigned_to: e.target.value })}
+                    >
+                      <option value="">-- Sin Asignar --</option>
+                      {users
+                        .filter(u => activeTab === 'sales' ? u.role === 'salesperson' : ['supervisor', 'admin', 'office'].includes(u.role))
+                        .map(u => (
+                          <option key={u.id} value={u.id}>{u.full_name}</option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1">Notas (Sincronizadas con Google)</label>

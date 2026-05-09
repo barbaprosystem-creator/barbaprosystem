@@ -43,61 +43,7 @@ export default function ProjectDetail({ projectId, onBack }) {
   async function fetchAll() {
     setLoading(true);
 
-    // MOCK FALLBACK LOGIC
-    if (projectId === 'mock-proj-1' || projectId === 'mock-proj-2') {
-      const isMock1 = projectId === 'mock-proj-1';
-      
-      setProject({
-        id: projectId,
-        project_number: isMock1 ? 1001 : 1002,
-        title: isMock1 ? 'Residencia Familia Pérez' : 'Renovación Siding María',
-        status: isMock1 ? 'in_progress' : 'scheduled',
-        start_date: new Date(Date.now() - 5 * 86400000).toISOString(),
-        target_end_date: new Date(Date.now() + 10 * 86400000).toISOString(),
-        address: isMock1 ? '123 Main St, Springfield' : '456 Oak Ave, Springfield',
-        contact: {
-          first_name: isMock1 ? 'Juan' : 'María',
-          last_name: isMock1 ? 'Pérez' : 'Gómez',
-          phone: isMock1 ? '(555) 123-4567' : '(555) 987-6543',
-          email: isMock1 ? 'juan.perez@example.com' : 'maria.g@example.com'
-        },
-        supervisor: {
-          full_name: isMock1 ? 'Carlos Barba' : 'Ana Supervisor'
-        }
-      });
 
-      setPayments([
-        {
-          id: `pay-1-${projectId}`,
-          project_id: projectId,
-          payment_type: 'deposit',
-          amount: isMock1 ? 5000 : 2500,
-          status: 'received',
-          due_date: new Date(Date.now() - 7 * 86400000).toISOString(),
-          paid_at: new Date(Date.now() - 6 * 86400000).toISOString(),
-        },
-        {
-          id: `pay-2-${projectId}`,
-          project_id: projectId,
-          payment_type: isMock1 ? 'partial' : 'final',
-          amount: isMock1 ? 5000 : 6000,
-          status: 'pending',
-          due_date: new Date(Date.now() + 5 * 86400000).toISOString(),
-        },
-        ...(isMock1 ? [{
-          id: `pay-3-${projectId}`,
-          project_id: projectId,
-          payment_type: 'final',
-          amount: 5000,
-          status: 'pending',
-          due_date: new Date(Date.now() + 15 * 86400000).toISOString(),
-        }] : [])
-      ]);
-
-      setPhotos([]); // Photos would require real storage URLs to render without errors unless we use a placeholder image URL
-      setLoading(false);
-      return;
-    }
 
     const [{ data: proj }, { data: pays }, { data: pics }] = await Promise.all([
       supabase.from('projects')
