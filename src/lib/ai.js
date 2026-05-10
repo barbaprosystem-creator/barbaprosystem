@@ -1,4 +1,5 @@
-export async function generateProposalContext(clientName, items, total) {
+export async function generateProposalContext(clientName, items, total, language = 'es') {
+  const langName = language === 'en' ? 'Inglés' : 'Español';
   const prompt = `
 Eres el asistente de ventas experto de Barba Construction, una empresa premium de roofing, siding y gutters.
 Genera un "Scope of Work" para el cliente: ${clientName || 'Cliente No Especificado'}
@@ -10,7 +11,7 @@ Total Estimado: $${total.toFixed(2)}
 
 REGLAS DE FORMATO (Barba Construction Style Guidelines):
 1. Tono: Profesional, limpio, conciso y orientado al cliente.
-2. Idioma: Español (o Inglés si los ítems/nombre están en inglés).
+2. Idioma: Escribe toda la propuesta estrictamente en ${langName}.
 3. Precios: NO desglose precios individuales. El documento solo debe mostrar el precio total al final a menos que el usuario indique lo contrario.
 4. Garantía: Siempre incluir "2-year labor warranty by Barba Construction" y mencionar la garantía del fabricante para materiales.
 5. Inclusiones: Siempre incluye remoción de escombros (haul-off), cleanup, final inspection.

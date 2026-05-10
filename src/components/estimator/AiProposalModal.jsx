@@ -6,6 +6,7 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
   const [proposalText, setProposalText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [language, setLanguage] = useState('en');
 
   if (!isOpen) return null;
 
@@ -13,7 +14,7 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
     setLoading(true);
     setError(null);
     try {
-      const text = await generateProposalContext(clientName, items, total);
+      const text = await generateProposalContext(clientName, items, total, language);
       setProposalText(text);
     } catch (err) {
       setError(err.message);
@@ -37,9 +38,25 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
               <p className="text-xs text-[#888888]">Crea una propuesta persuasiva para {clientName || 'el cliente'}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-[#888888] hover:text-white rounded-lg hover:bg-[#2a2a2a] transition-colors">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center bg-[#1a1a1a] rounded-lg p-1 border border-[#2a2a2a]">
+              <button 
+                onClick={() => setLanguage('es')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${language === 'es' ? 'bg-[#333333] text-white shadow' : 'text-[#888888] hover:text-[#c0c0c0]'}`}
+              >
+                ES
+              </button>
+              <button 
+                onClick={() => setLanguage('en')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${language === 'en' ? 'bg-[#333333] text-white shadow' : 'text-[#888888] hover:text-[#c0c0c0]'}`}
+              >
+                EN
+              </button>
+            </div>
+            <button onClick={onClose} className="p-2 text-[#888888] hover:text-white rounded-lg hover:bg-[#2a2a2a] transition-colors">
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
