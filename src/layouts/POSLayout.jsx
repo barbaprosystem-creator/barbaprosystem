@@ -13,6 +13,7 @@ import {
   Activity,
   Calendar
 } from 'lucide-react';
+import LanguageSwitcher from '../components/common/LanguageSwitcher';
 
 const navItems = [
   { to: '/pos/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: false },
@@ -78,19 +79,24 @@ export default function POSLayout({ onSignOut, profile }) {
           ))}
         </ul>
 
-        <div className="admin-sidebar-footer">
-          <div className="admin-user-badge">
-            <div className="admin-user-avatar">
-              {profile?.full_name?.[0]?.toUpperCase() || 'V'}
-            </div>
-            <div className="admin-user-info">
-              <span className="admin-user-name">{profile?.full_name || 'Vendedor'}</span>
-              <span className="admin-user-role">Vendedor</span>
-            </div>
+        <div className="admin-sidebar-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+          <div className="flex items-center justify-between mb-2">
+            <LanguageSwitcher />
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
-            <LogOut size={18} />
-          </button>
+          <div className="flex items-center justify-between w-full pt-2 border-t border-[#1e1e1e]">
+            <div className="admin-user-badge">
+              <div className="admin-user-avatar">
+                {profile?.full_name?.[0]?.toUpperCase() || 'V'}
+              </div>
+              <div className="admin-user-info">
+                <span className="admin-user-name">{profile?.full_name || 'Vendedor'}</span>
+                <span className="admin-user-role">Vendedor</span>
+              </div>
+            </div>
+            <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
+              <LogOut size={18} />
+            </button>
+          </div>
         </div>
       </nav>
 

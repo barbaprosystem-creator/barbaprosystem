@@ -131,6 +131,22 @@
 .text-muted { color: var(--text-secondary); }
 .text-center { text-align: center; }
 
+/* Hide Google Translate top banner and widget */
+.skiptranslate iframe,
+.goog-te-banner-frame {
+  display: none !important;
+}
+body {
+  top: 0 !important;
+}
+#google_translate_element {
+  display: none !important;
+}
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
+
 /* ===================================
    LOADING SCREEN
    =================================== */

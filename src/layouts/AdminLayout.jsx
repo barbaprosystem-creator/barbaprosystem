@@ -17,9 +17,9 @@ import {
   X,
   Eye,
   EyeOff,
-  BookOpen
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
+import LanguageSwitcher from '../components/common/LanguageSwitcher';
 
 const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
@@ -112,27 +112,33 @@ export default function AdminLayout({ profile, onSignOut }) {
           ))}
         </ul>
 
-        <div className="admin-sidebar-footer">
+        <div className="admin-sidebar-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+          <div className="flex items-center justify-between">
+            <LanguageSwitcher />
+          </div>
+
           <button 
-            className="w-full flex items-center gap-3 px-4 py-3 mb-2 rounded-xl text-sm font-semibold transition-all duration-200 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]"
             onClick={() => setIsPrivacyMode(!isPrivacyMode)}
           >
             {isPrivacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
             <span>{isPrivacyMode ? 'Mostrar Precios' : 'Ocultar Precios'}</span>
           </button>
 
-          <div className="admin-user-badge">
-            <div className="admin-user-avatar">
-              {profile?.full_name?.[0]?.toUpperCase() || 'A'}
+          <div className="flex items-center justify-between w-full mt-2 pt-2 border-t border-[#1e1e1e]">
+            <div className="admin-user-badge">
+              <div className="admin-user-avatar">
+                {profile?.full_name?.[0]?.toUpperCase() || 'A'}
+              </div>
+              <div className="admin-user-info">
+                <span className="admin-user-name">{profile?.full_name || 'Admin'}</span>
+                <span className="admin-user-role">CEO</span>
+              </div>
             </div>
-            <div className="admin-user-info">
-              <span className="admin-user-name">{profile?.full_name || 'Admin'}</span>
-              <span className="admin-user-role">CEO</span>
-            </div>
+            <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
+              <LogOut size={18} />
+            </button>
           </div>
-          <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
-            <LogOut size={18} />
-          </button>
         </div>
       </nav>
 
