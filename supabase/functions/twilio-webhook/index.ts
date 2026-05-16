@@ -16,21 +16,21 @@ serve(async (req) => {
     const formData = await req.formData();
     const body = Object.fromEntries(formData.entries());
 
+    let isConversationEvent = !!body.EventType;
     const eventType = body.EventType as string;
 
-    // Solo nos interesan los mensajes nuevos
-    if (eventType !== "onMessageAdded") {
+    // Si es un evento de Conversation pero no es onMessageAdded, lo ignoramos
+    if (isConversationEvent && eventType !== "onMessageAdded") {
       return new Response("Event not handled", { status: 200 });
     }
 
-    const conversationSid = body.ConversationSid as string; // Ej: CHxxxx...
-    const messageSid = body.MessageSid as string; // Ej: IMxxxx...
+    // Extraer datos dependiendo si es Conversation API o Programmable Messaging
+    const messageSid = (body.MessageSid || body.SmsSid) as string; 
+    let conversationSid = body.ConversationSid as string || null; 
     const bodyText = body.Body as string;
-    const author = body.Author as string; // Ej: whatsapp:+1234567890 o ig:12345
+    const author = (body.Author || body.From) as string; // 'From' viene en Programmable Messaging
 
-    // Ignorar los mensajes salientes (outbound) que nosotros mismos enviamos a través de la API
-    // Para evitar un bucle infinito en Realtime.
-    // Twilio suele identificar al sistema por el número o sin Author.
+    // Ignorar los mensajes salientes (outbound)
     if (!author || author.includes("system") || author === Deno.env.get("TWILIO_PHONE_NUMBER")) {
       return new Response("Ignored outbound message", { status: 200 });
     }
@@ -48,6 +48,9 @@ serve(async (req) => {
     } else if (author.startsWith("messenger:")) {
       canal = "facebook";
       identifier = author.replace("messenger:", "");
+    } else if (author.startsWith("+")) {
+      canal = "sms";
+      identifier = author;
     }
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
@@ -87,22 +90,38 @@ serve(async (req) => {
       clienteId = newContact?.id;
     }
 
-    // 3. Buscar o crear la Conversación Activa, ahora utilizando el ConversationSid
+    // 3. Buscar o crear la Conversación Activa
     let conversacionId = null;
-    const { data: conversacion } = await supabase
-      .from("conversaciones")
-      .select("id")
-      .eq("twilio_conversation_sid", conversationSid)
-      .single();
+    let conversacionData = null;
 
-    if (conversacion) {
-      conversacionId = conversacion.id;
+    if (conversationSid) {
+      const { data } = await supabase
+        .from("conversaciones")
+        .select("id")
+        .eq("twilio_conversation_sid", conversationSid)
+        .single();
+      conversacionData = data;
+    } else if (clienteId) {
+      // Si no tenemos ConversationSid (ej. Programmable Messaging), buscar por cliente_id
+      const { data } = await supabase
+        .from("conversaciones")
+        .select("id")
+        .eq("cliente_id", clienteId)
+        .eq("canal", canal)
+        .order("ultima_interaccion", { ascending: false })
+        .limit(1)
+        .single();
+      conversacionData = data;
+    }
+
+    if (conversacionData) {
+      conversacionId = conversacionData.id;
       // Actualizar timestamp de última interacción (renueva la ventana de 24h)
       await supabase.from("conversaciones")
         .update({ ultima_interaccion: new Date().toISOString() })
         .eq("id", conversacionId);
     } else {
-      // Si no existe (Twilio la auto-creó), la registramos
+      // Si no existe, la registramos
       const { data: nuevaConv } = await supabase
         .from("conversaciones")
         .insert({ 
