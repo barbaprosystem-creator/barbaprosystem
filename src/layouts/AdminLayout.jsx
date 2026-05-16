@@ -17,6 +17,7 @@ import {
   X,
   Eye,
   EyeOff,
+  BookOpen,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';

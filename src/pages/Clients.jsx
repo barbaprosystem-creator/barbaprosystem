@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2 } from 'lucide-react';
+import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2, MessageCircle } from 'lucide-react';
+import OmnichannelChat from '../components/chat/OmnichannelChat';
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
@@ -9,6 +10,7 @@ export default function Clients() {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [chatModal, setChatModal] = useState({ open: false, cliente: null });
   const [saving, setSaving] = useState(false);
   const [newClient, setNewClient] = useState({
     first_name: '',
@@ -158,6 +160,12 @@ export default function Clients() {
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex justify-center gap-2">
+                          <button 
+                            onClick={() => setChatModal({ open: true, cliente: client })}
+                            className="p-2 text-[#888888] hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-colors" title="Chat"
+                          >
+                            <MessageCircle size={18} />
+                          </button>
                           <button className="p-2 text-[#888888] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors" title="Ver">
                             <Eye size={18} />
                           </button>
@@ -273,6 +281,39 @@ export default function Clients() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal: Chat Omnicanal */}
+      {chatModal.open && chatModal.cliente && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-2xl h-[80vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-4 border-b border-[#333] flex items-center justify-between bg-[#161616]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-[var(--accent)]/10 text-[var(--accent)] flex items-center justify-center font-bold">
+                  {chatModal.cliente.first_name?.[0]?.toUpperCase() || '?'}
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-white leading-tight">
+                    {chatModal.cliente.first_name} {chatModal.cliente.last_name}
+                  </h2>
+                  <p className="text-xs text-[#888]">{chatModal.cliente.phone}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setChatModal({ open: false, cliente: null })}
+                className="p-2 hover:bg-[#222] rounded-xl text-[#888] hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-hidden">
+              <OmnichannelChat 
+                clienteId={chatModal.cliente.id} 
+                clienteTelefono={chatModal.cliente.phone} 
+              />
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter } from 'lucide-react';
+import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import OmnichannelChat from '../../components/chat/OmnichannelChat';
 
 const PIPELINE_STAGES = [
   { id: 'new_lead',       label: 'Nuevo',            color: '#3b82f6' },
@@ -160,7 +161,7 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
   );
 }
 
-function LeadCard({ lead, onClick }) {
+function LeadCard({ lead, onClick, onChatClick }) {
   const src = srcMap[lead.source];
   const q = QUALITY[lead.lead_quality];
   return (
@@ -181,6 +182,14 @@ function LeadCard({ lead, onClick }) {
               {src.icon} {src.label}
             </span>
           )}
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onChatClick(lead); }}
+            className="p-1 text-[#888] hover:text-green-400 hover:bg-green-400/10 rounded transition-colors ml-1"
+            title="Chat de WhatsApp"
+          >
+            <MessageCircle size={14} />
+          </button>
         </div>
       </div>
       {lead.phone && <div className="lead-card-detail"><Phone size={13} /><span>{lead.phone}</span></div>}
@@ -207,6 +216,7 @@ export default function CRMPipeline() {
   const [viewMode, setViewMode] = useState('kanban');
   const [filterSource, setFilterSource] = useState('all');
   const [filterQuality, setFilterQuality] = useState('all');
+  const [chatModal, setChatModal] = useState({ open: false, cliente: null });
 
   useEffect(() => { if (profile) fetchData(); }, [profile]);
 
@@ -344,7 +354,7 @@ export default function CRMPipeline() {
                   <span className="kanban-stage-count">{stageLeads.length}</span>
                 </div>
                 <div className="kanban-column-body">
-                  {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} />)}
+                  {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} />)}
                   {stageLeads.length === 0 && <div className="kanban-empty"><p>Sin leads</p></div>}
                 </div>
               </div>
@@ -358,7 +368,7 @@ export default function CRMPipeline() {
               <tr>
                 <th>Nombre</th><th>Telefono</th><th>Direccion</th>
                 <th>Origen</th><th>Calidad</th><th>Etapa</th>
-                <th>Asignado</th><th>Fecha</th>
+                <th>Asignado</th><th>Fecha</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -388,10 +398,20 @@ export default function CRMPipeline() {
                     </td>
                     <td>{c.assigned_profile?.full_name || '-'}</td>
                     <td>{new Date(c.created_at).toLocaleDateString('es')}</td>
+                    <td>
+                      <button 
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setChatModal({ open: true, cliente: c }); }}
+                        className="p-2 text-[#888888] hover:text-green-400 hover:bg-green-400/10 rounded-lg transition-colors"
+                        title="Chat"
+                      >
+                        <MessageCircle size={18} />
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={8} className="crm-empty-row">No hay leads</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="crm-empty-row">No hay leads</td></tr>}
             </tbody>
           </table>
         </div>
@@ -404,6 +424,26 @@ export default function CRMPipeline() {
           onSave={handleSave}
           onClose={() => { setShowForm(false); setEditLead(null); }}
         />
+      )}
+
+      {/* Omnichannel Chat Modal */}
+      {chatModal.open && chatModal.cliente && (
+        <div className="modal-overlay" onClick={() => setChatModal({ open: false, cliente: null })}>
+          <div className="modal-content !p-0 !bg-transparent !shadow-none max-w-2xl" onClick={e => e.stopPropagation()}>
+            <div className="bg-white rounded-xl overflow-hidden flex flex-col relative">
+              <button 
+                className="absolute top-4 right-4 z-10 p-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-full transition-colors"
+                onClick={() => setChatModal({ open: false, cliente: null })}
+              >
+                <X size={18} />
+              </button>
+              <OmnichannelChat 
+                clienteId={chatModal.cliente.id} 
+                clienteTelefono={chatModal.cliente.phone} 
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
