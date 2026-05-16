@@ -121,33 +121,20 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
   };
 
   return (
-    <div className="flex flex-col h-[600px] w-full border border-gray-200 rounded-xl shadow-sm bg-white overflow-hidden font-sans">
-      {/* HEADER */}
-      <div className="p-4 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
-        <div>
-          <h3 className="font-semibold text-gray-800 text-lg">Omnichannel Chat</h3>
-          <p className="text-xs font-medium">
-            {windowOpen 
-              ? <span className="text-green-600">🟢 Sesión activa (Ventana 24h abierta)</span>
-              : <span className="text-red-500">🔴 Ventana 24h expirada</span>
-            }
-          </p>
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full w-full bg-transparent overflow-hidden font-sans">
       {/* ÁREA DE MENSAJES */}
-      <div className="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4">
+      <div className="flex-1 p-4 overflow-y-auto bg-transparent space-y-4">
         {mensajes.map((msg) => (
           <div key={msg.id} className={`flex ${msg.direccion === 'outbound' ? 'justify-end' : 'justify-start'}`}>
             <div 
               className={`max-w-[75%] p-3 rounded-2xl ${
                 msg.direccion === 'outbound' 
-                  ? 'bg-blue-600 text-white rounded-br-none shadow-sm' 
-                  : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                  ? 'bg-[var(--accent)] text-black rounded-br-none shadow-sm' 
+                  : 'bg-[#222] border border-[#333] text-gray-100 rounded-bl-none shadow-sm'
               }`}
             >
               <p className="text-sm">{msg.contenido}</p>
-              <span className={`text-[10px] mt-1 block text-right ${msg.direccion === 'outbound' ? 'text-blue-200' : 'text-gray-400'}`}>
+              <span className={`text-[10px] mt-1 block text-right ${msg.direccion === 'outbound' ? 'text-black/60' : 'text-gray-400'}`}>
                 {new Date(msg.creado_en).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
               </span>
             </div>
@@ -157,10 +144,10 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
       </div>
 
       {/* ÁREA DE INPUT */}
-      <div className="p-4 bg-white border-t border-gray-200 shrink-0">
+      <div className="p-4 bg-[#111] border-t border-[#333] shrink-0">
         {!windowOpen ? (
-          <div className="flex flex-col items-center justify-center p-3 gap-3 bg-red-50 rounded-lg border border-red-100 w-full">
-            <p className="text-xs text-red-600 text-center leading-relaxed">
+          <div className="flex flex-col items-center justify-center p-3 gap-3 bg-red-500/10 rounded-lg border border-red-500/20 w-full">
+            <p className="text-xs text-red-400 text-center leading-relaxed">
               La ventana de 24 horas de WhatsApp ha expirado o no ha sido iniciada. 
               Para continuar la conversación, debes enviar una plantilla preaprobada.
             </p>
@@ -179,13 +166,13 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe un mensaje..."
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm transition-all"
+              className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#333] text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm transition-all placeholder:text-[#555]"
               disabled={enviando}
             />
             <button 
               type="submit"
               disabled={!nuevoMensaje.trim() || enviando}
-              className="p-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full disabled:opacity-50 transition-colors shadow-sm flex items-center justify-center"
+              className="p-3 bg-[var(--accent)] hover:bg-orange-400 text-black font-medium rounded-full disabled:opacity-50 transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center justify-center"
               aria-label="Enviar"
             >
               {/* Ícono de enviar básico en SVG */}

@@ -58,18 +58,18 @@ serve(async (req) => {
     // 2. Buscar o crear el Cliente en la tabla contacts
     let clienteId = null;
     
-    // CRM usa 'phone' para WhatsApp. Para IG/FB se podrían añadir columnas en el futuro,
-    // por ahora buscaremos por teléfono.
-    const searchColumn = canal === 'whatsapp' ? 'phone' : 'phone'; // Simplify, search by phone
-    
-    const { data: contact } = await supabase
+    // Normalizar el identificador para la búsqueda (ej. +15026587853 -> 5026587853)
+    const cleanIdentifier = identifier.replace(/\D/g, '');
+    const shortIdentifier = cleanIdentifier.length > 10 ? cleanIdentifier.slice(-10) : cleanIdentifier;
+
+    const { data: contacts } = await supabase
       .from("contacts")
       .select("id")
-      .eq(searchColumn, identifier)
-      .single();
+      .ilike("phone", `%${shortIdentifier}%`)
+      .limit(1);
       
-    if (contact) {
-      clienteId = contact.id;
+    if (contacts && contacts.length > 0) {
+      clienteId = contacts[0].id;
     } else {
       // Registrar un nuevo lead en contacts si no existe
       const { data: newContact, error: insertError } = await supabase
@@ -77,7 +77,7 @@ serve(async (req) => {
         .insert({ 
           first_name: "Nuevo", 
           last_name: "Lead", 
-          phone: canal === 'whatsapp' ? identifier : '', 
+          phone: canal === 'whatsapp' || canal === 'sms' ? identifier : '', 
           source: canal,
           pipeline_status: 'new_lead'
         })
