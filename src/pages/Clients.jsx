@@ -12,14 +12,15 @@ export default function Clients() {
   const [showModal, setShowModal] = useState(false);
   const [chatModal, setChatModal] = useState({ open: false, cliente: null });
   const [saving, setSaving] = useState(false);
-  const [newClient, setNewClient] = useState({
+  const defaultClientState = {
     first_name: '',
     last_name: '',
     email: '',
     phone: '',
     source: 'other',
     pipeline_status: 'new_lead'
-  });
+  };
+  const [currentClient, setCurrentClient] = useState(defaultClientState);
 
   useEffect(() => {
     async function load() {
@@ -37,18 +38,39 @@ export default function Clients() {
     e.preventDefault();
     setSaving(true);
     
-    const { data, error } = await supabase
-      .from('contacts')
-      .insert([newClient])
-      .select();
-      
-    if (!error && data) {
-      setClients([data[0], ...clients]);
-      setShowModal(false);
-      setNewClient({ first_name: '', last_name: '', email: '', phone: '', source: 'other', pipeline_status: 'new_lead' });
+    const payload = { ...currentClient };
+    delete payload.created_at;
+    delete payload.updated_at;
+
+    if (payload.id) {
+      const { data, error } = await supabase
+        .from('contacts')
+        .update(payload)
+        .eq('id', payload.id)
+        .select();
+        
+      if (!error && data) {
+        setClients(clients.map(c => c.id === data[0].id ? data[0] : c));
+        setShowModal(false);
+        setCurrentClient(defaultClientState);
+      } else {
+        console.error(error);
+        alert('Error al actualizar el cliente.');
+      }
     } else {
-      console.error(error);
-      alert('Error al crear el cliente.');
+      const { data, error } = await supabase
+        .from('contacts')
+        .insert([payload])
+        .select();
+        
+      if (!error && data) {
+        setClients([data[0], ...clients]);
+        setShowModal(false);
+        setCurrentClient(defaultClientState);
+      } else {
+        console.error(error);
+        alert('Error al crear el cliente.');
+      }
     }
     setSaving(false);
   };
@@ -88,7 +110,7 @@ export default function Clients() {
             />
           </div>
           <button 
-            onClick={() => setShowModal(true)}
+            onClick={() => { setCurrentClient(defaultClientState); setShowModal(true); }}
             className="flex items-center gap-2 px-5 py-2.5 bg-[var(--accent)] hover:bg-orange-400 text-black font-semibold rounded-xl transition-all shadow-[0_0_15px_rgba(249,115,22,0.2)] active:scale-95 w-full sm:w-auto justify-center"
           >
             <Plus size={18} /> Nuevo Cliente
@@ -169,7 +191,10 @@ export default function Clients() {
                           <button className="p-2 text-[#888888] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors" title="Ver">
                             <Eye size={18} />
                           </button>
-                          <button className="p-2 text-[#888888] hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Editar">
+                          <button 
+                            onClick={() => { setCurrentClient(client); setShowModal(true); }}
+                            className="p-2 text-[#888888] hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors" title="Editar"
+                          >
                             <Edit2 size={18} />
                           </button>
                         </div>
@@ -188,7 +213,7 @@ export default function Clients() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-[#111] border border-[#333] rounded-2xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="p-5 border-b border-[#333] flex items-center justify-between bg-[#161616]">
-              <h2 className="text-xl font-bold text-white">Nuevo Cliente</h2>
+              <h2 className="text-xl font-bold text-white">{currentClient.id ? 'Editar Cliente' : 'Nuevo Cliente'}</h2>
               <button
                 onClick={() => setShowModal(false)}
                 className="p-2 hover:bg-[#222] rounded-xl text-[#888] hover:text-white transition-colors"
@@ -205,8 +230,8 @@ export default function Clients() {
                     required
                     type="text"
                     placeholder="Ej. Juan"
-                    value={newClient.first_name}
-                    onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                    value={currentClient.first_name}
+                    onChange={(e) => setCurrentClient({ ...currentClient, first_name: e.target.value })}
                     className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
                   />
                 </div>
@@ -216,8 +241,8 @@ export default function Clients() {
                     required
                     type="text"
                     placeholder="Ej. Pérez"
-                    value={newClient.last_name}
-                    onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                    value={currentClient.last_name}
+                    onChange={(e) => setCurrentClient({ ...currentClient, last_name: e.target.value })}
                     className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
                   />
                 </div>
@@ -228,8 +253,8 @@ export default function Clients() {
                 <input
                   type="email"
                   placeholder="Ej. juan@correo.com"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  value={currentClient.email}
+                  onChange={(e) => setCurrentClient({ ...currentClient, email: e.target.value })}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
@@ -239,8 +264,8 @@ export default function Clients() {
                 <input
                   type="tel"
                   placeholder="Ej. (555) 123-4567"
-                  value={newClient.phone}
-                  onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                  value={currentClient.phone}
+                  onChange={(e) => setCurrentClient({ ...currentClient, phone: e.target.value })}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
                 />
               </div>
@@ -248,8 +273,8 @@ export default function Clients() {
               <div className="space-y-1">
                 <label className="text-sm font-medium text-[#aaa]">Fuente (Source)</label>
                 <select
-                  value={newClient.source}
-                  onChange={(e) => setNewClient({ ...newClient, source: e.target.value })}
+                  value={currentClient.source}
+                  onChange={(e) => setCurrentClient({ ...currentClient, source: e.target.value })}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-[var(--accent)] transition-colors"
                 >
                   <option value="other">Otro (Manual)</option>
