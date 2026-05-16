@@ -52,25 +52,39 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
-    // 2. Buscar o crear el Cliente
+    // 2. Buscar o crear el Cliente en la tabla contacts
     let clienteId = null;
-    const { data: cliente } = await supabase
-      .from("clientes")
+    
+    // CRM usa 'phone' para WhatsApp. Para IG/FB se podrían añadir columnas en el futuro,
+    // por ahora buscaremos por teléfono.
+    const searchColumn = canal === 'whatsapp' ? 'phone' : 'phone'; // Simplify, search by phone
+    
+    const { data: contact } = await supabase
+      .from("contacts")
       .select("id")
-      .or(`telefono.eq.${identifier},instagram_id.eq.${identifier},facebook_id.eq.${identifier}`)
+      .eq(searchColumn, identifier)
       .single();
       
-    if (cliente) {
-      clienteId = cliente.id;
+    if (contact) {
+      clienteId = contact.id;
     } else {
-      // Registrar un nuevo prospecto si no existe
-      const field = canal === 'whatsapp' ? 'telefono' : (canal === 'instagram' ? 'instagram_id' : 'facebook_id');
-      const { data: nuevoCliente } = await supabase
-        .from("clientes")
-        .insert({ nombre: "Nuevo Lead", [field]: identifier })
+      // Registrar un nuevo lead en contacts si no existe
+      const { data: newContact, error: insertError } = await supabase
+        .from("contacts")
+        .insert({ 
+          first_name: "Nuevo", 
+          last_name: "Lead", 
+          phone: canal === 'whatsapp' ? identifier : '', 
+          source: canal,
+          pipeline_status: 'new_lead'
+        })
         .select("id")
         .single();
-      clienteId = nuevoCliente?.id;
+        
+      if (insertError) {
+        console.error("Error creating contact:", insertError);
+      }
+      clienteId = newContact?.id;
     }
 
     // 3. Buscar o crear la Conversación Activa, ahora utilizando el ConversationSid

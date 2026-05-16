@@ -51,6 +51,13 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
       const payload = { ...form };
       if (!payload.assigned_to) delete payload.assigned_to;
       if (!payload.lead_quality) delete payload.lead_quality;
+      
+      // Clean up joined or read-only properties
+      delete payload.assigned_profile;
+      delete payload.id;
+      delete payload.created_at;
+      delete payload.updated_at;
+
       if (contact?.id) {
         const { error } = await supabase.from('contacts').update(payload).eq('id', contact.id);
         if (error) throw error;
