@@ -63,6 +63,42 @@ export default function AdminDashboard() {
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const handleSeedTestData = async () => {
+    try {
+      if (!window.confirm("¿Seguro que deseas cargar los datos de prueba? Esto insertará contactos, estimados y proyectos de prueba.")) return;
+
+      const { error: cErr } = await supabase.from('contacts').upsert([
+        { id: '11111111-1111-1111-1111-111111111111', first_name: 'Juan', last_name: 'Pérez', email: 'juan.perez@example.com', phone: '555-0101', address: '123 Main St', city: 'Houston', state: 'TX', zip: '77001', source: 'web', pipeline_status: 'closed_won', lead_quality: 'hot' },
+        { id: '22222222-2222-2222-2222-222222222222', first_name: 'María', last_name: 'García', email: 'maria.garcia@example.com', phone: '555-0202', address: '456 Oak Ln', city: 'Houston', state: 'TX', zip: '77002', source: 'referral', pipeline_status: 'closed_won', lead_quality: 'warm' }
+      ]);
+      if (cErr && cErr.code !== '23505') throw cErr; // ignore unique violation
+
+      const { error: eErr } = await supabase.from('estimates').upsert([
+        { id: '33333333-3333-3333-3333-333333333333', contact_id: '11111111-1111-1111-1111-111111111111', status: 'approved', work_type: 'Roofing', subtotal: 12000, grand_total: 12500, scope_of_work: 'Reemplazo completo de techo con GAF Timberline HDZ' },
+        { id: '44444444-4444-4444-4444-444444444444', contact_id: '22222222-2222-2222-2222-222222222222', status: 'approved', work_type: 'Siding', subtotal: 8500, grand_total: 8900, scope_of_work: 'Instalación de Vinyl Siding en toda la casa' }
+      ]);
+      if (eErr && eErr.code !== '23505') throw eErr;
+
+      const today = new Date();
+      const dMinus2 = new Date(today); dMinus2.setDate(dMinus2.getDate() - 2);
+      const dPlus5 = new Date(today); dPlus5.setDate(dPlus5.getDate() + 5);
+      const dPlus3 = new Date(today); dPlus3.setDate(dPlus3.getDate() + 3);
+      const dPlus10 = new Date(today); dPlus10.setDate(dPlus10.getDate() + 10);
+
+      const { error: pErr } = await supabase.from('projects').insert([
+        { contact_id: '11111111-1111-1111-1111-111111111111', estimate_id: '33333333-3333-3333-3333-333333333333', title: 'Residencia Familia Pérez - Techo', status: 'in_progress', progress_pct: 60, start_date: dMinus2.toISOString().split('T')[0], target_end_date: dPlus5.toISOString().split('T')[0], sold_price: 12500, address: '123 Main St, Houston, TX 77001', notes: 'El cliente solicitó cuidado extra con las plantas del jardín frontal.' },
+        { contact_id: '22222222-2222-2222-2222-222222222222', estimate_id: '44444444-4444-4444-4444-444444444444', title: 'Renovación Siding María García', status: 'scheduled', progress_pct: 0, start_date: dPlus3.toISOString().split('T')[0], target_end_date: dPlus10.toISOString().split('T')[0], sold_price: 8900, address: '456 Oak Ln, Houston, TX 77002', notes: 'Brigada asignada para el próximo lunes.' }
+      ]);
+      if (pErr && pErr.code !== '23505') throw pErr;
+
+      alert("Datos de prueba cargados exitosamente!");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert("Error al cargar datos: " + err.message);
+    }
+  };
+
   useEffect(() => {
     async function loadDashboardData() {
       try {
@@ -160,14 +196,22 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-page-header">
+      <header className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1>Dashboard</h1>
           <p className="text-muted">Barba Construction - Resumen operativo</p>
         </div>
-        <span style={{ fontSize: '13px', color: '#6b7280' }}>
-          {new Date().toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button 
+            onClick={handleSeedTestData}
+            style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            Cargar Datos de Prueba
+          </button>
+          <span style={{ fontSize: '13px', color: '#6b7280' }}>
+            {new Date().toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </span>
+        </div>
       </header>
 
       <AlertBanner payments={payments} />
