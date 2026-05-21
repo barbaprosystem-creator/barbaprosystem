@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { FileText, Download, CheckCircle, CreditCard, Loader } from 'lucide-react';
+import { FileText, Download, CheckCircle, CreditCard, Loader, Package } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -344,11 +344,23 @@ export default function PDFPreview() {
             </div>
             <h2 className="text-2xl font-black text-gray-900 mb-2">¡Propuesta Aprobada!</h2>
             <p className="text-gray-600 mb-6">Su firma ha sido guardada. En breve, recibirá su factura oficial a través de <strong>QuickBooks</strong> para realizar su pago inicial y asegurar su proyecto.</p>
-            <button 
-              onClick={() => setPaymentSuccess(false)}
-              className="bg-[#111] text-[#FACB00] font-bold py-3 px-6 rounded-lg w-full hover:bg-black transition-colors">
-              Entendido
-            </button>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={() => {
+                  const url = `${window.location.origin}/catalog`;
+                  navigator.clipboard.writeText(url);
+                  alert('¡Enlace del catálogo copiado! Compártelo con tu cliente.');
+                }}
+                className="bg-[#111] text-white border border-[#333] font-bold py-3 px-6 rounded-lg w-full hover:bg-[#2a2a2a] transition-colors flex justify-center items-center gap-2">
+                <Package size={20} className="text-[#FACB00]" />
+                Copiar Enlace del Catálogo
+              </button>
+              <button 
+                onClick={() => setPaymentSuccess(false)}
+                className="bg-[#FACB00] text-black font-bold py-3 px-6 rounded-lg w-full hover:bg-[#e0b600] transition-colors">
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

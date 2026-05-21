@@ -133,6 +133,7 @@ export default function App() {
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="clients" element={<Clients />} />
           <Route path="showroom" element={<Showroom />} />
+          <Route path="catalog" element={<PublicCatalogPage />} />
           <Route path="pdf-preview" element={<PDFPreview />} />
         </Route>
 

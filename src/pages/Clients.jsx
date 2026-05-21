@@ -18,7 +18,8 @@ export default function Clients() {
     email: '',
     phone: '',
     source: 'other',
-    pipeline_status: 'new_lead'
+    pipeline_status: 'new_lead',
+    sms_opt_in: false
   };
   const [currentClient, setCurrentClient] = useState(defaultClientState);
 
@@ -287,6 +288,19 @@ export default function Clients() {
                   <option value="walk_in">Visita (Walk-in)</option>
                   <option value="tiktok">TikTok</option>
                 </select>
+              </div>
+
+              <div className="flex items-start gap-3 mt-4 bg-[#1a1a1a] p-3 rounded-xl border border-[#333]">
+                <input 
+                  type="checkbox" 
+                  id="internalSmsOptIn"
+                  checked={currentClient.sms_opt_in}
+                  onChange={(e) => setCurrentClient({...currentClient, sms_opt_in: e.target.checked})}
+                  className="mt-1 w-4 h-4 rounded border-[#333] text-[var(--accent)] focus:ring-[var(--accent)] bg-[#222]"
+                />
+                <label htmlFor="internalSmsOptIn" className="text-xs text-[#888] leading-tight">
+                  <strong className="text-white">Consentimiento SMS (A2P 10DLC):</strong> El cliente aceptó verbalmente o por escrito recibir mensajes de texto sobre su proyecto. Los datos no se venderán a terceros.
+                </label>
               </div>
 
               <div className="pt-2 flex gap-3">

@@ -22,6 +22,7 @@ const navItems = [
   { to: '/pos/calendar', icon: Calendar, label: 'Calendario', end: false },
   { to: '/pos/clients', icon: Users, label: 'Clientes', end: false },
   { to: '/pos/showroom', icon: ImageIcon, label: 'Showroom', end: false },
+  { to: '/pos/catalog', icon: Package, label: 'Catálogo', end: false },
 ];
 
 export default function POSLayout({ onSignOut, profile }) {

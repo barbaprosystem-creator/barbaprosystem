@@ -12,7 +12,7 @@ export default function PublicCatalogPage() {
   // Carrito de selección
   const [selectedItems, setSelectedItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [clientInfo, setClientInfo] = useState({ name: '', address: '', email: '' });
+  const [clientInfo, setClientInfo] = useState({ name: '', address: '', email: '', phone: '', smsOptIn: false });
   const [isSendingEmail, setIsSendingEmail] = useState(false);
 
   useEffect(() => {
@@ -70,8 +70,15 @@ export default function PublicCatalogPage() {
     let message = `*NUEVA SELECCIÓN DE MATERIALES*%0A`;
     message += `👤 *Cliente:* ${clientInfo.name}%0A`;
     if (clientInfo.address) {
-      message += `📍 *Dirección:* ${clientInfo.address}%0A%0A`;
+      message += `📍 *Dirección:* ${clientInfo.address}%0A`;
     }
+    if (clientInfo.phone) {
+      message += `📞 *Teléfono:* ${clientInfo.phone}%0A`;
+    }
+    if (clientInfo.smsOptIn) {
+      message += `✅ *SMS Opt-In:* Aceptado%0A`;
+    }
+    message += `%0A`;
     
     message += `*MATERIALES SELECCIONADOS:*%0A`;
     selectedItems.forEach((item, index) => {
@@ -100,6 +107,12 @@ export default function PublicCatalogPage() {
     htmlBody += `<p><strong>Email del cliente:</strong> ${clientInfo.email}</p>`;
     if (clientInfo.address) {
       htmlBody += `<p><strong>Dirección:</strong> ${clientInfo.address}</p>`;
+    }
+    if (clientInfo.phone) {
+      htmlBody += `<p><strong>Teléfono:</strong> ${clientInfo.phone}</p>`;
+    }
+    if (clientInfo.smsOptIn) {
+      htmlBody += `<p><strong>SMS Opt-In:</strong> Aceptado por el cliente</p>`;
     }
     htmlBody += `<h3>Materiales Seleccionados:</h3><ul>`;
     selectedItems.forEach((item) => {
@@ -364,6 +377,27 @@ export default function PublicCatalogPage() {
                           onChange={(e) => setClientInfo({...clientInfo, address: e.target.value})}
                           className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
                         />
+                      </div>
+                      <div>
+                        <input 
+                          type="tel" 
+                          placeholder="Tu Número de Teléfono *"
+                          value={clientInfo.phone}
+                          onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})}
+                          className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                      <div className="flex items-start gap-3 mt-2 bg-[#12131c] p-3 rounded-lg border border-[#34384c]">
+                        <input 
+                          type="checkbox" 
+                          id="smsOptIn"
+                          checked={clientInfo.smsOptIn}
+                          onChange={(e) => setClientInfo({...clientInfo, smsOptIn: e.target.checked})}
+                          className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-[#2a2d3d]"
+                        />
+                        <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-tight">
+                          By checking this box, you agree to receive SMS text messages from Barba Construction regarding your estimates, projects, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. See our <a href="/privacy" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
+                        </label>
                       </div>
                       
                       <div className="flex flex-col gap-3 mt-4">

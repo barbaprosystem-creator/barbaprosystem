@@ -43,12 +43,24 @@ export function useAuth() {
 
     async function init() {
       try {
-        const { data: { session: s } } = await Promise.race([
+        const response = await Promise.race([
           supabase.auth.getSession(),
           new Promise((_, r) => setTimeout(() => r(new Error('getSession timeout')), 7000))
         ]);
 
         if (!mounted) return;
+
+        // If there's a critical error (like AuthSessionMissingError or corrupted token), force clear
+        if (response?.error) {
+          console.error('Critical auth error on init, forcing signout:', response.error.message);
+          await supabase.auth.signOut();
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        const s = response?.data?.session;
         setSession(s);
 
         if (s?.user) {
@@ -68,8 +80,13 @@ export function useAuth() {
           }
         }
       } catch (err) {
-        console.warn('Auth init error (may be offline):', err.message);
-        // On timeout/error, clear loading so user sees login page
+        console.warn('Auth init exception (clearing corrupt session):', err.message);
+        // On timeout/error (which could be a dead token loop), try to sign out to clear local storage
+        await supabase.auth.signOut().catch(() => {});
+        if (mounted) {
+          setSession(null);
+          setProfile(null);
+        }
       } finally {
         if (mounted) setLoading(false);
       }

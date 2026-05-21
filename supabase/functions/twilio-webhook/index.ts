@@ -21,7 +21,7 @@ serve(async (req) => {
 
     // Si es un evento de Conversation pero no es onMessageAdded, lo ignoramos
     if (isConversationEvent && eventType !== "onMessageAdded") {
-      return new Response("Event not handled", { status: 200 });
+      return new Response("<Response></Response>", { status: 200, headers: { "Content-Type": "text/xml" } });
     }
 
     // Extraer datos dependiendo si es Conversation API o Programmable Messaging
@@ -32,7 +32,7 @@ serve(async (req) => {
 
     // Ignorar los mensajes salientes (outbound)
     if (!author || author.includes("system") || author === Deno.env.get("TWILIO_PHONE_NUMBER")) {
-      return new Response("Ignored outbound message", { status: 200 });
+      return new Response("<Response></Response>", { status: 200, headers: { "Content-Type": "text/xml" } });
     }
 
     // 1. Estandarizar datos y detectar canal a partir del Author
@@ -77,7 +77,7 @@ serve(async (req) => {
         .insert({ 
           first_name: "Nuevo", 
           last_name: "Lead", 
-          phone: canal === 'whatsapp' || canal === 'sms' ? identifier : '', 
+          phone: identifier, // Guardamos el ID de IG/FB o el número de WA/SMS aquí
           source: canal,
           pipeline_status: 'new_lead'
         })
@@ -85,7 +85,7 @@ serve(async (req) => {
         .single();
         
       if (insertError) {
-        console.error("Error creating contact:", insertError);
+        return new Response(`<Response><Message>Contact Error: ${insertError.message}</Message></Response>`, { status: 200, headers: { "Content-Type": "text/xml" } });
       }
       clienteId = newContact?.id;
     }
@@ -99,7 +99,7 @@ serve(async (req) => {
         .from("conversaciones")
         .select("id")
         .eq("twilio_conversation_sid", conversationSid)
-        .single();
+        .maybeSingle();
       conversacionData = data;
     } else if (clienteId) {
       // Si no tenemos ConversationSid (ej. Programmable Messaging), buscar por cliente_id
@@ -110,7 +110,7 @@ serve(async (req) => {
         .eq("canal", canal)
         .order("ultima_interaccion", { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       conversacionData = data;
     }
 
@@ -122,7 +122,7 @@ serve(async (req) => {
         .eq("id", conversacionId);
     } else {
       // Si no existe, la registramos
-      const { data: nuevaConv } = await supabase
+      const { data: nuevaConv, error: convError } = await supabase
         .from("conversaciones")
         .insert({ 
           cliente_id: clienteId, 
@@ -131,23 +131,29 @@ serve(async (req) => {
         })
         .select("id")
         .single();
+      if (convError) {
+        return new Response(`<Response><Message>Conv Error: ${convError.message}</Message></Response>`, { status: 200, headers: { "Content-Type": "text/xml" } });
+      }
       conversacionId = nuevaConv?.id;
     }
 
     // 4. Insertar el Mensaje Limpio (Esto disparará Supabase Realtime)
-    await supabase.from("mensajes").insert({
+    const { error: msgError } = await supabase.from("mensajes").insert({
       conversacion_id: conversacionId,
       direccion: "inbound",
       contenido: bodyText,
       twilio_message_sid: messageSid,
       estado_entrega: "entregado"
     });
+    if (msgError) {
+      return new Response(`<Response><Message>Msg Error: ${msgError.message}</Message></Response>`, { status: 200, headers: { "Content-Type": "text/xml" } });
+    }
 
-    // Respuesta limpia para Twilio Conversations
-    return new Response("OK", { status: 200 });
+    // Respuesta limpia para Twilio
+    return new Response("<Response></Response>", { status: 200, headers: { "Content-Type": "text/xml" } });
 
   } catch (error) {
     console.error("Error procesando webhook de Twilio:", error);
-    return new Response("Internal Server Error", { status: 500 });
+    return new Response("<Response></Response>", { status: 500, headers: { "Content-Type": "text/xml" } });
   }
 });
