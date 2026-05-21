@@ -47,29 +47,56 @@ export default function ProjectAccountingTab({ projectId }) {
 
     setAiLoading(true);
     try {
-      // Convertir a base64
+      // Comprimir la imagen para evitar error 413 Payload Too Large
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result.split(',')[1];
-        
-        // Llamar a IA
-        const extracted = await extractReceiptData(base64String, file.type);
-        if (extracted) {
-          setForm(prev => ({
-            ...prev,
-            amount: extracted.total || prev.amount,
-            vendor: extracted.vendor || prev.vendor,
-            date: extracted.date || prev.date,
-            description: extracted.items?.join(', ') || prev.description
-          }));
-          alert('¡Datos extraídos con éxito de la imagen!');
-        }
-        setAiLoading(false);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1000;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Extraer base64 comprimido a JPEG calidad 80%
+          const base64String = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
+          
+          try {
+            // Llamar a IA
+            const extracted = await extractReceiptData(base64String, 'image/jpeg');
+            if (extracted) {
+              setForm(prev => ({
+                ...prev,
+                amount: extracted.total || prev.amount,
+                vendor: extracted.vendor || prev.vendor,
+                date: extracted.date || prev.date,
+                description: extracted.items?.join(', ') || prev.description
+              }));
+              alert('¡Datos extraídos con éxito de la imagen!');
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Error al procesar los datos de la IA.');
+          } finally {
+            setAiLoading(false);
+          }
+        };
+        img.src = event.target.result;
       };
       reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
-      alert('Error al analizar la imagen con IA.');
+      alert('Error al leer la imagen.');
       setAiLoading(false);
     }
   };

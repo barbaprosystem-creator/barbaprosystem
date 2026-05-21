@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { messages, temperature = 0.7 } = req.body;
+  const { messages, temperature = 0.7, response_format } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'Messages are required and must be an array' });
@@ -39,7 +39,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages,
-        temperature
+        temperature,
+        ...(response_format && { response_format })
       })
     });
 

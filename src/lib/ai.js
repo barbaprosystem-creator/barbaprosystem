@@ -191,7 +191,8 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
             ]
           }
         ],
-        temperature: 0.1
+        temperature: 0.1,
+        response_format: { type: "json_object" }
       })
     });
 
@@ -199,11 +200,12 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
     if (data.error) throw new Error(data.error);
     
     const content = data.choices[0].message.content;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      console.error('Error parseando JSON de la IA:', content);
+      throw new Error('La respuesta de la IA no contenía JSON válido.');
     }
-    throw new Error('La respuesta de la IA no contenía JSON válido.');
   } catch (err) {
     console.error('Error extrayendo datos del recibo:', err);
     throw err;
