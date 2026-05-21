@@ -81,8 +81,16 @@ export function useAuth() {
         }
       } catch (err) {
         console.warn('Auth init exception (clearing corrupt session):', err.message);
-        // On timeout/error (which could be a dead token loop), try to sign out to clear local storage
-        await supabase.auth.signOut().catch(() => {});
+        // Borrado súper agresivo de cualquier rastro de la sesión envenenada
+        try {
+          localStorage.removeItem('barba-crm-auth-token');
+          sessionStorage.removeItem('barba-crm-auth-token');
+          // No hacemos 'await' para evitar que se quede colgado si la red está bloqueada
+          supabase.auth.signOut().catch(() => {}); 
+        } catch (e) {
+          console.error('Error clearing local storage', e);
+        }
+        
         if (mounted) {
           setSession(null);
           setProfile(null);
