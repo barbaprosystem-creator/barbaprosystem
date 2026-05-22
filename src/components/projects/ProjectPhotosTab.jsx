@@ -32,6 +32,10 @@ export default function ProjectPhotosTab({ projectId }) {
   }
 
   const handleUploadClick = (type) => {
+    if (projectId.startsWith('mock-')) {
+      alert("No puedes subir fotos a un proyecto de prueba. Por favor crea un proyecto real primero para usar esta función.");
+      return;
+    }
     setUploadType(type);
     fileInputRef.current?.click();
   };
