@@ -30,6 +30,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import EULA from './pages/EULA';
 import ContactUs from './pages/ContactUs';
+import LandingPage from './pages/LandingPage';
 
 // Loading spinner
 function LoadingScreen() {
@@ -56,6 +57,7 @@ export default function App() {
       <Router>
         <Routes>
           {/* Public Link for the Customer */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/p/:id" element={<PDFPreview />} />
           <Route path="/catalog" element={<PublicCatalogPage />} />
           
@@ -65,8 +67,11 @@ export default function App() {
           <Route path="/eula" element={<EULA />} />
           <Route path="/contact" element={<ContactUs />} />
 
-          {/* Anything else goes to Login */}
-          <Route path="*" element={<LoginPage onAuth={signIn} />} />
+          {/* Login Route */}
+          <Route path="/login" element={<LoginPage onAuth={signIn} />} />
+
+          {/* Anything else goes to Landing Page */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
     );
