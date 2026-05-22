@@ -134,27 +134,6 @@ export default function AdminDashboard() {
         }) || [];
         let finalPayments = sortedPayments.slice(0, 5);
 
-        // Fallback for demonstration
-        if (finalLeadsCount === 0 && finalProjectsCount === 0) {
-          finalLeadsCount = 2;
-          finalProjectsCount = 2;
-          finalEstimatesCount = 2;
-          totalRevenue = 21400;
-          pendingPayments = 8900;
-          overduePayments = 0;
-          wonLeads = 1;
-          finalRecentLeads = [
-            { id: 'mock-1', first_name: 'Juan', last_name: 'Pérez', source: 'web', pipeline_status: 'closed_won', created_at: new Date().toISOString() },
-            { id: 'mock-2', first_name: 'María', last_name: 'García', source: 'referral', pipeline_status: 'contacted', created_at: new Date(Date.now() - 86400000).toISOString() }
-          ];
-          finalActiveProjects = [
-            { id: 'mock-proj-1', title: 'Residencia Familia Pérez - Techo', progress_pct: 60, status: 'in_progress', start_date: new Date().toISOString().split('T')[0] },
-            { id: 'mock-proj-2', title: 'Renovación Siding María García', progress_pct: 0, status: 'scheduled', start_date: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0] }
-          ];
-          finalPayments = [
-            { id: 'mock-pay-1', amount: 8900, status: 'pending', payment_type: 'final', due_date: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0] }
-          ];
-        }
 
         setStats({
           totalLeads: finalLeadsCount,

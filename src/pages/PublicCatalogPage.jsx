@@ -137,7 +137,59 @@ export default function PublicCatalogPage() {
       const result = await response.json();
       
       if (response.ok) {
-        alert('¡Selección enviada exitosamente por correo a la oficina!');
+        // --- SUPABASE INTEGRATION ---
+        try {
+          // split name
+          const nameParts = clientInfo.name.trim().split(' ');
+          const firstName = nameParts[0];
+          const lastName = nameParts.slice(1).join(' ') || '';
+
+          // Find existing contact or create
+          let { data: existingContacts } = await supabase
+            .from('contacts')
+            .select('id')
+            .or(`email.eq."${clientInfo.email}",phone.eq."${clientInfo.phone}"`)
+            .limit(1);
+
+          let contactId;
+          
+          if (existingContacts && existingContacts.length > 0) {
+            contactId = existingContacts[0].id;
+          } else {
+            // Create new contact
+            const { data: newContact, error: insertError } = await supabase
+              .from('contacts')
+              .insert([{
+                first_name: firstName,
+                last_name: lastName,
+                email: clientInfo.email,
+                phone: clientInfo.phone,
+                source: 'web',
+                pipeline_status: 'new',
+                notes: 'Contact from Public Catalog'
+              }])
+              .select('id')
+              .single();
+              
+            if (!insertError && newContact) {
+              contactId = newContact.id;
+            }
+          }
+
+          // Save selections
+          if (contactId) {
+            await supabase.from('catalog_selections').insert([{
+              contact_id: contactId,
+              selections: selectedItems,
+              notes: 'Selected from Public Catalog page'
+            }]);
+          }
+        } catch (dbErr) {
+          console.error("Error saving selection to DB:", dbErr);
+        }
+        // ----------------------------
+
+        alert('¡Selección enviada exitosamente por correo a la oficina y guardada en el CRM!');
         setIsCartOpen(false);
       } else {
         alert('Error al enviar: ' + (result.error || 'Desconocido'));

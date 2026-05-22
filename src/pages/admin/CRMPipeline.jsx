@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import OmnichannelChat from '../../components/chat/OmnichannelChat';
+import ClientDetail from './ClientDetail';
+import { Eye } from 'lucide-react';
 
 const PIPELINE_STAGES = [
   { id: 'new_lead',       label: 'Nuevo',            color: '#3b82f6' },
@@ -168,7 +170,7 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
   );
 }
 
-function LeadCard({ lead, onClick, onChatClick }) {
+function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
   const src = srcMap[lead.source];
   const q = QUALITY[lead.lead_quality];
   return (
@@ -197,6 +199,14 @@ function LeadCard({ lead, onClick, onChatClick }) {
           >
             <MessageCircle size={14} />
           </button>
+          <button 
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onViewClick(lead.id); }}
+            className="p-1 text-[#888] hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors ml-1"
+            title="Ver Expediente 360"
+          >
+            <Eye size={14} />
+          </button>
         </div>
       </div>
       {lead.phone && <div className="lead-card-detail"><Phone size={13} /><span>{lead.phone}</span></div>}
@@ -223,6 +233,7 @@ export default function CRMPipeline() {
   const [viewMode, setViewMode] = useState('kanban');
   const [filterSource, setFilterSource] = useState('all');
   const [filterQuality, setFilterQuality] = useState('all');
+  const [viewClient, setViewClient] = useState(null);
   const [chatModal, setChatModal] = useState({ open: false, cliente: null });
 
   useEffect(() => { if (profile) fetchData(); }, [profile]);
@@ -277,6 +288,10 @@ export default function CRMPipeline() {
   if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Cargando pipeline...</p></div>;
 
   return (
+    <>
+      {viewClient ? (
+        <ClientDetail clientId={viewClient} onBack={() => setViewClient(null)} />
+      ) : (
     <div className="crm-page">
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
@@ -361,7 +376,7 @@ export default function CRMPipeline() {
                   <span className="kanban-stage-count">{stageLeads.length}</span>
                 </div>
                 <div className="kanban-column-body">
-                  {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} />)}
+                  {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} onViewClick={setViewClient} />)}
                   {stageLeads.length === 0 && <div className="kanban-empty"><p>Sin leads</p></div>}
                 </div>
               </div>
@@ -414,6 +429,14 @@ export default function CRMPipeline() {
                       >
                         <MessageCircle size={18} />
                       </button>
+                      <button 
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setViewClient(c.id); }}
+                        className="p-2 text-[#888888] hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
+                        title="Ver Expediente 360"
+                      >
+                        <Eye size={18} />
+                      </button>
                     </td>
                   </tr>
                 );
@@ -453,6 +476,8 @@ export default function CRMPipeline() {
         </div>
       )}
     </div>
+    )}
+    </>
   );
 }
 

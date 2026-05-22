@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2, MessageCircle } from 'lucide-react';
 import OmnichannelChat from '../components/chat/OmnichannelChat';
+import ClientDetail from './admin/ClientDetail';
 
 export default function Clients() {
   const [clients, setClients] = useState([]);
@@ -10,6 +11,7 @@ export default function Clients() {
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [viewClient, setViewClient] = useState(null);
   const [chatModal, setChatModal] = useState({ open: false, cliente: null });
   const [saving, setSaving] = useState(false);
   const defaultClientState = {
@@ -93,8 +95,12 @@ export default function Clients() {
   };
 
   return (
-    <div className="admin-page p-6 lg:p-10 space-y-8 relative">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+    <>
+      {viewClient ? (
+        <ClientDetail clientId={viewClient} onBack={() => setViewClient(null)} />
+      ) : (
+        <div className="admin-page p-6 lg:p-10 space-y-8 relative">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div className="flex flex-col gap-2">
           <h1 className="text-3xl font-bold tracking-tight">Mis Clientes</h1>
           <p className="text-[#888888]">{filtered.length} contactos</p>
@@ -189,7 +195,9 @@ export default function Clients() {
                           >
                             <MessageCircle size={18} />
                           </button>
-                          <button className="p-2 text-[#888888] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors" title="Ver">
+                          <button 
+                            onClick={() => setViewClient(client.id)}
+                            className="p-2 text-[#888888] hover:text-[var(--accent)] hover:bg-[var(--accent)]/10 rounded-lg transition-colors" title="Ver Expediente 360">
                             <Eye size={18} />
                           </button>
                           <button 
@@ -357,6 +365,8 @@ export default function Clients() {
         </div>
       )}
     </div>
+    )}
+    </>
   );
 }
 

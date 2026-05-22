@@ -9,8 +9,10 @@ const STATUS_MAP = {
   approved: { label:'Aprobado', color:'#10b981' },
   rejected: { label:'Rechazado', color:'#ef4444' },
 };
+import { useNavigate } from 'react-router-dom';
 
 export default function EstimatesList() {
+  const navigate = useNavigate();
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -112,7 +114,7 @@ export default function EstimatesList() {
         <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
         <div className="crm-toolbar-right">
           <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-          <button className="btn-primary" onClick={() => alert('Constructor de Estimados - Proximamente')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => navigate('/pos/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
       <div className="estimate-tabs">

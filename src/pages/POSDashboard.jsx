@@ -32,17 +32,6 @@ export default function POSDashboard() {
         let finalLeadsCount = leadsCount || 0;
         let finalEstimatesCount = estimatesCount || 0;
 
-        // Fallback for demonstration
-        if (finalLeadsCount === 0 && finalEstimatesCount === 0) {
-          finalLeadsCount = 2;
-          finalEstimatesCount = 2;
-          wonLeads = 1;
-          revenue = 12500;
-          finalLeads = [
-            { id: 'mock-1', first_name: 'Juan', last_name: 'Pérez', source: 'web', pipeline_status: 'closed_won', created_at: new Date().toISOString() },
-            { id: 'mock-2', first_name: 'María', last_name: 'García', source: 'referral', pipeline_status: 'contacted', created_at: new Date(Date.now() - 86400000).toISOString() }
-          ];
-        }
 
         setStats({
           leads: finalLeadsCount,

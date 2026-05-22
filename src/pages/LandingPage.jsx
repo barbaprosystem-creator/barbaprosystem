@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HardHat, Send, CheckCircle2, ChevronRight, Phone, Mail, MapPin, Hammer, ShieldCheck, Wrench } from 'lucide-react';
+import { HardHat, Send, CheckCircle2, ChevronRight, Phone, Mail, MapPin, Hammer, ShieldCheck, Wrench, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { supabase } from '../lib/supabase';
 
 // Animation Variants
 const fadeInUp = {
@@ -26,10 +27,40 @@ const imageReveal = {
 
 export default function LandingPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    notes: ''
+  });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    
+    try {
+      // split name into first and last
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const { error } = await supabase.from('contacts').insert([{
+        first_name: firstName,
+        last_name: lastName,
+        phone: formData.phone,
+        notes: formData.notes,
+        source: 'web',
+        pipeline_status: 'new'
+      }]);
+
+      if (error) throw error;
+      setSubmitted(true);
+    } catch (err) {
+      alert('Error sending request: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -305,6 +336,8 @@ export default function LandingPage() {
                     <input 
                       required
                       type="text" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
                       className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-5 py-4 focus:outline-none focus:border-[#FACB00] focus:ring-1 focus:ring-[#FACB00] transition-all"
                       placeholder="John Doe"
                     />
@@ -315,6 +348,8 @@ export default function LandingPage() {
                     <input 
                       required
                       type="tel" 
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-5 py-4 focus:outline-none focus:border-[#FACB00] focus:ring-1 focus:ring-[#FACB00] transition-all mb-3"
                       placeholder="(502) 123-4567"
                     />
@@ -329,6 +364,8 @@ export default function LandingPage() {
                     <label className="block text-sm font-bold text-gray-400 uppercase tracking-wider mb-2">Project Details</label>
                     <textarea 
                       required
+                      value={formData.notes}
+                      onChange={(e) => setFormData({...formData, notes: e.target.value})}
                       className="w-full bg-[#111] border border-[#333] text-white rounded-xl px-5 py-4 focus:outline-none focus:border-[#FACB00] focus:ring-1 focus:ring-[#FACB00] transition-all min-h-[120px] resize-y"
                       placeholder="Tell us what you need help with..."
                     />
@@ -336,10 +373,11 @@ export default function LandingPage() {
 
                   <button 
                     type="submit"
-                    className="w-full bg-[#FACB00] text-black font-black text-lg py-4 rounded-xl hover:bg-[#e0b600] active:scale-[0.98] transition-all flex justify-center items-center gap-3 shadow-lg shadow-[#FACB00]/20 hover:shadow-[#FACB00]/40"
+                    disabled={loading}
+                    className="w-full bg-[#FACB00] text-black font-black text-lg py-4 rounded-xl hover:bg-[#e0b600] active:scale-[0.98] transition-all flex justify-center items-center gap-3 shadow-lg shadow-[#FACB00]/20 hover:shadow-[#FACB00]/40 disabled:opacity-50"
                   >
-                    <Send size={22} />
-                    Send Request
+                    {loading ? <Loader2 className="animate-spin" size={22} /> : <Send size={22} />}
+                    {loading ? 'Sending...' : 'Send Request'}
                   </button>
                 </form>
               )}
