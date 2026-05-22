@@ -42,23 +42,34 @@ export function useAuth() {
     );
 
     async function init() {
+      const fallbackToLocal = () => {
+        try {
+          const stored = localStorage.getItem('barba-crm-auth-token');
+          if (stored) return { data: { session: JSON.parse(stored) }, error: null };
+        } catch(e) {}
+        return { data: { session: null }, error: null };
+      };
+
       try {
-        const response = await Promise.race([
-          supabase.auth.getSession(),
-          new Promise((_, r) => setTimeout(() => r(new Error('getSession timeout')), 7000))
-        ]);
+        let response;
+        try {
+          response = await Promise.race([
+            supabase.auth.getSession(),
+            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
+          ]);
+          
+          // Si Supabase tira error de sesión, forzamos usar lo que hay en memoria
+          // El usuario pidió sesión permanente hasta logout manual
+          if (response?.error) {
+            console.warn('Supabase session error, falling back to local storage', response.error);
+            response = fallbackToLocal();
+          }
+        } catch (e) {
+          console.warn('Supabase getSession timeout, falling back to local storage');
+          response = fallbackToLocal();
+        }
 
         if (!mounted) return;
-
-        // If there's a critical error (like AuthSessionMissingError or corrupted token), force clear
-        if (response?.error) {
-          console.error('Critical auth error on init, forcing signout:', response.error.message);
-          await supabase.auth.signOut();
-          setSession(null);
-          setProfile(null);
-          setLoading(false);
-          return;
-        }
 
         const s = response?.data?.session;
         setSession(s);
@@ -80,21 +91,7 @@ export function useAuth() {
           }
         }
       } catch (err) {
-        console.warn('Auth init exception (clearing corrupt session):', err.message);
-        // Borrado súper agresivo de cualquier rastro de la sesión envenenada
-        try {
-          localStorage.removeItem('barba-crm-auth-token');
-          sessionStorage.removeItem('barba-crm-auth-token');
-          // No hacemos 'await' para evitar que se quede colgado si la red está bloqueada
-          supabase.auth.signOut().catch(() => {}); 
-        } catch (e) {
-          console.error('Error clearing local storage', e);
-        }
-        
-        if (mounted) {
-          setSession(null);
-          setProfile(null);
-        }
+        console.error('Fatal auth init error:', err);
       } finally {
         if (mounted) setLoading(false);
       }

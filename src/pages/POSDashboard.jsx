@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function POSDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ leads: 0, estimates: 0, won: 0, revenue: 0 });
   const [recentLeads, setRecentLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -145,7 +146,7 @@ export default function POSDashboard() {
                   {recentLeads.map((lead) => {
                     const s = statusMap[lead.status] || { label: lead.status, cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                     return (
-                      <tr key={lead.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
+                      <tr key={lead.id} onClick={() => navigate('/pos/pipeline')} className="hover:bg-[#1a1a1a]/50 transition-colors cursor-pointer">
                         <td className="py-4 px-6">
                           <div className="font-semibold text-[#e0e0e0]">{lead.full_name}</div>
                         </td>

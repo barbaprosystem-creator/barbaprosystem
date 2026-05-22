@@ -343,7 +343,7 @@ export default function ProjectMaterialsTab({ projectId }) {
                 type="submit"
                 className="flex-1 py-3 bg-[#E2FF00] text-black font-bold rounded-xl hover:bg-[#d4f000] transition-colors flex justify-center items-center gap-2"
               >
-                Generar Magia <CheckCircle2 size={18} />
+                Calcular Presupuesto <CheckCircle2 size={18} />
               </button>
             </div>
           </form>
