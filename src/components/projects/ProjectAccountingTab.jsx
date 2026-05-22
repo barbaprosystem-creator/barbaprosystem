@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera } from 'lucide-react';
+import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { extractReceiptData } from '../../lib/ai';
 
