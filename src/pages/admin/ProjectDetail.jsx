@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
@@ -33,6 +33,9 @@ export default function ProjectDetail({ projectId, onBack }) {
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('pipeline');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ payment_type: 'partial', amount: '', due_date: new Date().toISOString().split('T')[0] });
+  const [savingPayment, setSavingPayment] = useState(false);
 
   const canEdit = role === 'admin' || role === 'supervisor';
 
@@ -68,6 +71,28 @@ export default function ProjectDetail({ projectId, onBack }) {
   async function markPaymentReceived(id) {
     await supabase.from('payments').update({ status: 'received', paid_at: new Date().toISOString() }).eq('id', id);
     fetchAll();
+  }
+
+  async function handleAddPayment(e) {
+    e.preventDefault();
+    setSavingPayment(true);
+    try {
+      const { error } = await supabase.from('payments').insert({
+        project_id: projectId,
+        payment_type: paymentForm.payment_type,
+        amount: Number(paymentForm.amount),
+        due_date: paymentForm.due_date,
+        status: 'pending'
+      });
+      if (error) throw error;
+      setShowPaymentModal(false);
+      setPaymentForm({ payment_type: 'partial', amount: '', due_date: new Date().toISOString().split('T')[0] });
+      fetchAll();
+    } catch(err) {
+      alert("Error al agregar el pago");
+    } finally {
+      setSavingPayment(false);
+    }
   }
 
   if (loading) return (
@@ -224,7 +249,17 @@ export default function ProjectDetail({ projectId, onBack }) {
         {/* PAYMENTS TAB */}
         {activeTab === 'payments' && (
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
+              {canEdit && (
+                <button
+                  onClick={() => setShowPaymentModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3b82f6] hover:bg-[#2563eb] text-xs font-bold text-white transition-colors"
+                >
+                  <Plus size={14} /> Nuevo Pago
+                </button>
+              )}
+            </div>
             {payments.length === 0 ? (
               <p className="text-sm text-[#555555] text-center py-8">No hay pagos registrados para este proyecto.</p>
             ) : (
@@ -291,6 +326,56 @@ export default function ProjectDetail({ projectId, onBack }) {
           <ProjectDocumentsTab projectId={projectId} />
         )}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-sm overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center p-5 border-b border-[#222]">
+              <h2 className="text-xl font-bold text-white">Nuevo Pago</h2>
+              <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
+            </div>
+            
+            <form id="payment-form" onSubmit={handleAddPayment} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tipo de Pago</label>
+                <select 
+                  value={paymentForm.payment_type} onChange={e => setPaymentForm({...paymentForm, payment_type: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#3b82f6]"
+                >
+                  <option value="deposit">Depósito (Adelanto)</option>
+                  <option value="partial">Pago Parcial / Avance</option>
+                  <option value="final">Pago Final</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Monto Total ($)</label>
+                <input 
+                  required type="number" step="0.01" min="0"
+                  value={paymentForm.amount} onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#3b82f6]"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Fecha de Vencimiento</label>
+                <input 
+                  required type="date"
+                  value={paymentForm.due_date} onChange={e => setPaymentForm({...paymentForm, due_date: e.target.value})}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#3b82f6]"
+                />
+              </div>
+            </form>
+            
+            <div className="p-5 border-t border-[#222] flex gap-3">
+              <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white font-bold transition-colors">Cancelar</button>
+              <button form="payment-form" type="submit" disabled={savingPayment} className="flex-1 py-2 rounded-lg bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold transition-colors disabled:opacity-50">
+                {savingPayment ? 'Guardando...' : 'Guardar Pago'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
