@@ -29,6 +29,7 @@ import PublicCatalogPage from './pages/PublicCatalogPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import EULA from './pages/EULA';
+import ContactUs from './pages/ContactUs';
 
 // Loading spinner
 function LoadingScreen() {
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/eula" element={<EULA />} />
+          <Route path="/contact" element={<ContactUs />} />
 
           {/* Anything else goes to Login */}
           <Route path="*" element={<LoginPage onAuth={signIn} />} />
@@ -90,6 +92,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/terms" element={<TermsOfService />} />
         <Route path="/eula" element={<EULA />} />
+        <Route path="/contact" element={<ContactUs />} />
 
         {/* ROOT REDIRECT */}
         <Route path="/" element={<Navigate to={roleHome[role] || '/pos/estimator'} replace />} />
