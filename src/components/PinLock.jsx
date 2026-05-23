@@ -1,21 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, Delete } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 /**
  * PinLock — wraps any content behind a numeric PIN with frosted blur effect.
- * Usage: <PinLock pin="2012"><YourContent /></PinLock>
+ * Usage: <PinLock title="Acceso Restringido"><YourContent /></PinLock>
  */
-export default function PinLock({ pin = '2012', children, title = 'Acceso Restringido' }) {
+export default function PinLock({ pin: fallbackPin = '2012', children, title = 'Acceso Restringido' }) {
+  const [dbPin, setDbPin] = useState(null);
   const [unlocked, setUnlocked] = useState(false);
   const [entered, setEntered]   = useState('');
   const [shake, setShake]       = useState(false);
 
+  useEffect(() => {
+    supabase.from('system_settings').select('value').eq('key', 'security_pin').single()
+      .then(({ data }) => {
+        if (data?.value) setDbPin(data.value);
+        else setDbPin(fallbackPin);
+      })
+      .catch(() => setDbPin(fallbackPin));
+  }, [fallbackPin]);
+
   function pressDigit(d) {
-    if (entered.length >= pin.length) return;
+    const activePin = dbPin || fallbackPin;
+    if (entered.length >= activePin.length) return;
     const next = entered + d;
     setEntered(next);
-    if (next.length === pin.length) {
-      if (next === pin) {
+    if (next.length === activePin.length) {
+      if (next === activePin) {
         setUnlocked(true);
       } else {
         setShake(true);
@@ -48,7 +60,7 @@ export default function PinLock({ pin = '2012', children, title = 'Acceso Restri
 
           {/* Dots */}
           <div className="pin-dots">
-            {Array.from({ length: pin.length }).map((_, i) => (
+            {Array.from({ length: (dbPin || fallbackPin).length }).map((_, i) => (
               <div key={i} className={`pin-dot ${i < entered.length ? 'filled' : ''}`} />
             ))}
           </div>
