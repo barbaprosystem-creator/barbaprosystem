@@ -21,6 +21,7 @@ import {
   MessageSquare,
   PenLine,
   Users2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
@@ -42,6 +43,7 @@ const navItems = [
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
   { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },
   { to: '/admin/interactive-catalog', icon: BookOpen, label: 'Catálogo de Clientes' },
+  { to: '/admin/showroom', icon: ImageIcon, label: 'Showroom' },
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 

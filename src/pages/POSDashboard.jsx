@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight } from 'lucide-react';
+import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight, CalendarDays, Wallet } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 export default function POSDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ leads: 0, estimates: 0, won: 0, revenue: 0 });
-  const [recentLeads, setRecentLeads] = useState([]);
+  
+  // States
   const [loading, setLoading] = useState(true);
+  const [summaryPeriod, setSummaryPeriod] = useState('all');
+  const [recentLeads, setRecentLeads] = useState([]);
+  
+  const [stats, setStats] = useState({
+    leads: 0,
+    estimates: 0,
+    approvedCount: 0,
+    approvedRevenue: 0,
+    commission: 0
+  });
 
   useEffect(() => {
     async function loadData() {
@@ -23,21 +33,44 @@ export default function POSDashboard() {
         ] = await Promise.all([
           supabase.from('contacts').select('*', { count: 'exact' }).eq('assigned_to', user.id).order('created_at', { ascending: false }),
           supabase.from('estimates').select('*', { count: 'exact' }).eq('created_by', user.id),
-          supabase.from('estimates').select('grand_total, status').eq('created_by', user.id)
+          supabase.from('estimates').select('grand_total, status, updated_at').eq('created_by', user.id)
         ]);
 
-        let wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
-        let revenue = estimates?.filter(e => e.status === 'accepted' || e.status === 'approved').reduce((sum, e) => sum + (e.grand_total || 0), 0) || 0;
+        // Filter approved estimates based on summaryPeriod
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+        let approvedCount = 0;
+        let approvedRevenue = 0;
+
+        (estimates || []).forEach(e => {
+          if (e.status === 'approved' || e.status === 'accepted') {
+            const dateToUse = new Date(e.updated_at || new Date());
+            
+            let include = false;
+            if (summaryPeriod === 'all') include = true;
+            else if (summaryPeriod === 'week' && dateToUse >= startOfWeek) include = true;
+            else if (summaryPeriod === 'month' && dateToUse >= startOfMonth) include = true;
+            else if (summaryPeriod === 'year' && dateToUse >= startOfYear) include = true;
+
+            if (include) {
+              approvedCount++;
+              approvedRevenue += (e.grand_total || 0);
+            }
+          }
+        });
+
         let finalLeads = leads?.slice(0, 5) || [];
-        let finalLeadsCount = leadsCount || 0;
-        let finalEstimatesCount = estimatesCount || 0;
-
-
+        
         setStats({
-          leads: finalLeadsCount,
-          estimates: finalEstimatesCount,
-          won: wonLeads,
-          revenue: revenue,
+          leads: leadsCount || 0,
+          estimates: estimatesCount || 0,
+          approvedCount,
+          approvedRevenue,
+          commission: approvedRevenue * 0.05
         });
 
         setRecentLeads(finalLeads);
@@ -49,13 +82,13 @@ export default function POSDashboard() {
     }
 
     loadData();
-  }, [user]);
+  }, [user, summaryPeriod]);
 
   const kpis = [
-    { label: 'Mis Leads', value: stats.leads, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Estimados', value: stats.estimates, icon: FileText, color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    { label: 'Ganados', value: stats.won, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Ingresos', value: `$${stats.revenue.toLocaleString()}`, icon: DollarSign, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/10' },
+    { label: 'Leads Totales', value: stats.leads, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Aprobados', value: stats.approvedCount, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Monto Aprobado', value: `$${stats.approvedRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: DollarSign, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/10' },
+    { label: 'Mi Comisión (5%)', value: `$${stats.commission.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: Wallet, color: 'text-[#facb00]', bg: 'bg-[#facb00]/10', glow: true },
   ];
 
   const statusMap = {
@@ -69,20 +102,50 @@ export default function POSDashboard() {
 
   return (
     <div className="admin-page p-6 lg:p-10 space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Mi Dashboard</h1>
-        <p className="text-[#888888]">Resumen de tu actividad de ventas y desempeno</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Resumen de Ventas</h1>
+          <p className="text-[#888888]">Desempeño y comisiones generadas</p>
+        </div>
+        
+        {/* Filtros de Tiempo */}
+        <div className="flex bg-[#1a1a1a] border border-[#333] rounded-lg p-1">
+          <button 
+            onClick={() => setSummaryPeriod('week')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'week' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Esta Semana
+          </button>
+          <button 
+            onClick={() => setSummaryPeriod('month')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'month' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Este Mes
+          </button>
+          <button 
+            onClick={() => setSummaryPeriod('year')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'year' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Este Año
+          </button>
+          <button 
+            onClick={() => setSummaryPeriod('all')}
+            className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'all' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            Histórico (Todo)
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="admin-card p-6 flex items-center gap-5 hover:border-[var(--accent)]/50 transition-colors">
+          <div key={kpi.label} className={`admin-card p-6 flex items-center gap-5 transition-colors ${kpi.glow ? 'border-[#facb00]/30 shadow-[0_0_15px_rgba(250,203,0,0.1)]' : 'hover:border-[var(--accent)]/50'}`}>
             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${kpi.bg} ${kpi.color}`}>
               <kpi.icon size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="text-2xl font-bold tracking-tight">
+              <span className={`text-2xl font-bold tracking-tight ${kpi.glow ? 'text-[#facb00]' : ''}`}>
                 {loading ? (
                   <div className="h-8 w-16 bg-[#1a1a1a] rounded animate-pulse"></div>
                 ) : (
@@ -104,8 +167,8 @@ export default function POSDashboard() {
             </div>
             <h2 className="text-lg font-bold">Leads Recientes</h2>
           </div>
-          <Link to="/pos/clients" className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1 font-medium">
-            Ver Todos <ArrowRight size={16} />
+          <Link to="/pos/pipeline" className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1 font-medium">
+            Ir al CRM Pipeline <ArrowRight size={16} />
           </Link>
         </div>
         
@@ -118,7 +181,7 @@ export default function POSDashboard() {
           ) : recentLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Users size={48} className="text-slate-700" />
-              <p className="text-sm font-medium">No tienes leads asignados todavia.</p>
+              <p className="text-sm font-medium">No tienes leads asignados todavía.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -162,5 +225,3 @@ export default function POSDashboard() {
     </div>
   );
 }
-
-
