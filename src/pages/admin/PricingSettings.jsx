@@ -9,14 +9,8 @@ const UNIT_TYPES  = ['sq', 'linear_ft', 'unit', 'sqft', 'hour', 'each'];
 
 const EMPTY_FORM = {
   category: 'roofing', item_name: '', description: '',
-  unit_type: 'sq', base_cost: '', margin_pct: '30',
+  unit_type: 'sq', sell_price: '',
 };
-
-function calcSellPrice(base, margin) {
-  const b = parseFloat(base)   || 0;
-  const m = parseFloat(margin) || 0;
-  return b > 0 ? b / (1 - m / 100) : 0;
-}
 
 export default function PricingSettings() {
   const [items, setItems]         = useState([]);
@@ -43,13 +37,16 @@ export default function PricingSettings() {
   }
 
   async function addItem() {
-    if (!newItem.item_name || !newItem.base_cost) return;
+    if (!newItem.item_name || !newItem.sell_price) return;
     setSaving(true);
     const payload = {
-      ...newItem,
-      base_cost:  parseFloat(newItem.base_cost),
-      margin_pct: parseFloat(newItem.margin_pct),
-      sell_price: calcSellPrice(newItem.base_cost, newItem.margin_pct),
+      category: newItem.category,
+      item_name: newItem.item_name,
+      description: newItem.description,
+      unit_type: newItem.unit_type,
+      base_cost: 0,
+      margin_pct: 0,
+      sell_price: parseFloat(newItem.sell_price),
     };
     const { error } = await supabase.from('price_catalog').insert(payload);
     if (!error) {
@@ -67,8 +64,7 @@ export default function PricingSettings() {
       item_name:   item.item_name,
       description: item.description || '',
       unit_type:   item.unit_type,
-      base_cost:   String(item.base_cost),
-      margin_pct:  String(item.margin_pct),
+      sell_price:  String(item.sell_price || 0),
     });
   }
 
@@ -77,10 +73,11 @@ export default function PricingSettings() {
   async function saveEdit() {
     setSaving(true);
     const payload = {
-      ...editForm,
-      base_cost:  parseFloat(editForm.base_cost),
-      margin_pct: parseFloat(editForm.margin_pct),
-      sell_price: calcSellPrice(editForm.base_cost, editForm.margin_pct),
+      category: editForm.category,
+      item_name: editForm.item_name,
+      description: editForm.description,
+      unit_type: editForm.unit_type,
+      sell_price: parseFloat(editForm.sell_price),
     };
     const { error } = await supabase.from('price_catalog').update(payload).eq('id', editId);
     if (!error) { cancelEdit(); fetchItems(); }
@@ -129,15 +126,14 @@ export default function PricingSettings() {
 
   const catCounts = items.reduce((acc, i) => { acc[i.category] = (acc[i.category] || 0) + 1; return acc; }, {});
 
-  // Computed sell price preview
-  const previewSell = calcSellPrice(editForm.base_cost, editForm.margin_pct);
+
 
   return (
     <div className="pricing-page">
       <header className="admin-page-header">
         <div>
           <h1><Tag size={22} /> Motor de Precios</h1>
-          <p className="text-muted">Edita costos base, márgenes y precios de venta. Los vendedores solo ven el precio final.</p>
+          <p className="text-muted">Edita tus precios de venta directos para los estimadores.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn-secondary" onClick={analyzeMarket} disabled={analyzingMarket} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
@@ -199,18 +195,9 @@ export default function PricingSettings() {
               </select>
             </div>
             <div className="pricing-form-field">
-              <label>Costo Base ($) *</label>
-              <input type="number" min="0" step="0.01" placeholder="0.00" value={newItem.base_cost}
-                onChange={e => setNewItem({ ...newItem, base_cost: e.target.value })} />
-            </div>
-            <div className="pricing-form-field">
-              <label>Margen (%)</label>
-              <input type="number" min="0" max="90" placeholder="30" value={newItem.margin_pct}
-                onChange={e => setNewItem({ ...newItem, margin_pct: e.target.value })} />
-            </div>
-            <div className="pricing-form-field">
-              <label>Precio de Venta (preview)</label>
-              <div className="pricing-sell-preview">{formatCurrency(calcSellPrice(newItem.base_cost, newItem.margin_pct))}</div>
+              <label>Precio de Venta ($) *</label>
+              <input type="number" min="0" step="0.01" placeholder="0.00" value={newItem.sell_price}
+                onChange={e => setNewItem({ ...newItem, sell_price: e.target.value })} />
             </div>
           </div>
           <div className="pricing-form-actions">
@@ -237,8 +224,6 @@ export default function PricingSettings() {
                 <th>Categoría</th>
                 <th>Ítem / Descripción</th>
                 <th>Unidad</th>
-                <th>Costo Base</th>
-                <th>Margen</th>
                 <th>Precio Venta</th>
                 <th>Mercado (IA)</th>
                 <th style={{ width: 100 }}>Acciones</th>
@@ -271,16 +256,9 @@ export default function PricingSettings() {
                     </td>
                     <td>
                       <input className="pricing-inline-input" type="number" min="0" step="0.01"
-                        value={editForm.base_cost}
-                        onChange={e => setEditForm({ ...editForm, base_cost: e.target.value })} />
+                        value={editForm.sell_price}
+                        onChange={e => setEditForm({ ...editForm, sell_price: e.target.value })} />
                     </td>
-                    <td>
-                      <input className="pricing-inline-input" type="number" min="0" max="90"
-                        value={editForm.margin_pct}
-                        onChange={e => setEditForm({ ...editForm, margin_pct: e.target.value })} />
-                      <span style={{ color: '#666', fontSize: 11 }}>%</span>
-                    </td>
-                    <td className="sell-price">{formatCurrency(previewSell)}</td>
                     <td style={{ color: '#888' }}>-</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
@@ -298,13 +276,11 @@ export default function PricingSettings() {
                   <tr key={item.id}>
                     <td><span className="category-badge">{item.category}</span></td>
                     <td className="item-name-cell">
-                      <strong>{item.item_name}</strong>
-                      {item.description && <small>{item.description}</small>}
+                      <div className="pricing-item-name">{item.item_name}</div>
+                      {item.description && <div className="pricing-item-desc">{item.description}</div>}
                     </td>
-                    <td>{item.unit_type}</td>
-                    <td>{formatCurrency(item.base_cost)}</td>
-                    <td>{item.margin_pct}%</td>
-                    <td className="sell-price">{formatCurrency(item.sell_price || calcSellPrice(item.base_cost, item.margin_pct))}</td>
+                    <td className="unit-type">{item.unit_type}</td>
+                    <td className="sell-price" style={{ fontSize: '15px' }}>{formatCurrency(item.sell_price)}</td>
                     <td>
                       {item.market_price ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
