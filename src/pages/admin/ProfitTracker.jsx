@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Loader2, Printer, Download } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
+import PinLock from '../../components/PinLock';
 
 export default function ProfitTracker() {
   const [data, setData] = useState([]);
@@ -112,6 +113,7 @@ export default function ProfitTracker() {
   const totalProfit = data.reduce((sum, row) => sum + row.profit, 0);
 
   return (
+    <PinLock pin="2012" title="Profit Tracker — Restringido">
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
       <div className="flex justify-between items-center mb-8 print:hidden">
         <div>
@@ -197,5 +199,6 @@ export default function ProfitTracker() {
         </div>
       </div>
     </div>
+    </PinLock>
   );
 }

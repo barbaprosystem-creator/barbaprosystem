@@ -8,6 +8,7 @@ import {
   BarChart3, TrendingUp, DollarSign, Users, FileText, FolderKanban,
 } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
+import PinLock from '../../components/PinLock';
 
 const COLORS = {
   completed:   '#10b981',
@@ -141,6 +142,7 @@ export default function ReportsPage() {
   const statusLabels = { completed: 'Completado', in_progress: 'En Ejecución', cancelled: 'Cancelado' };
 
   return (
+    <PinLock pin="2012" title="Reportes & Analytics — Restringido">
     <div className="reports-page">
       {/* Header */}
       <div className="crm-toolbar">
@@ -290,5 +292,6 @@ export default function ReportsPage() {
         </div>
       </div>
     </div>
+    </PinLock>
   );
 }

@@ -1959,3 +1959,256 @@ body.privacy-mode .text-amber-400:hover {
   .rpt-chart-pie { width:360px; flex-shrink:0; }
   .rpt-section-pad { padding:0 24px 20px; }
 }
+
+
+/* ============================================
+   PIN LOCK COMPONENT
+   ============================================ */
+
+.pin-lock-wrapper {
+  position: relative;
+  min-height: 100vh;
+}
+
+.pin-lock-blur {
+  filter: blur(18px);
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.35;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.pin-lock-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 16px;
+}
+
+.pin-lock-card {
+  background: #141420;
+  border: 1px solid #2a2a3a;
+  border-radius: 20px;
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 320px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+  text-align: center;
+  transition: transform 0.15s ease;
+}
+
+.pin-lock-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: rgba(245,197,24,0.12);
+  border: 1px solid rgba(245,197,24,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.pin-lock-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.pin-lock-sub {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+
+/* PIN dots */
+.pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.pin-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #333;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.pin-dot.filled {
+  background: #F5C518;
+  border-color: #F5C518;
+  box-shadow: 0 0 8px rgba(245,197,24,0.5);
+}
+
+/* Keypad */
+.pin-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.pin-key {
+  background: #1e1e2e;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  height: 56px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+}
+
+.pin-key:hover {
+  background: #2a2a3e;
+  border-color: #F5C518;
+  color: #F5C518;
+  transform: scale(1.04);
+}
+
+.pin-key:active { transform: scale(0.96); background: #333; }
+
+.pin-key-empty { visibility: hidden; }
+
+.pin-key-back {
+  background: #1e1e2e;
+  border: 1px solid #2a2a3a;
+  border-radius: 12px;
+  color: #888;
+  height: 56px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+}
+.pin-key-back:hover { background: #2a2a2a; color: #ef4444; border-color: #ef4444; }
+
+/* Shake animation for wrong PIN */
+.pin-shake {
+  animation: pinShake 0.5s ease;
+}
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  15%       { transform: translateX(-8px); }
+  30%       { transform: translateX(8px); }
+  45%       { transform: translateX(-6px); }
+  60%       { transform: translateX(6px); }
+  75%       { transform: translateX(-3px); }
+  90%       { transform: translateX(3px); }
+}
+
+/* ============================================
+   PRICING SETTINGS — INLINE EDIT STYLES
+   ============================================ */
+
+.pricing-add-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pricing-add-header h3 { color: #fff; font-size: 15px; font-weight: 600; }
+
+.pricing-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (min-width: 600px) {
+  .pricing-form-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 900px) {
+  .pricing-form-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.pricing-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pricing-form-field label {
+  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.pricing-form-field input,
+.pricing-form-field select {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.pricing-form-field input:focus,
+.pricing-form-field select:focus {
+  border-color: #F5C518;
+}
+
+.pricing-sell-preview {
+  background: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: #10b981;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pricing-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+/* Inline edit row */
+.pricing-row-editing {
+  background: rgba(245,197,24,0.04) !important;
+  outline: 1px solid rgba(245,197,24,0.2);
+}
+
+.pricing-inline-input {
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 13px;
+  padding: 5px 8px;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+.pricing-inline-input:focus { border-color: #F5C518; }
+.pricing-desc-input {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+.btn-icon.success { color: #10b981; border-color: #10b981; }
+.btn-icon.success:hover { background: rgba(16,185,129,0.1); }
