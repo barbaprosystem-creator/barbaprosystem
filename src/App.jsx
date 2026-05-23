@@ -19,6 +19,7 @@ import MaterialsCatalog from './pages/admin/MaterialsCatalog';
 import CatalogAdminPage from './pages/admin/CatalogAdminPage';
 import BrigadesPage from './pages/admin/BrigadesPage';
 import ProfitTracker from './pages/admin/ProfitTracker';
+import InboxPage from './pages/admin/InboxPage';
 
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
@@ -113,6 +114,7 @@ export default function App() {
           }
         >
           <Route index element={<AdminDashboard />} />
+          <Route path="inbox" element={<InboxPage />} />
           <Route path="crm" element={<CRMPipeline />} />
           <Route path="estimates" element={<EstimatesList />} />
           <Route path="projects" element={<ProjectsList />} />

@@ -4,31 +4,30 @@ const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 console.log("Using URL:", supabaseUrl);
-console.log("Using Key (first 10 chars):", supabaseKey ? supabaseKey.substring(0, 10) : 'MISSING');
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function test() {
   const From = '+15023058421';
-  const Body = 'Hola esto es un test local';
+  const Body = 'Test SMS bug canal';
   let canal = 'sms';
   let telefonoCliente = From;
   
   try {
-    console.log("Paso 1: Buscando cliente...");
     let { data: cliente, error: clienteError } = await supabase
-      .from('clientes')
+      .from('contacts')
       .select('id')
-      .eq('telefono', telefonoCliente)
+      .eq('phone', telefonoCliente)
       .maybeSingle();
 
     if (!cliente) {
       console.log("Creando cliente...");
       const { data: nuevoCliente, error: nuevoClienteError } = await supabase
-        .from('clientes')
+        .from('contacts')
         .insert([{ 
-          nombre: `Cliente ${telefonoCliente}`, 
-          telefono: telefonoCliente 
+          first_name: 'Test', 
+          last_name: 'User',
+          phone: telefonoCliente 
         }])
         .select()
         .single();
@@ -36,9 +35,8 @@ async function test() {
       if (nuevoClienteError) throw nuevoClienteError;
       cliente = nuevoCliente;
     }
-    console.log("Cliente OK:", cliente.id);
 
-    console.log("Paso 2: Buscando conversacion...");
+    console.log("Creando conversacion con canal:", canal);
     let { data: conversacion, error: convError } = await supabase
       .from('conversaciones')
       .select('id')
@@ -48,7 +46,6 @@ async function test() {
       .maybeSingle();
 
     if (!conversacion) {
-      console.log("Creando conversacion...");
       const { data: nuevaConv, error: nuevaConvError } = await supabase
         .from('conversaciones')
         .insert([{ 
@@ -62,9 +59,8 @@ async function test() {
       if (nuevaConvError) throw nuevaConvError;
       conversacion = nuevaConv;
     }
-    console.log("Conversacion OK:", conversacion.id);
-
-    console.log("Paso 3: Insertando mensaje...");
+    
+    console.log("Insertando mensaje...");
     const { error: msgError } = await supabase
       .from('mensajes')
       .insert([{
@@ -75,7 +71,7 @@ async function test() {
       }]);
 
     if (msgError) throw msgError;
-    console.log("Todo insertado correctamente.");
+    console.log("EXITO!");
 
   } catch (err) {
     console.error("ERROR CAPTURADO:", err);
