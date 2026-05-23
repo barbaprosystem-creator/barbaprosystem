@@ -13,7 +13,7 @@ export default function ReportsPage() {
   async function fetchStats() {
     setLoading(true);
     const [leads, estimates, projects, payments] = await Promise.all([
-      supabase.from('leads').select('id,status', { count:'exact' }),
+      supabase.from('contacts').select('id,pipeline_status', { count:'exact' }),
       supabase.from('estimates').select('id,status,grand_total', { count:'exact' }),
       supabase.from('projects').select('id,sold_price,status', { count:'exact' }),
       supabase.from('payments').select('amount,status'),
@@ -22,7 +22,7 @@ export default function ReportsPage() {
     const estData = estimates.data || [];
     const projData = projects.data || [];
     const payData = payments.data || [];
-    const wonLeads = (leads.data||[]).filter(l => l.status === 'won').length;
+    const wonLeads = (leads.data||[]).filter(l => l.pipeline_status === 'closed_won').length;
     const totalLeads = leads.count || 1;
 
     setStats({

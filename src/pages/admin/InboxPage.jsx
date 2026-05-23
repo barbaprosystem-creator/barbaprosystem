@@ -9,6 +9,7 @@ export default function InboxPage() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Todos');
+  const [search, setSearch] = useState('');
 
   // New Conversation Modal State
   const [showNewModal, setShowNewModal] = useState(false);
@@ -182,10 +183,19 @@ export default function InboxPage() {
   };
 
   const filteredConversations = conversations.filter(c => {
-    if (filter === 'Todos') return true;
-    if (filter === 'No leídos') return c.unreadCount > 0;
-    if (filter === 'WhatsApp') return c.canal === 'whatsapp';
-    if (filter === 'SMS') return c.canal === 'sms';
+    // Channel filter
+    if (filter === 'No leídos' && c.unreadCount <= 0) return false;
+    if (filter === 'WhatsApp' && c.canal !== 'whatsapp') return false;
+    if (filter === 'SMS' && c.canal !== 'sms') return false;
+    if (filter === 'Email' && c.canal !== 'email') return false;
+    // Search filter
+    if (search) {
+      const s = search.toLowerCase();
+      const name = `${c.contacts?.first_name || ''} ${c.contacts?.last_name || ''}`.toLowerCase();
+      const phone = (c.contacts?.phone || '').toLowerCase();
+      const email = (c.contacts?.email || '').toLowerCase();
+      if (!name.includes(s) && !phone.includes(s) && !email.includes(s)) return false;
+    }
     return true;
   });
 
@@ -276,11 +286,13 @@ export default function InboxPage() {
             <input 
               type="text" 
               placeholder="Buscar cliente o número..." 
+              value={search}
+              onChange={e => setSearch(e.target.value)}
               className="w-full px-4 py-2.5 bg-[#0b0b0b] border border-[#242424] rounded-lg focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] text-sm text-[var(--text-primary)] placeholder-gray-500 transition-colors"
             />
           </div>
           <div className="flex gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">
-            {['Todos', 'No leídos', 'WhatsApp', 'SMS'].map(f => (
+            {['Todos', 'No leídos', 'WhatsApp', 'SMS', 'Email'].map(f => (
               <button 
                 key={f}
                 onClick={() => setFilter(f)}

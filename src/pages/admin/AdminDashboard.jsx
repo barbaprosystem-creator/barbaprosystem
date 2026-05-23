@@ -183,12 +183,6 @@ export default function AdminDashboard() {
           <p className="text-muted">Barba Construction - Resumen operativo</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button 
-            onClick={handleSeedTestData}
-            style={{ padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}
-          >
-            Cargar Datos de Prueba
-          </button>
           <span style={{ fontSize: '13px', color: '#6b7280' }}>
             {new Date().toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </span>
