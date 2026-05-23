@@ -27,6 +27,7 @@ const navItems = [
   { to: '/admin/crm', icon: Users, label: 'CRM Pipeline' },
   { to: '/admin/estimates', icon: FileText, label: 'Estimados' },
   { to: '/admin/projects', icon: FolderKanban, label: 'Proyectos' },
+  { to: '/admin/profit-tracker', icon: DollarSign, label: 'Profit Tracker' },
   { to: '/admin/payments', icon: DollarSign, label: 'Pagos' },
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
