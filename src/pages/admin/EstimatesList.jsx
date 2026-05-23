@@ -3,13 +3,14 @@ import { supabase } from '../../lib/supabase';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
+import { useNavigate } from 'react-router-dom';
+
 const STATUS_MAP = {
   draft: { label:'Borrador', color:'#6b7280' },
   sent: { label:'Enviado', color:'#3b82f6' },
   approved: { label:'Aprobado', color:'#10b981' },
   rejected: { label:'Rechazado', color:'#ef4444' },
 };
-import { useNavigate } from 'react-router-dom';
 
 export default function EstimatesList() {
   const navigate = useNavigate();
