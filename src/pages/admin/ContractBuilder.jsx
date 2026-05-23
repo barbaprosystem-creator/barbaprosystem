@@ -388,16 +388,16 @@ export default function ContractBuilder() {
             <ul className="list-disc pl-6 mb-4 space-y-1">
               {items.map(item => (
                 <li key={item.id}>
-                  <strong>{item.description}</strong> (Qty: {item.quantity}) - {formatMoney(item.total)}
+                  <strong>{item.description}</strong> (Qty: {item.quantity}) - {formatCurrency(item.total)}
                 </li>
               ))}
             </ul>
-            <p className="font-bold text-lg text-right">Total Project Cost: {formatMoney(total)}</p>
+            <p className="font-bold text-lg text-right">Total Project Cost: {formatCurrency(total)}</p>
           </section>
 
           <section>
             <h3 className="font-bold text-lg mb-2 border-b border-gray-200 pb-1">2. Payment Terms</h3>
-            <p className="mb-2">The total cost for the work described in this Agreement is <strong>{formatMoney(total)}</strong>.</p>
+            <p className="mb-2">The total cost for the work described in this Agreement is <strong>{formatCurrency(total)}</strong>.</p>
             <div className="bg-gray-50 p-4 border-l-4 border-[#F5C518] whitespace-pre-line my-3 italic">
               {paymentTerms || <span className="text-gray-400">Términos de pago pendientes...</span>}
             </div>
