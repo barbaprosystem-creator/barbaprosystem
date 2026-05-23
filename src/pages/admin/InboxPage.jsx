@@ -67,11 +67,11 @@ export default function InboxPage() {
 
       setConversations(processed);
       
-      // Update selected conversation if it's open
-      if (selectedConversation) {
-        const updated = processed.find(c => c.id === selectedConversation.id);
-        if (updated) setSelectedConversation(updated);
-      }
+      // Update selected conversation if it's open (using functional update to avoid stale closures)
+      setSelectedConversation(prevSelected => {
+        if (!prevSelected) return null;
+        return processed.find(c => c.id === prevSelected.id) || prevSelected;
+      });
       
       setLoading(false);
     } catch (err) {
