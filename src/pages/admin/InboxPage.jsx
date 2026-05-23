@@ -42,7 +42,7 @@ export default function InboxPage() {
         .eq('cliente_id', newConvData.contactId)
         .eq('canal', newConvData.canal)
         .eq('estado', 'activa')
-        .single();
+        .maybeSingle();
 
       if (existing) {
         setShowNewModal(false);
