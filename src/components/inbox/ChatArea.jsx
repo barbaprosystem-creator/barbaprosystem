@@ -15,21 +15,42 @@ export default function ChatArea({ conversation }) {
 
   const handleSendMessage = async (text) => {
     try {
-      const { error } = await supabase
+      // 1. Guardar localmente en Supabase como "enviado"
+      const { data: insertedData, error } = await supabase
         .from('mensajes')
         .insert([{
           conversacion_id: conversation.id,
           direccion: 'outbound',
           contenido: text,
           estado_entrega: 'enviado'
-        }]);
+        }])
+        .select()
+        .single();
         
       if (error) throw error;
       
-      // Opcional: Llamar al endpoint de Twilio aquí si ya está implementado el envío
+      // 2. Enviar el mensaje por Twilio si hay un número de contacto
+      const contactPhone = conversation.contacts?.phone;
+      if (contactPhone && conversation.canal === 'sms') {
+        const twilioRes = await fetch('/api/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: contactPhone,
+            body: text
+          })
+        });
+        
+        const twilioData = await twilioRes.json();
+        
+        if (!twilioRes.ok) {
+          console.error("Error desde API de Twilio:", twilioData);
+          // Opcional: Actualizar estado_entrega a 'fallido'
+        }
+      }
     } catch (err) {
       console.error("Error enviando mensaje:", err);
-      alert("Hubo un error al enviar el mensaje.");
+      alert("Hubo un error al guardar o enviar el mensaje.");
     }
   };
 
