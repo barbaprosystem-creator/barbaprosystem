@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature } from 'lucide-react';
+import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
@@ -17,6 +17,7 @@ export default function EstimatesList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
 
   useEffect(() => { fetchEstimates(); }, []);
 
@@ -157,6 +158,9 @@ export default function EstimatesList() {
         <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
         <div className="crm-toolbar-right">
           <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
+          <button className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#333] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors" onClick={() => setShowSummaryModal(true)}>
+            <BarChart2 size={16}/><span>Resumen Ventas</span>
+          </button>
           <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
@@ -199,11 +203,70 @@ export default function EstimatesList() {
                 </td>
               </tr>
             ))}
-            {filtered.length===0 && <tr><td colSpan={8} className="crm-empty-row">No hay estimados</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan="8" className="text-center py-8 text-[#888]">No se encontraron estimados.</td></tr>}
           </tbody>
         </table>
       </div>
+
+      {/* MODAL RESUMEN VENTAS */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <BarChart2 className="text-[#FACB00]" /> Resumen de Ventas por Vendedor
+                </h3>
+                <p className="text-sm text-gray-400">Total de estimados enviados y aprobados.</p>
+              </div>
+              <button onClick={() => setShowSummaryModal(false)}><X className="text-gray-400 hover:text-white" /></button>
+            </div>
+            
+            <div className="bg-[#1a1a1a] rounded-lg border border-[#333] overflow-hidden">
+              <table className="w-full text-left text-sm text-gray-300">
+                <thead className="bg-[#222] text-gray-400 font-bold uppercase text-xs">
+                  <tr>
+                    <th className="px-4 py-3">Vendedor</th>
+                    <th className="px-4 py-3 text-center">Enviados (Cant.)</th>
+                    <th className="px-4 py-3 text-right">Monto Enviado</th>
+                    <th className="px-4 py-3 text-center">Aprobados (Cant.)</th>
+                    <th className="px-4 py-3 text-right">Monto Aprobado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#333]">
+                  {Object.entries(
+                    estimates.reduce((acc, est) => {
+                      if (est.status !== 'sent' && est.status !== 'approved') return acc;
+                      const name = est.creator?.full_name || 'Sin Vendedor';
+                      if (!acc[name]) acc[name] = { sentCount: 0, sentAmount: 0, appCount: 0, appAmount: 0 };
+                      if (est.status === 'sent') {
+                        acc[name].sentCount++;
+                        acc[name].sentAmount += Number(est.grand_total || 0);
+                      } else {
+                        acc[name].appCount++;
+                        acc[name].appAmount += Number(est.grand_total || 0);
+                      }
+                      return acc;
+                    }, {})
+                  ).map(([name, stats]) => (
+                    <tr key={name} className="hover:bg-[#2a2a2a] transition-colors">
+                      <td className="px-4 py-3 font-bold text-white">{name}</td>
+                      <td className="px-4 py-3 text-center text-blue-400">{stats.sentCount}</td>
+                      <td className="px-4 py-3 text-right text-blue-400">{formatCurrency(stats.sentAmount)}</td>
+                      <td className="px-4 py-3 text-center text-emerald-400 font-bold">{stats.appCount}</td>
+                      <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(stats.appAmount)}</td>
+                    </tr>
+                  ))}
+                  {estimates.filter(e => e.status === 'sent' || e.status === 'approved').length === 0 && (
+                    <tr><td colSpan="5" className="px-4 py-6 text-center text-gray-500">No hay datos de ventas recientes.</td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-
