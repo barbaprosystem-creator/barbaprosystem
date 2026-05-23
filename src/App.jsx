@@ -47,32 +47,41 @@ function LoadingScreen() {
 export default function App() {
   const { session, profile, loading, signIn, signOut, role } = useAuth();
 
-  if (loading) return <LoadingScreen />;
+  // ==========================================
+  // ALWAYS-PUBLIC ROUTES — NO AUTH NEEDED
+  // Render immediately, no loading screen, no auth check.
+  // These must work for customers who click a link from their email.
+  // ==========================================
+  const PUBLIC_PATHS = ['/p/', '/catalog', '/privacy', '/terms', '/eula', '/contact'];
+  const isPublicPath = PUBLIC_PATHS.some(p => window.location.pathname.startsWith(p));
 
-  // ==========================================
-  // UNAUTHENTICATED ROUTING (PUBLIC ROUTES)
-  // ==========================================
-  // If the user is not logged in, they can ONLY access public routes like the Proposal link.
-  // Otherwise, they are sent to the LoginPage.
-  if (!session || !profile) {
+  if (isPublicPath) {
     return (
       <Router>
         <Routes>
-          {/* Public Link for the Customer */}
-          <Route path="/" element={<LandingPage />} />
           <Route path="/p/:id" element={<PDFPreview />} />
           <Route path="/catalog" element={<PublicCatalogPage />} />
-          
-          {/* Legal Pages for Integrations */}
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/eula" element={<EULA />} />
           <Route path="/contact" element={<ContactUs />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    );
+  }
 
-          {/* Login Route */}
+  if (loading) return <LoadingScreen />;
+
+  // ==========================================
+  // UNAUTHENTICATED ROUTING (PRIVATE ROUTES)
+  // ==========================================
+  if (!session || !profile) {
+    return (
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage onAuth={signIn} />} />
-
-          {/* Anything else goes to Landing Page */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
