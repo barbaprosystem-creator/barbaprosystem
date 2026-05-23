@@ -156,7 +156,7 @@ export default function EstimatesList() {
         <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
         <div className="crm-toolbar-right">
           <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
-          <button className="btn-primary" onClick={() => navigate('/pos/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
       <div className="estimate-tabs">
