@@ -31,6 +31,7 @@ import Clients from './pages/Clients';
 import Showroom from './pages/Showroom';
 import PDFPreview from './pages/PDFPreview';
 import PublicCatalogPage from './pages/PublicCatalogPage';
+import PublicContract from './pages/PublicContract';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import EULA from './pages/EULA';
@@ -55,7 +56,7 @@ export default function App() {
   // Render immediately, no loading screen, no auth check.
   // These must work for customers who click a link from their email.
   // ==========================================
-  const PUBLIC_PATHS = ['/p/', '/catalog', '/privacy', '/terms', '/eula', '/contact'];
+  const PUBLIC_PATHS = ['/p/', '/contract/', '/catalog', '/privacy', '/terms', '/eula', '/contact'];
   const isPublicPath = PUBLIC_PATHS.some(p => window.location.pathname.startsWith(p));
 
   if (isPublicPath) {
@@ -63,6 +64,7 @@ export default function App() {
       <Router>
         <Routes>
           <Route path="/p/:id" element={<PDFPreview />} />
+          <Route path="/contract/:id" element={<PublicContract />} />
           <Route path="/catalog" element={<PublicCatalogPage />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
@@ -105,6 +107,7 @@ export default function App() {
       <Routes>
         {/* PUBLIC ROUTE ALSO AVAILABLE WHEN LOGGED IN */}
         <Route path="/p/:id" element={<PDFPreview />} />
+        <Route path="/contract/:id" element={<PublicContract />} />
         <Route path="/catalog" element={<PublicCatalogPage />} />
         
         {/* Legal Pages for Integrations */}

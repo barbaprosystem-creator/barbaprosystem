@@ -16,12 +16,8 @@ export default function ContractBuilder() {
   const [contact, setContact] = useState(null);
   
   // Signatures
-  const customerCanvasRef = useRef(null);
   const companyCanvasRef = useRef(null);
-  const [customerSig, setCustomerSig] = useState(null);
   const [companySig, setCompanySig] = useState(null);
-
-  
   // Editable fields
   const [paymentTerms, setPaymentTerms] = useState('');
   const [contractDate, setContractDate] = useState(new Date().toISOString().split('T')[0]);
@@ -127,10 +123,8 @@ export default function ContractBuilder() {
 
   useEffect(() => {
     if (loading) return;
-    const cleanupCustomer = setupCanvas(customerCanvasRef.current, setCustomerSig);
     const cleanupCompany = setupCanvas(companyCanvasRef.current, setCompanySig);
     return () => {
-      if (cleanupCustomer) cleanupCustomer();
       if (cleanupCompany) cleanupCompany();
     };
   }, [loading]);
@@ -162,96 +156,43 @@ export default function ContractBuilder() {
 
     setSending(true);
     try {
-      // Create HTML version of contract to send via email
+      if (!companySig) {
+        alert("Por favor firma el contrato como compañía antes de enviarlo.");
+        setSending(false);
+        return;
+      }
+
+      // 1. Guardar en Supabase
+      const { error: updateErr } = await supabase
+        .from('estimates')
+        .update({
+          contract_payment_terms: paymentTerms,
+          contract_company_sig: companySig,
+          contract_date: contractDate,
+          status: 'sent'
+        })
+        .eq('id', id);
+
+      if (updateErr) {
+        if (updateErr.message.includes('column') || updateErr.code === 'PGRST204') {
+          throw new Error('Las columnas del contrato no existen en la base de datos. Debes correr el código SQL que te di para actualizar la tabla "estimates".');
+        }
+        throw updateErr;
+      }
+
+      // 2. Enviar email con el enlace
+      const contractUrl = `https://barbaprosystem.com/contract/${id}`;
       const htmlContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; color: #111;">
-          <h1 style="text-align: center; border-bottom: 2px solid #F5C518; padding-bottom: 10px;">RETAIL CONSTRUCTION AGREEMENT</h1>
-          
-          <table style="width: 100%; margin-top: 20px;">
-            <tr>
-              <td style="width: 50%; vertical-align: top;">
-                <strong>Contractor:</strong><br/>
-                Barba Construction<br/>
-                5910 Preston Highway<br/>
-                Louisville, KY 40219<br/>
-                (502) 338-3720<br/>
-                www.barbaconstruction.com
-              </td>
-              <td style="width: 50%; vertical-align: top; text-align: right;">
-                <strong>Customer:</strong><br/>
-                ${contact.first_name} ${contact.last_name || ''}<br/>
-                ${contact.address || 'Address pending'}<br/>
-                ${contact.phone || 'Phone pending'}<br/>
-                Date: ${contractDate}
-              </td>
-            </tr>
-          </table>
-
-          <h3 style="margin-top: 30px;">1. Scope of Work</h3>
-          <p>The Contractor agrees to provide all materials and labor necessary to complete the following work:</p>
-          <ul>
-            ${items.map(item => `<li><strong>${item.description}</strong> (Qty: ${item.quantity}) - ${formatCurrency(item.total)}</li>`).join('')}
-          </ul>
-          <p><strong>Total Project Cost: ${formatCurrency(estimate.total || estimate.grand_total || 0)}</strong></p>
-
-          <h3 style="margin-top: 30px;">2. Payment Terms</h3>
-          <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #F5C518;">
-            ${(paymentTerms || '').replace(/\n/g, '<br/>')}
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111; padding: 20px;">
+          <h2 style="color: #F5C518;">Contract for your Project</h2>
+          <p>Hello ${contact.first_name},</p>
+          <p>Your construction contract from Barba Construction is ready for your review and signature.</p>
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${contractUrl}" style="background-color: #F5C518; color: #111; font-weight: bold; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block;">Review and Sign Contract</a>
           </div>
-          <p><small>Payments may be made by credit card, cash, or check.</small></p>
-
-          <h3 style="margin-top: 30px;">3. Materials and Ownership of Excess Materials</h3>
-          <p>Barba Construction may purchase additional materials beyond the estimated project requirements as a precaution to avoid delays. Any unused or excess materials purchased for this project shall remain the sole property of Barba Construction and may be removed from the job site upon project completion.</p>
-
-          <h3 style="margin-top: 30px;">4. Change Orders</h3>
-          <p>Any changes to the original scope of work must be documented in a written change order signed by both parties. Change orders may result in additional charges or changes to the project timeline.</p>
-
-          <h3 style="margin-top: 30px;">5. Responsibilities of the Parties</h3>
-          <p><strong>Barba Construction Responsibilities:</strong><br/>
-          • Perform all work in a professional and timely manner.<br/>
-          • Comply with all applicable building codes and regulations.<br/>
-          • Maintain a clean and safe worksite.</p>
-          <p><strong>Customer Responsibilities:</strong><br/>
-          • Provide access to the property for the Contractor and its subcontractors during normal business hours.<br/>
-          • Communicate any concerns or issues promptly to Barba Construction.<br/>
-          • Ensure timely payment according to the terms of this Agreement.</p>
-
-          <h3 style="margin-top: 30px;">6. Warranties</h3>
-          <p>Barba Construction provides a 2-year workmanship warranty for the work performed under this Agreement. Manufacturer warranties for materials may apply separately.</p>
-
-          <h3 style="margin-top: 30px;">7. Permits and Approvals</h3>
-          <p>Barba Construction will obtain all necessary permits required for the scope of work. The cost of permits is included in the total project price unless otherwise specified.</p>
-
-          <h3 style="margin-top: 30px;">8. Termination</h3>
-          <p>This Agreement may be terminated by mutual written consent or if either party fails to perform their obligations. In the event of termination, the Customer agrees to pay for all work completed up to the date of termination.</p>
-
-          <h3 style="margin-top: 30px;">9. Governing Law</h3>
-          <p>This Agreement shall be governed by the laws of the Commonwealth of Kentucky.</p>
-
-          <h3 style="margin-top: 30px;">10. Entire Agreement</h3>
-          <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements. Any amendments must be in writing and signed by both parties.</p>
-
-          <div style="margin-top: 50px; border-top: 1px solid #ccc; pt-4">
-            <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement as of the date first written above.</p>
-            <table style="width: 100%; margin-top: 30px;">
-              <tr>
-                <td style="width: 50%; vertical-align: bottom; padding-right: 20px;">
-                  ${customerSig ? `<img src="${customerSig}" style="max-height: 80px; display: block; margin-bottom: 10px;" />` : '<div style="height: 80px;"></div>'}
-                  <div style="border-top: 1px solid #000; padding-top: 5px;">
-                    <strong>Customer Signature</strong><br/>
-                    Date: ${contractDate}
-                  </div>
-                </td>
-                <td style="width: 50%; vertical-align: bottom; padding-left: 20px;">
-                  ${companySig ? `<img src="${companySig}" style="max-height: 80px; display: block; margin-bottom: 10px;" />` : '<div style="height: 80px;"></div>'}
-                  <div style="border-top: 1px solid #000; padding-top: 5px;">
-                    <strong>Barba Construction Representative</strong><br/>
-                    Date: ${contractDate}
-                  </div>
-                </td>
-              </tr>
-            </table>
-          </div>
+          <p>If the button doesn't work, copy and paste this link in your browser:</p>
+          <p><a href="${contractUrl}">${contractUrl}</a></p>
+          <p>Thank you,<br/>Barba Construction</p>
         </div>
       `;
 
@@ -462,21 +403,8 @@ export default function ContractBuilder() {
           
           <div className="flex flex-col md:flex-row justify-between gap-10">
             <div className="w-full md:w-1/2">
-              <div className="relative border-b-2 border-dashed border-gray-300 bg-gray-50 rounded-t-lg mb-2">
-                <canvas 
-                  ref={customerCanvasRef} 
-                  width={400} 
-                  height={150} 
-                  className="w-full cursor-crosshair touch-none"
-                />
-                <button 
-                  onClick={() => clearSignature(customerCanvasRef, setCustomerSig)}
-                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500 print:hidden"
-                  title="Borrar Firma"
-                >
-                  <Eraser size={18} />
-                </button>
-                {!customerSig && <p className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none print:hidden">Firmar aquí</p>}
+              <div className="border-b-2 border-dashed border-gray-300 bg-gray-50 rounded-t-lg mb-2 h-[150px] flex items-center justify-center">
+                <span className="text-gray-400 italic">Firma del cliente (vía enlace web)</span>
               </div>
               <p className="mt-2 text-sm font-bold uppercase">Customer Signature</p>
               <p className="mt-1 text-sm text-gray-600">Date: {contractDate}</p>
@@ -521,6 +449,55 @@ export default function ContractBuilder() {
             <p>5910 PRESTON HWY</p>
             <p>(502) 338-3720</p>
             <p>barbaconstruct@gmail.com</p>
+          </div>
+
+          {/* Cancellation Form */}
+          <div className="mt-8 border-t border-gray-300 pt-6">
+            <h3 className="font-bold text-lg mb-2">Cancellation Form</h3>
+            <p className="mb-6">If you wish to cancel this contract, please complete and return this form to the address provided above.</p>
+            
+            <h4 className="font-bold uppercase mb-4">NOTICE OF CANCELLATION</h4>
+            <div className="space-y-4 max-w-lg">
+              <p><strong>To:</strong> Barba Construction<br/>5910 Preston Hwy, Louisville, KY 40219</p>
+              <div className="border-b border-gray-400 pb-1 pt-4">
+                <strong>Consumer Name:</strong> <span className="inline-block w-64"></span>
+              </div>
+              <div className="border-b border-gray-400 pb-1 pt-2">
+                <strong>Consumer Address:</strong> <span className="inline-block w-64"></span>
+              </div>
+              <div className="border-b border-gray-400 pb-1 pt-2">
+                <strong>Reason:</strong> <span className="inline-block w-64"></span>
+              </div>
+              <div className="border-b border-gray-400 pb-1 pt-2">
+                <strong>Consumer Signature:</strong> <span className="inline-block w-64"></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 border-t border-gray-300 pt-6">
+            <h4 className="font-bold text-lg mb-4">Acknowledgment of Receipt of Right to Cancel</h4>
+            <p className="mb-6">I acknowledge receipt of this notice informing me of my right to cancel this contract within three business days of its execution.</p>
+            
+            <div className="space-y-6 max-w-lg">
+              <div className="border-b border-gray-400 pb-1">
+                <strong>Consumer Name:</strong> <span className="inline-block w-64"></span>
+              </div>
+              <div className="border-b border-gray-400 pb-1">
+                <strong>Consumer Signature:</strong> <span className="inline-block w-64"></span>
+              </div>
+              <div className="border-b border-gray-400 pb-1">
+                <strong>Date:</strong> <span className="inline-block w-64"></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 pt-6">
+            <p className="font-bold mb-2">Notes:</p>
+            <ol className="list-decimal pl-6 space-y-2 text-sm">
+              <li><strong>Definition of "Business Day":</strong> Business days exclude Sundays and federal holidays.</li>
+              <li><strong>Retention of Copy:</strong> Both the contractor and the consumer should retain a copy of this notice for their records.</li>
+              <li><strong>Legal Compliance:</strong> This document is crafted in accordance with Kentucky's consumer protection laws, including provisions under federal and state home solicitation sales acts.</li>
+            </ol>
           </div>
         </div>
         
