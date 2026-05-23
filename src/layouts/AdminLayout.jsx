@@ -18,7 +18,8 @@ import {
   Eye,
   EyeOff,
   BookOpen,
-  MessageSquare
+  MessageSquare,
+  PenLine,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
@@ -27,7 +28,8 @@ const navItems = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
   { to: '/admin/inbox', icon: MessageSquare, label: 'Inbox' },
   { to: '/admin/crm', icon: Users, label: 'CRM Pipeline' },
-  { to: '/admin/estimates', icon: FileText, label: 'Estimados' },
+  { to: '/admin/estimator', icon: PenLine, label: 'Crear Estimado' },
+  { to: '/admin/estimates', icon: FileText, label: 'Lista Estimados' },
   { to: '/admin/projects', icon: FolderKanban, label: 'Proyectos' },
   { to: '/admin/profit-tracker', icon: DollarSign, label: 'Profit Tracker' },
   { to: '/admin/payments', icon: DollarSign, label: 'Pagos' },

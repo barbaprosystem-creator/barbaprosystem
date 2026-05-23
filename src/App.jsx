@@ -21,6 +21,7 @@ import BrigadesPage from './pages/admin/BrigadesPage';
 import ProfitTracker from './pages/admin/ProfitTracker';
 import InboxPage from './pages/admin/InboxPage';
 
+
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
@@ -126,6 +127,7 @@ export default function App() {
           <Route path="inbox" element={<InboxPage />} />
           <Route path="crm" element={<CRMPipeline />} />
           <Route path="estimates" element={<EstimatesList />} />
+          <Route path="estimator" element={<Estimator />} />
           <Route path="projects" element={<ProjectsList />} />
           <Route path="payments" element={<PaymentTracker />} />
           <Route path="calendar" element={<CalendarPage />} />
