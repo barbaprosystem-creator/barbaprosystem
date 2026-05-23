@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
-import { ArrowLeft, Send, Printer, FileText, Loader } from 'lucide-react';
+import { ArrowLeft, Send, Printer, FileText, Loader, Eraser } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -14,6 +14,13 @@ export default function ContractBuilder() {
   const [estimate, setEstimate] = useState(null);
   const [items, setItems] = useState([]);
   const [contact, setContact] = useState(null);
+  
+  // Signatures
+  const customerCanvasRef = useRef(null);
+  const companyCanvasRef = useRef(null);
+  const [customerSig, setCustomerSig] = useState(null);
+  const [companySig, setCompanySig] = useState(null);
+
   
   // Editable fields
   const [paymentTerms, setPaymentTerms] = useState('');
@@ -59,6 +66,78 @@ export default function ContractBuilder() {
     }
     fetchEstimate();
   }, [id]);
+
+  // Hook up drawing logic for a canvas
+  const setupCanvas = (canvas, setSig) => {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false;
+
+    const startDrawing = (e) => {
+      isDrawing = true;
+      draw(e);
+    };
+
+    const stopDrawing = () => {
+      isDrawing = false;
+      ctx.beginPath();
+      setSig(canvas.toDataURL('image/png'));
+    };
+
+    const draw = (e) => {
+      if (!isDrawing) return;
+      ctx.lineWidth = 2;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#000';
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+
+      ctx.lineTo(x, y);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+    };
+
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseout', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e); }, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+
+    return () => {
+      canvas.removeEventListener('mousedown', startDrawing);
+      canvas.removeEventListener('mousemove', draw);
+      canvas.removeEventListener('mouseup', stopDrawing);
+      canvas.removeEventListener('mouseout', stopDrawing);
+      canvas.removeEventListener('touchstart', startDrawing);
+      canvas.removeEventListener('touchmove', draw);
+      canvas.removeEventListener('touchend', stopDrawing);
+    };
+  };
+
+  useEffect(() => {
+    if (loading) return;
+    const cleanupCustomer = setupCanvas(customerCanvasRef.current, setCustomerSig);
+    const cleanupCompany = setupCanvas(companyCanvasRef.current, setCompanySig);
+    return () => {
+      if (cleanupCustomer) cleanupCustomer();
+      if (cleanupCompany) cleanupCompany();
+    };
+  }, [loading]);
+
+  const clearSignature = (canvasRef, setSig) => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      setSig(null);
+    }
+  };
 
   const handlePrint = () => {
     window.print();
@@ -146,8 +225,26 @@ export default function ContractBuilder() {
           <h3 style="margin-top: 30px;">10. Entire Agreement</h3>
           <p>This Agreement constitutes the entire understanding between the parties and supersedes any prior agreements. Any amendments must be in writing and signed by both parties.</p>
 
-          <div style="margin-top: 50px; text-align: center; background: #fff8e1; border: 1px solid #ffe082; padding: 20px; border-radius: 8px;">
-            <p style="font-weight: bold; font-size: 18px; margin-bottom: 10px;">Para aprobar y firmar este contrato, por favor contacta a Barba Construction o responde a este correo con tu confirmación.</p>
+          <div style="margin-top: 50px; border-top: 1px solid #ccc; pt-4">
+            <p><strong>IN WITNESS WHEREOF</strong>, the parties have executed this Agreement as of the date first written above.</p>
+            <table style="width: 100%; margin-top: 30px;">
+              <tr>
+                <td style="width: 50%; vertical-align: bottom; padding-right: 20px;">
+                  ${customerSig ? `<img src="${customerSig}" style="max-height: 80px; display: block; margin-bottom: 10px;" />` : '<div style="height: 80px;"></div>'}
+                  <div style="border-top: 1px solid #000; padding-top: 5px;">
+                    <strong>Customer Signature</strong><br/>
+                    Date: ${contractDate}
+                  </div>
+                </td>
+                <td style="width: 50%; vertical-align: bottom; padding-left: 20px;">
+                  ${companySig ? `<img src="${companySig}" style="max-height: 80px; display: block; margin-bottom: 10px;" />` : '<div style="height: 80px;"></div>'}
+                  <div style="border-top: 1px solid #000; padding-top: 5px;">
+                    <strong>Barba Construction Representative</strong><br/>
+                    Date: ${contractDate}
+                  </div>
+                </td>
+              </tr>
+            </table>
           </div>
         </div>
       `;
@@ -343,16 +440,47 @@ export default function ContractBuilder() {
         <div className="mt-16 pt-8 border-t border-gray-300">
           <p className="font-bold mb-10">IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.</p>
           
-          <div className="flex justify-between gap-10">
-            <div className="w-1/2">
-              <div className="border-b border-black pt-10"></div>
-              <p className="mt-2 text-sm">Customer Signature</p>
-              <p className="mt-1 text-sm font-bold">Date: ________________</p>
+          <div className="flex flex-col md:flex-row justify-between gap-10">
+            <div className="w-full md:w-1/2">
+              <div className="relative border-b-2 border-dashed border-gray-300 bg-gray-50 rounded-t-lg mb-2">
+                <canvas 
+                  ref={customerCanvasRef} 
+                  width={400} 
+                  height={150} 
+                  className="w-full cursor-crosshair touch-none"
+                />
+                <button 
+                  onClick={() => clearSignature(customerCanvasRef, setCustomerSig)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500 print:hidden"
+                  title="Borrar Firma"
+                >
+                  <Eraser size={18} />
+                </button>
+                {!customerSig && <p className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none print:hidden">Firmar aquí</p>}
+              </div>
+              <p className="mt-2 text-sm font-bold uppercase">Customer Signature</p>
+              <p className="mt-1 text-sm text-gray-600">Date: {contractDate}</p>
             </div>
-            <div className="w-1/2">
-              <div className="border-b border-black pt-10"></div>
-              <p className="mt-2 text-sm">Barba Construction Representative</p>
-              <p className="mt-1 text-sm font-bold">Date: ________________</p>
+
+            <div className="w-full md:w-1/2">
+              <div className="relative border-b-2 border-dashed border-gray-300 bg-gray-50 rounded-t-lg mb-2">
+                <canvas 
+                  ref={companyCanvasRef} 
+                  width={400} 
+                  height={150} 
+                  className="w-full cursor-crosshair touch-none"
+                />
+                <button 
+                  onClick={() => clearSignature(companyCanvasRef, setCompanySig)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-red-500 print:hidden"
+                  title="Borrar Firma"
+                >
+                  <Eraser size={18} />
+                </button>
+                {!companySig && <p className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none print:hidden">Firmar aquí</p>}
+              </div>
+              <p className="mt-2 text-sm font-bold uppercase">Barba Construction Representative</p>
+              <p className="mt-1 text-sm text-gray-600">Date: {contractDate}</p>
             </div>
           </div>
         </div>
