@@ -5,11 +5,14 @@ import './index.css'
 import App from './App.jsx'
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+import { AuthProvider } from './hooks/useAuth';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={clientId}>
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </GoogleOAuthProvider>
   </StrictMode>,
 )

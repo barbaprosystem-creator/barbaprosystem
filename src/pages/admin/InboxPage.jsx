@@ -76,13 +76,18 @@ export default function InboxPage() {
   useEffect(() => {
     fetchConversations();
     
+    let debounceTimer;
     const channel = supabase.channel('inbox-updates')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'mensajes' }, (payload) => {
-        fetchConversations();
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          fetchConversations();
+        }, 1500);
       })
       .subscribe();
 
     return () => {
+      clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -112,7 +117,9 @@ export default function InboxPage() {
             estado_entrega
           )
         `)
-        .order('ultima_interaccion', { ascending: false });
+        .order('ultima_interaccion', { ascending: false })
+        .order('creado_en', { foreignTable: 'mensajes', ascending: false })
+        .limit(20, { foreignTable: 'mensajes' });
 
       if (error) throw error;
       
@@ -193,19 +200,24 @@ export default function InboxPage() {
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Seleccionar Cliente</label>
-                <select 
+                <label className="block text-sm font-medium text-gray-400 mb-1">Buscar Cliente</label>
+                <input 
+                  type="text"
+                  list="contacts-list"
+                  placeholder="Escribe el nombre o teléfono del cliente..."
                   className="w-full bg-[#12131c] border border-[#34384c] text-white rounded-lg px-4 py-2.5 focus:border-[var(--gold)] outline-none"
-                  value={newConvData.contactId}
-                  onChange={(e) => setNewConvData({...newConvData, contactId: e.target.value})}
-                >
-                  <option value="">-- Elige un cliente --</option>
+                  value={newConvData.searchText || ''}
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    const matched = allContacts.find(c => `${c.first_name} ${c.last_name} ${c.phone||''}`.trim() === text);
+                    setNewConvData({...newConvData, searchText: text, contactId: matched ? matched.id : ''});
+                  }}
+                />
+                <datalist id="contacts-list">
                   {allContacts.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.first_name} {c.last_name} {c.email ? `(${c.email})` : ''} {c.phone ? `(${c.phone})` : ''}
-                    </option>
+                    <option key={c.id} value={`${c.first_name} ${c.last_name} ${c.phone||''}`.trim()} />
                   ))}
-                </select>
+                </datalist>
               </div>
               
               <div>
