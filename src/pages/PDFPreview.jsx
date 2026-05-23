@@ -35,29 +35,40 @@ export default function PDFPreview() {
         return;
       }
       try {
-        const { data: payload, error: rpcErr } = await supabase
-          .rpc('get_estimate_payload', { p_estimate_id: id });
-        
-        if (rpcErr) throw rpcErr;
+        // Use the server-side API so clients don't need a Supabase session
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
 
-        if (!payload || !payload.estimate) {
-          throw new Error("No se encontró el estimado.");
+        const res = await fetch(`/api/get-estimate?id=${id}`, {
+          signal: controller.signal,
+        });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || `Error ${res.status}`);
         }
 
+        const payload = await res.json();
         setEstimateData({
           estimate: payload.estimate,
-          contact: payload.contact,
-          items: payload.items || []
+          contact:  payload.contact,
+          items:    payload.items || [],
         });
       } catch (err) {
-        console.error("Error fetching estimate:", err);
-        setError("No pudimos cargar la información de la propuesta. Puede que el enlace no sea válido.");
+        if (err.name === 'AbortError') {
+          setError("La propuesta tardó demasiado en cargar. Por favor intenta de nuevo.");
+        } else {
+          console.error("Error fetching estimate:", err);
+          setError("No pudimos cargar la información de la propuesta. Puede que el enlace no sea válido.");
+        }
       } finally {
         setLoading(false);
       }
     }
     fetchEstimate();
   }, [id]);
+
 
   // Simple signature canvas drawing logic
   useEffect(() => {
