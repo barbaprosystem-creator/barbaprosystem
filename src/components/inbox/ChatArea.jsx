@@ -31,14 +31,15 @@ export default function ChatArea({ conversation }) {
       
       // 2. Enviar el mensaje por Twilio si hay un número de contacto
       const contactPhone = conversation.contacts?.phone;
-      if (contactPhone && conversation.canal === 'sms') {
+      if (contactPhone && (conversation.canal === 'sms' || conversation.canal === 'whatsapp')) {
         try {
           const twilioRes = await fetch('/api/send-message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               to: contactPhone,
-              body: text
+              body: text,
+              canal: conversation.canal
             })
           });
           

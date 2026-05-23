@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const { to, body } = req.body;
+  const { to, body, canal } = req.body;
 
   if (!to || !body) {
     return res.status(400).json({ error: 'Faltan parámetros: "to" o "body" son requeridos.' });
@@ -26,8 +26,6 @@ export default async function handler(req, res) {
 
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
   const authToken = process.env.TWILIO_AUTH_TOKEN;
-  // If the user wants to use a specific number, let's use the one from env, or a fallback if not set.
-  // We'll hardcode +14155238886 as default, or use process.env.TWILIO_PHONE_NUMBER
   const fromNumber = process.env.TWILIO_PHONE_NUMBER || '+14155238886'; 
 
   if (!accountSid || !authToken) {
@@ -38,9 +36,13 @@ export default async function handler(req, res) {
   try {
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
     
+    // Si el canal es whatsapp, Twilio requiere que los números tengan el prefijo "whatsapp:"
+    const finalTo = canal === 'whatsapp' ? `whatsapp:${to}` : to;
+    const finalFrom = canal === 'whatsapp' ? `whatsapp:${fromNumber}` : fromNumber;
+
     const params = new URLSearchParams();
-    params.append('To', to);
-    params.append('From', fromNumber);
+    params.append('To', finalTo);
+    params.append('From', finalFrom);
     params.append('Body', body);
 
     const response = await fetch(twilioUrl, {
