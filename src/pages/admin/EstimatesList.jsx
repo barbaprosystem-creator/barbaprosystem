@@ -50,8 +50,8 @@ export default function EstimatesList() {
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
                 <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
-                  <h1 style="color: #F5C518; margin: 0; font-size: 24px; letter-spacing: 2px;">BARBA CONSTRUCTION</h1>
-                  <p style="color: #888888; font-size: 12px; margin-top: 10px;">Excelencia en Roofing, Siding & Gutters</p>
+                  <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
+                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excelencia en Roofing, Siding & Gutters</p>
                 </div>
                 
                 <div style="padding: 40px 30px;">

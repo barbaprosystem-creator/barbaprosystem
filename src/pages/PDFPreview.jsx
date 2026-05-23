@@ -182,9 +182,8 @@ export default function PDFPreview() {
         {/* Print Header */}
         <div className="bg-[#111] print:bg-[#111] text-white p-8 flex justify-between items-start border-b-[6px] border-[#FACB00]" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
           <div>
-            {/* Si no existe la imagen local, puedes usar texto como fallback */}
-            <h1 className="text-[#FACB00] text-2xl font-black tracking-widest uppercase">BARBA CONSTRUCTION</h1>
-            <p className="text-xs text-gray-400 mt-2">Excelencia en Roofing, Siding & Gutters<br/>(555) 123-4567<br/>info@barbaprosystem.com</p>
+            <img src="/logo-barba.png" alt="Barba Construction" className="h-16 mb-2 object-contain" />
+            <p className="text-xs text-gray-400 mt-2">Excelencia en Roofing, Siding & Gutters<br/>(502) 305-8421<br/>barbaconstruct@gmail.com</p>
           </div>
           <div className="text-right">
             <h1 className="text-3xl font-light text-gray-300">ESTIMADO</h1>
@@ -282,13 +281,11 @@ export default function PDFPreview() {
           <div className="grid grid-cols-2 gap-8 border-t border-gray-200 pt-8 mt-12">
             
             {/* Financing Block */}
-            <div className="bg-blue-50/50 rounded-xl p-6 border border-blue-100 flex flex-col justify-center items-center text-center">
-              <CreditCard size={32} className="text-blue-500 mb-3" />
-              <h4 className="font-bold text-blue-900 mb-2">Financiamiento</h4>
-              <p className="text-sm text-blue-800 font-medium leading-relaxed">
-                El financiamiento para este proyecto se tramita de manera presencial en nuestras oficinas.
+            <div className="flex flex-col">
+              <h4 className="text-sm font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">Información de Financiamiento</h4>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                El financiamiento para este proyecto se tramita de manera presencial en nuestras oficinas. Visítenos para procesar su solicitud con <strong>Servi Financial</strong> de forma rápida y segura. Contáctenos para más detalles.
               </p>
-              <p className="text-xs text-blue-600 mt-2">Visítenos para procesar su solicitud con Servi Financial de forma rápida y segura.</p>
             </div>
 
             {/* Signature Block */}
