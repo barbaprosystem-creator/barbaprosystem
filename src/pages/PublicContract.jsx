@@ -128,14 +128,14 @@ export default function PublicContract() {
         .update({
           contract_customer_sig: signature,
           contract_signed_at: new Date().toISOString(),
-          status: 'accepted'
+          status: 'approved'
         })
         .eq('id', id);
 
       if (error) throw error;
       
       // Actualizar estado local
-      setEstimate(prev => ({ ...prev, contract_customer_sig: signature, status: 'accepted' }));
+      setEstimate(prev => ({ ...prev, contract_customer_sig: signature, status: 'approved' }));
       alert("¡Contrato firmado y aceptado exitosamente!");
       
     } catch (err) {
