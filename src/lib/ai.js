@@ -93,6 +93,46 @@ Devuelve ÚNICAMENTE el texto de la propuesta modificada, sin saludos ni comenta
   }
 }
 
+export async function analyzeMarketPrices(items) {
+  const prompt = `
+Eres un experto estimador de construcción y analista de costos en Kentucky, Estados Unidos.
+Te voy a dar una lista de servicios y materiales de construcción de una empresa. 
+Para cada ítem, estima cuál es el "Precio de Mercado Promedio Actual" de VENTA al cliente final (incluyendo labor, materiales y ganancias típicas) en el estado de Kentucky, según la unidad solicitada (ej. por "sq" para techos, "linear_ft" para gutters, "each" para ventanas).
+
+Devuelve ÚNICAMENTE un objeto JSON válido donde la clave sea el ID del ítem y el valor sea tu precio estimado en número (sin símbolos de dólar ni comas).
+Ejemplo: {"1234-5678": 350.50, "9876-5432": 15.00}
+
+No incluyas explicaciones, saludos ni bloques de código (como \`\`\`json), SOLO el JSON crudo y válido.
+
+Ítems a analizar:
+${items.map(i => `ID: ${i.id} | Categoría: ${i.category} | Ítem: ${i.item_name} ${i.description ? '('+i.description+')' : ''} | Unidad: ${i.unit_type}`).join('\n')}
+`;
+
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    
+    let text = data.choices[0].message.content.trim();
+    if (text.startsWith('\`\`\`json')) text = text.slice(7);
+    if (text.startsWith('\`\`\`')) text = text.slice(3);
+    if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
+    
+    return JSON.parse(text.trim());
+  } catch (err) {
+    console.error('Error analizando mercado:', err);
+    throw err;
+  }
+}
+
 export async function askCopilot(messages, contextString = null) {
   let systemMessage = `Eres "Barba Copilot", el asistente inteligente y oráculo operativo exclusivo de Barba Construction.
 Tu misión es ayudar a la gerencia, vendedores y encargados de operaciones. Responde siempre en español, con un tono ultra-profesional, resolutivo y eficiente.

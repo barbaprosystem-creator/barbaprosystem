@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
-import { Plus, Save, Trash2, Tag, Search, X, Edit2, Check } from 'lucide-react';
+import { Plus, Save, Trash2, Tag, Search, X, Edit2, Check, Sparkles, Loader2 } from 'lucide-react';
+import { analyzeMarketPrices } from '../../lib/ai';
 
 const CATEGORIES = ['roofing', 'siding', 'gutters', 'windows', 'fences', 'deck', 'general', 'labor', 'other'];
 const UNIT_TYPES  = ['sq', 'linear_ft', 'unit', 'sqft', 'hour', 'each'];
@@ -25,6 +26,7 @@ export default function PricingSettings() {
   const [showAdd, setShowAdd]     = useState(false);
   const [newItem, setNewItem]     = useState(EMPTY_FORM);
   const [saving, setSaving]       = useState(false);
+  const [analyzingMarket, setAnalyzingMarket] = useState(false);
 
   // Inline edit state
   const [editId, setEditId]       = useState(null);
@@ -91,6 +93,34 @@ export default function PricingSettings() {
     fetchItems();
   }
 
+  async function analyzeMarket() {
+    if (items.length === 0) {
+      alert('No hay ítems para analizar.');
+      return;
+    }
+    if (!confirm('¿Analizar los precios de mercado actuales usando IA? Esto tomará unos segundos.')) return;
+    setAnalyzingMarket(true);
+    try {
+      const marketData = await analyzeMarketPrices(items);
+      
+      // Update each item in the database
+      const promises = Object.entries(marketData).map(([id, price]) => {
+        return supabase.from('price_catalog').update({ 
+          market_price: price, 
+          market_price_updated_at: new Date().toISOString() 
+        }).eq('id', id);
+      });
+      
+      await Promise.all(promises);
+      await fetchItems();
+      alert('Análisis de mercado completado exitosamente.');
+    } catch (err) {
+      alert('Error analizando mercado: ' + err.message);
+    } finally {
+      setAnalyzingMarket(false);
+    }
+  }
+
   const filtered = items.filter(item => {
     if (filter !== 'all' && item.category !== filter) return false;
     if (search && !item.item_name.toLowerCase().includes(search.toLowerCase())) return false;
@@ -109,9 +139,15 @@ export default function PricingSettings() {
           <h1><Tag size={22} /> Motor de Precios</h1>
           <p className="text-muted">Edita costos base, márgenes y precios de venta. Los vendedores solo ven el precio final.</p>
         </div>
-        <button className="btn-primary" onClick={() => { setShowAdd(!showAdd); setEditId(null); }}>
-          <Plus size={18} /> Agregar Ítem
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn-secondary" onClick={analyzeMarket} disabled={analyzingMarket} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+            {analyzingMarket ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+            {analyzingMarket ? 'Analizando...' : 'Analizar Mercado (IA)'}
+          </button>
+          <button className="btn-primary" onClick={() => { setShowAdd(!showAdd); setEditId(null); }}>
+            <Plus size={18} /> Agregar Ítem
+          </button>
+        </div>
       </header>
 
       {/* Filters */}
@@ -204,6 +240,7 @@ export default function PricingSettings() {
                 <th>Costo Base</th>
                 <th>Margen</th>
                 <th>Precio Venta</th>
+                <th>Mercado (IA)</th>
                 <th style={{ width: 100 }}>Acciones</th>
               </tr>
             </thead>
@@ -244,6 +281,7 @@ export default function PricingSettings() {
                       <span style={{ color: '#666', fontSize: 11 }}>%</span>
                     </td>
                     <td className="sell-price">{formatCurrency(previewSell)}</td>
+                    <td style={{ color: '#888' }}>-</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn-icon success" onClick={saveEdit} title="Guardar" disabled={saving}>
@@ -267,6 +305,18 @@ export default function PricingSettings() {
                     <td>{formatCurrency(item.base_cost)}</td>
                     <td>{item.margin_pct}%</td>
                     <td className="sell-price">{formatCurrency(item.sell_price || calcSellPrice(item.base_cost, item.margin_pct))}</td>
+                    <td>
+                      {item.market_price ? (
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{formatCurrency(item.market_price)}</span>
+                          <span style={{ fontSize: '10px', color: '#666' }}>
+                            Act. {new Date(item.market_price_updated_at).toLocaleDateString('es')}
+                          </span>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#555', fontStyle: 'italic', fontSize: '12px' }}>Sin analizar</span>
+                      )}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn-icon" onClick={() => startEdit(item)} title="Editar">
