@@ -10,6 +10,69 @@ export default function InboxPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('Todos');
 
+  // New Conversation Modal State
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [allContacts, setAllContacts] = useState([]);
+  const [newConvData, setNewConvData] = useState({ contactId: '', canal: '' });
+
+  const openNewConversationModal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name, phone, email')
+        .order('first_name');
+      if (!error && data) {
+        setAllContacts(data);
+        setNewConvData({ contactId: '', canal: '' });
+        setShowNewModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateConversation = async () => {
+    if (!newConvData.contactId || !newConvData.canal) return;
+    
+    try {
+      // 1. Check if conversation already exists
+      const { data: existing } = await supabase
+        .from('conversaciones')
+        .select('id')
+        .eq('cliente_id', newConvData.contactId)
+        .eq('canal', newConvData.canal)
+        .eq('estado', 'activa')
+        .single();
+
+      if (existing) {
+        setShowNewModal(false);
+        handleSelectConversation(existing.id);
+        return;
+      }
+
+      // 2. Create new conversation
+      const { data: newConv, error } = await supabase
+        .from('conversaciones')
+        .insert([{
+          cliente_id: newConvData.contactId,
+          canal: newConvData.canal,
+          estado: 'activa'
+        }])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      // 3. Refresh list and select it
+      await fetchConversations();
+      setShowNewModal(false);
+      handleSelectConversation(newConv.id);
+    } catch (err) {
+      console.error('Error creating conversation:', err);
+      alert('Error al crear la conversación');
+    }
+  };
+
   useEffect(() => {
     fetchConversations();
     
@@ -120,12 +183,84 @@ export default function InboxPage() {
   });
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-[var(--bg-primary)] border-t border-[var(--border)] overflow-hidden text-[var(--text-primary)]">
+    <div className="flex h-[calc(100vh-4rem)] bg-[var(--bg-primary)] border-t border-[var(--border)] overflow-hidden text-[var(--text-primary)] relative">
+      
+      {/* Modal Nueva Conversación */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1e1f2e] border border-[#34384c] rounded-2xl w-full max-w-md p-6 shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-4">Iniciar Conversación</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Seleccionar Cliente</label>
+                <select 
+                  className="w-full bg-[#12131c] border border-[#34384c] text-white rounded-lg px-4 py-2.5 focus:border-[var(--gold)] outline-none"
+                  value={newConvData.contactId}
+                  onChange={(e) => setNewConvData({...newConvData, contactId: e.target.value})}
+                >
+                  <option value="">-- Elige un cliente --</option>
+                  {allContacts.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.first_name} {c.last_name} {c.email ? `(${c.email})` : ''} {c.phone ? `(${c.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Canal de Comunicación</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {['email', 'whatsapp', 'sms'].map(c => (
+                    <button
+                      key={c}
+                      onClick={() => setNewConvData({...newConvData, canal: c})}
+                      className={`px-3 py-2 rounded-lg border text-sm font-semibold capitalize transition-colors ${
+                        newConvData.canal === c 
+                          ? 'bg-[var(--gold-soft)] border-[var(--gold)] text-[var(--gold)]' 
+                          : 'bg-[#12131c] border-[#34384c] text-gray-400 hover:text-white'
+                      }`}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="pt-4 flex gap-3 justify-end">
+                <button 
+                  onClick={() => setShowNewModal(false)}
+                  className="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleCreateConversation}
+                  disabled={!newConvData.contactId || !newConvData.canal}
+                  className="px-4 py-2 bg-[var(--gold)] text-black font-bold rounded-lg hover:bg-[#ffdf4d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Crear Chat
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Columna Izquierda: Lista de Conversaciones (30%) */}
       <div className="w-[320px] lg:w-1/3 max-w-[400px] bg-[var(--bg-secondary)] border-r border-[var(--border)] flex flex-col z-10">
         <div className="p-5 border-b border-[var(--border)]">
-          <h2 className="text-xl font-[Oswald] uppercase tracking-wider text-white font-bold">Bandeja de Entrada</h2>
-          <div className="mt-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-[Oswald] uppercase tracking-wider text-white font-bold">Bandeja de Entrada</h2>
+            <button 
+              onClick={openNewConversationModal}
+              className="w-8 h-8 rounded-full bg-[var(--gold)] text-black flex items-center justify-center hover:bg-[#ffdf4d] hover:scale-105 transition-all shadow-lg"
+              title="Nueva Conversación"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+            </button>
+          </div>
+          <div>
             <input 
               type="text" 
               placeholder="Buscar cliente o número..." 
