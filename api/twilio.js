@@ -34,20 +34,21 @@ export default async function handler(req, res) {
       telefonoCliente = From.replace('whatsapp:', '');
     }
 
-    // 2. Buscar si el cliente ya existe en Supabase
+    // 2. Buscar si el cliente ya existe en Supabase (tabla contacts)
     let { data: cliente, error: clienteError } = await supabase
-      .from('clientes')
+      .from('contacts')
       .select('id')
-      .eq('telefono', telefonoCliente)
+      .eq('phone', telefonoCliente)
       .maybeSingle(); // maybeSingle para que no tire error si no hay ninguno
 
     // Si no existe, crear el cliente
     if (!cliente) {
       const { data: nuevoCliente, error: nuevoClienteError } = await supabase
-        .from('clientes')
+        .from('contacts')
         .insert([{ 
-          nombre: `Cliente ${telefonoCliente}`, // Nombre temporal
-          telefono: telefonoCliente 
+          first_name: 'Nuevo',
+          last_name: `Contacto ${telefonoCliente}`,
+          phone: telefonoCliente 
         }])
         .select()
         .single();
