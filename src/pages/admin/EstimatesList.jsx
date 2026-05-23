@@ -14,10 +14,10 @@ import { useNavigate } from 'react-router-dom';
 export default function EstimatesList() {
   const navigate = useNavigate();
   const [estimates, setEstimates] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [summaryPeriod, setSummaryPeriod] = useState('all'); // all, week, month, year
 
   useEffect(() => { fetchEstimates(); }, []);
 
@@ -215,11 +215,29 @@ export default function EstimatesList() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BarChart2 className="text-[#FACB00]" /> Resumen de Ventas por Vendedor
+                  <BarChart2 className="text-[#FACB00]" /> Resumen de Ventas y Comisiones
                 </h3>
-                <p className="text-sm text-gray-400">Total de estimados enviados y aprobados.</p>
+                <p className="text-sm text-gray-400">Total de estimados y cálculo de comisiones (5% sobre aprobados).</p>
               </div>
               <button onClick={() => setShowSummaryModal(false)}><X className="text-gray-400 hover:text-white" /></button>
+            </div>
+
+            {/* TABS DE PERIODO */}
+            <div className="flex gap-2 mb-4">
+              {[
+                { id: 'week', label: 'Esta Semana' },
+                { id: 'month', label: 'Este Mes' },
+                { id: 'year', label: 'Este Año' },
+                { id: 'all', label: 'Histórico (Todo)' }
+              ].map(p => (
+                <button 
+                  key={p.id}
+                  onClick={() => setSummaryPeriod(p.id)}
+                  className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${summaryPeriod === p.id ? 'bg-[#FACB00] text-black' : 'bg-[#1a1a1a] text-gray-400 hover:text-white border border-[#333]'}`}
+                >
+                  {p.label}
+                </button>
+              ))}
             </div>
             
             <div className="bg-[#1a1a1a] rounded-lg border border-[#333] overflow-hidden">
@@ -231,12 +249,28 @@ export default function EstimatesList() {
                     <th className="px-4 py-3 text-right">Monto Enviado</th>
                     <th className="px-4 py-3 text-center">Aprobados (Cant.)</th>
                     <th className="px-4 py-3 text-right">Monto Aprobado</th>
+                    <th className="px-4 py-3 text-right text-[#FACB00]">Comisión (5%)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#333]">
                   {Object.entries(
                     estimates.reduce((acc, est) => {
                       if (est.status !== 'sent' && est.status !== 'approved') return acc;
+                      
+                      // Filtrar por fecha (usamos created_at o updated_at, por defecto updated_at si existe y está aprobado, sino created_at)
+                      const dateToUse = new Date((est.status === 'approved' ? est.updated_at : est.created_at) || est.created_at);
+                      const now = new Date();
+                      
+                      if (summaryPeriod === 'year' && dateToUse.getFullYear() !== now.getFullYear()) return acc;
+                      if (summaryPeriod === 'month' && (dateToUse.getFullYear() !== now.getFullYear() || dateToUse.getMonth() !== now.getMonth())) return acc;
+                      if (summaryPeriod === 'week') {
+                        const day = now.getDay();
+                        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                        const startOfWeek = new Date(now.setDate(diff));
+                        startOfWeek.setHours(0,0,0,0);
+                        if (dateToUse < startOfWeek) return acc;
+                      }
+
                       const name = est.creator?.full_name || 'Sin Vendedor';
                       if (!acc[name]) acc[name] = { sentCount: 0, sentAmount: 0, appCount: 0, appAmount: 0 };
                       if (est.status === 'sent') {
@@ -255,10 +289,27 @@ export default function EstimatesList() {
                       <td className="px-4 py-3 text-right text-blue-400">{formatCurrency(stats.sentAmount)}</td>
                       <td className="px-4 py-3 text-center text-emerald-400 font-bold">{stats.appCount}</td>
                       <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(stats.appAmount)}</td>
+                      <td className="px-4 py-3 text-right text-[#FACB00] font-bold">{formatCurrency(stats.appAmount * 0.05)}</td>
                     </tr>
                   ))}
-                  {estimates.filter(e => e.status === 'sent' || e.status === 'approved').length === 0 && (
-                    <tr><td colSpan="5" className="px-4 py-6 text-center text-gray-500">No hay datos de ventas recientes.</td></tr>
+                  {Object.keys(
+                    estimates.reduce((acc, est) => {
+                      if (est.status !== 'sent' && est.status !== 'approved') return acc;
+                      const dateToUse = new Date((est.status === 'approved' ? est.updated_at : est.created_at) || est.created_at);
+                      const now = new Date();
+                      if (summaryPeriod === 'year' && dateToUse.getFullYear() !== now.getFullYear()) return acc;
+                      if (summaryPeriod === 'month' && (dateToUse.getFullYear() !== now.getFullYear() || dateToUse.getMonth() !== now.getMonth())) return acc;
+                      if (summaryPeriod === 'week') {
+                        const day = now.getDay();
+                        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
+                        const startOfWeek = new Date(now.setDate(diff));
+                        startOfWeek.setHours(0,0,0,0);
+                        if (dateToUse < startOfWeek) return acc;
+                      }
+                      acc[1]=1; return acc;
+                    }, {})
+                  ).length === 0 && (
+                    <tr><td colSpan="6" className="px-4 py-6 text-center text-gray-500">No hay datos de ventas en este periodo.</td></tr>
                   )}
                 </tbody>
               </table>
