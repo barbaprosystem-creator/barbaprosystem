@@ -32,24 +32,28 @@ export default function ChatArea({ conversation }) {
       // 2. Enviar el mensaje por Twilio si hay un número de contacto
       const contactPhone = conversation.contacts?.phone;
       if (contactPhone && conversation.canal === 'sms') {
-        const twilioRes = await fetch('/api/send-message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: contactPhone,
-            body: text
-          })
-        });
-        
-        const twilioData = await twilioRes.json();
-        
-        if (!twilioRes.ok) {
-          console.error("Error desde API de Twilio:", twilioData);
-          // Opcional: Actualizar estado_entrega a 'fallido'
+        try {
+          const twilioRes = await fetch('/api/send-message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: contactPhone,
+              body: text
+            })
+          });
+          
+          if (!twilioRes.ok) {
+            const errorText = await twilioRes.text();
+            console.error("Error desde API de Twilio:", errorText);
+            alert(`Error de conexión con Twilio: Asegúrate de haber configurado las variables en Vercel. Error: ${twilioRes.status}`);
+          }
+        } catch (fetchErr) {
+          console.error("Error en la petición a Vercel:", fetchErr);
+          alert("Error de red intentando contactar al servidor. Si estás probando en 'Local' (npm run dev), recuerda que el envío de SMS solo funciona en la versión subida a Vercel.");
         }
       }
     } catch (err) {
-      console.error("Error enviando mensaje:", err);
+      console.error("Error general:", err);
       alert("Hubo un error al guardar o enviar el mensaje.");
     }
   };
