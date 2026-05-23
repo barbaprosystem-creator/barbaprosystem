@@ -15,7 +15,7 @@ export default function BillsPage() {
   
   // Forms state
   const [billForm, setBillForm] = useState({ name: '', address: '', amount: 0, payment_url: '', login_user: '', login_password: '' });
-  const [autoForm, setAutoForm] = useState({ make: '', vin: '', insurance_number: '', insurance_amount: 0 });
+  const [autoForm, setAutoForm] = useState({ make: '', vin: '', insurance_number: '', insurance_amount: 0, insuranceFile: null });
   const [paymentForm, setPaymentForm] = useState({ target_type: 'bill', target_id: null, amount_paid: 0, paid_on: new Date().toISOString().split('T')[0] });
   
   // Photo upload
@@ -75,13 +75,43 @@ export default function BillsPage() {
 
   const handleSaveAuto = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('company_autos').insert([autoForm]);
-    if (error) alert("Error guardando: " + error.message);
-    else {
-      setShowAutoModal(false);
-      setAutoForm({ make: '', vin: '', insurance_number: '', insurance_amount: 0 });
-      fetchData();
+    setUploadingPhoto(true);
+
+    const { insuranceFile, ...autoData } = autoForm;
+    let finalPhotoUrl = null;
+
+    // Insertar primero para tener un ID
+    const { data: newAuto, error } = await supabase.from('company_autos').insert([autoData]).select().single();
+    
+    if (error) {
+      alert("Error guardando auto: " + error.message);
+      setUploadingPhoto(false);
+      return;
     }
+
+    // Si hay archivo, subirlo
+    if (insuranceFile) {
+      try {
+        const fileExt = insuranceFile.name.split('.').pop();
+        const fileName = `autos/seguro-${newAuto.id}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage.from('project-documents').upload(fileName, insuranceFile);
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage.from('project-documents').getPublicUrl(fileName);
+        finalPhotoUrl = publicUrl;
+
+        // Actualizar el auto con la URL
+        await supabase.from('company_autos').update({ insurance_photo_url: publicUrl }).eq('id', newAuto.id);
+      } catch (err) {
+        alert("El auto se guardó, pero hubo un error subiendo la foto: " + err.message);
+      }
+    }
+
+    setUploadingPhoto(false);
+    setShowAutoModal(false);
+    setAutoForm({ make: '', vin: '', insurance_number: '', insurance_amount: 0, insuranceFile: null });
+    fetchData();
   };
 
   const handleSavePayment = async (e) => {
@@ -334,7 +364,13 @@ export default function BillsPage() {
               <div><label className="block text-xs text-gray-400 mb-1">VIN Number</label><input className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={autoForm.vin} onChange={e => setAutoForm({...autoForm, vin: e.target.value})} /></div>
               <div><label className="block text-xs text-gray-400 mb-1">Número de Póliza de Seguro</label><input className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={autoForm.insurance_number} onChange={e => setAutoForm({...autoForm, insurance_number: e.target.value})} /></div>
               <div><label className="block text-xs text-gray-400 mb-1">Monto Mensual de Seguro ($)</label><input type="number" step="0.01" className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={autoForm.insurance_amount} onChange={e => setAutoForm({...autoForm, insurance_amount: e.target.value})} /></div>
-              <button type="submit" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded mt-2">Guardar Auto</button>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">Foto de Tarjeta de Seguro (Opcional)</label>
+                <input type="file" accept="image/*,.pdf" className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white text-sm" onChange={e => setAutoForm({...autoForm, insuranceFile: e.target.files[0]})} />
+              </div>
+              <button type="submit" disabled={uploadingPhoto} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded mt-2 disabled:opacity-50">
+                {uploadingPhoto ? 'Guardando...' : 'Guardar Auto'}
+              </button>
             </form>
           </div>
         </div>
