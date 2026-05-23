@@ -20,6 +20,7 @@ import CatalogAdminPage from './pages/admin/CatalogAdminPage';
 import BrigadesPage from './pages/admin/BrigadesPage';
 import ProfitTracker from './pages/admin/ProfitTracker';
 import InboxPage from './pages/admin/InboxPage';
+import PayrollPage from './pages/admin/PayrollPage';
 
 
 // Pages - Sales (POS)
@@ -137,6 +138,7 @@ export default function App() {
           <Route path="materials-catalog" element={<MaterialsCatalog />} />
           <Route path="interactive-catalog" element={<CatalogAdminPage />} />
           <Route path="profit-tracker" element={<ProfitTracker />} />
+          <Route path="payroll" element={<PayrollPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 

@@ -20,6 +20,7 @@ import {
   BookOpen,
   MessageSquare,
   PenLine,
+  Users2,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
@@ -35,6 +36,7 @@ const navItems = [
   { to: '/admin/payments', icon: DollarSign, label: 'Pagos' },
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
+  { to: '/admin/payroll', icon: Users2, label: 'Payroll' },
   { to: '/admin/brigades', icon: HardHat, label: 'Brigadas' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
   { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },
