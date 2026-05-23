@@ -125,6 +125,7 @@ export default function EstimatesList() {
       await supabase.from('projects').insert([{
         title: `Proyecto de ${est.contact?.first_name || 'Cliente'} - EST-${String(est.estimate_number).padStart(4,'0')}`,
         contact_id: est.contact_id,
+        estimate_id: est.id,
         status: 'pending',
         sold_price: est.total || est.grand_total,
         address: est.contact?.address || 'Por confirmar'

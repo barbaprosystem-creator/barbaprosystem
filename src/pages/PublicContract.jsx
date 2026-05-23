@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/utils';
 import { FileSignature, Eraser, Loader, Printer } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 export default function PublicContract() {
   const { id } = useParams();
@@ -134,8 +136,85 @@ export default function PublicContract() {
 
       if (error) throw error;
       
-      // Actualizar estado local
+      // Actualizar estado local (para UI)
       setEstimate(prev => ({ ...prev, contract_customer_sig: signature, status: 'approved' }));
+      
+      // GENERAR PDF Y PROYECTO
+      try {
+        let { data: projects } = await supabase
+          .from('projects')
+          .select('id')
+          .eq('estimate_id', id)
+          .limit(1);
+          
+        let projectId = projects?.[0]?.id;
+
+        if (!projectId) {
+          const { data: newProject, error: projErr } = await supabase.from('projects').insert([{
+            title: `Proyecto de ${estimate.contact?.first_name || 'Cliente'} - EST-${String(estimate.estimate_number).padStart(4,'0')}`,
+            contact_id: estimate.contact_id,
+            estimate_id: id,
+            status: 'pending',
+            sold_price: estimate.total || estimate.grand_total,
+            address: estimate.contact?.address || 'Por confirmar'
+          }]).select('id').single();
+          
+          if (!projErr && newProject) {
+            projectId = newProject.id;
+          } else {
+            console.error("Error creating project:", projErr);
+          }
+        }
+
+        if (projectId) {
+          // Ocultar botones antes de la captura
+          const element = document.getElementById('contract-document');
+          if (element) {
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+            const imgData = canvas.toDataURL('image/jpeg', 1.0);
+            
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft > 0) {
+              position = heightLeft - imgHeight;
+              pdf.addPage();
+              pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, imgHeight);
+              heightLeft -= pageHeight;
+            }
+            
+            const pdfBlob = pdf.output('blob');
+            const fileName = `Contrato-EST-${String(estimate.estimate_number).padStart(4,'0')}.pdf`;
+            const filePath = `${projectId}/${Date.now()}-${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('project-documents')
+              .upload(filePath, pdfBlob, { contentType: 'application/pdf' });
+              
+            if (!uploadError) {
+              await supabase.from('project_documents').insert({
+                project_id: projectId,
+                name: fileName,
+                storage_path: filePath,
+                file_type: 'pdf',
+                created_at: new Date().toISOString()
+              });
+            } else {
+               console.error("Error uploading PDF:", uploadError);
+            }
+          }
+        }
+      } catch (pdfErr) {
+        console.error("Error generating/uploading PDF: ", pdfErr);
+      }
+
       alert("¡Contrato firmado y aceptado exitosamente!");
       
     } catch (err) {
@@ -167,8 +246,8 @@ export default function PublicContract() {
           </button>
         </div>
 
-        {/* Document */}
-        <div className="bg-white p-8 md:p-12 rounded-xl shadow-xl print:shadow-none print:p-0">
+        {/* Document Container to Capture */}
+        <div id="contract-document" className="bg-white p-8 md:p-12 rounded-xl shadow-xl print:shadow-none print:p-0">
           <div className="text-center border-b-2 border-[#F5C518] pb-6 mb-8">
             <h1 className="text-3xl font-bold tracking-tight uppercase">Retail Construction Agreement</h1>
           </div>
