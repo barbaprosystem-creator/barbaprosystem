@@ -152,6 +152,7 @@ export default function PublicContract() {
   const total = estimate.total || estimate.grand_total || 0;
   const paymentTerms = estimate.contract_payment_terms || '';
   const contractDate = estimate.contract_date || estimate.created_at.split('T')[0];
+  const cancellationDate = estimate.contract_cancellation_date || 'the third business day following the date of the contract execution';
   const isSigned = !!estimate.contract_customer_sig;
 
   return (
@@ -340,9 +341,9 @@ export default function PublicContract() {
             
             <div className="bg-gray-50 p-6 border border-gray-200 rounded text-sm mb-6">
               <p className="font-bold mb-2">Notice of Right to Cancel</p>
-              <p className="mb-4">You, the consumer, have the right to cancel this contract without penalty or obligation by delivering written notice of your intent to cancel to the contractor no later than midnight of the third business day following the date of the contract execution.</p>
+              <p className="mb-4">You, the consumer, have the right to cancel this contract without penalty or obligation by delivering written notice of your intent to cancel to the contractor no later than midnight of <strong>{cancellationDate}</strong>.</p>
               
-              <p className="mb-4">If you cancel, any payments made by you under this contract will be returned within 10 business days of the contractor's receipt of your cancellation notice. However, if cancellation occurs after the 3rd day following the date of this agreement, the contractor will retain fifty percent (50%) of the deposit as a cancellation fee, and the remaining fifty percent (50%) will be refunded to you within 10 business days.</p>
+              <p className="mb-4">If you cancel, any payments made by you under this contract will be returned within 10 business days of the contractor's receipt of your cancellation notice. However, if cancellation occurs after <strong>{cancellationDate}</strong>, the contractor will retain fifty percent (50%) of the deposit as a cancellation fee, and the remaining fifty percent (50%) will be refunded to you within 10 business days.</p>
               
               <p className="font-bold mb-2">How to Cancel</p>
               <p>To cancel this contract, you must notify the contractor in writing. Send your cancellation notice to the following address:</p>
@@ -350,62 +351,6 @@ export default function PublicContract() {
               <p>5910 PRESTON HWY</p>
               <p>(502) 338-3720</p>
               <p>barbaconstruct@gmail.com</p>
-            </div>
-
-            {/* Cancellation Form */}
-            <div className="mt-8 border-t border-gray-300 pt-6">
-              <h3 className="font-bold text-lg mb-2">Cancellation Form</h3>
-              <p className="mb-6">If you wish to cancel this contract, please complete and return this form to the address provided above.</p>
-              
-              <h4 className="font-bold uppercase mb-4">NOTICE OF CANCELLATION</h4>
-              <div className="space-y-4 max-w-lg">
-                <p><strong>To:</strong> Barba Construction<br/>5910 Preston Hwy, Louisville, KY 40219</p>
-                <div className="border-b border-gray-400 pb-1 pt-4 flex">
-                  <strong className="mr-2">Consumer Name:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-                <div className="border-b border-gray-400 pb-1 pt-2 flex">
-                  <strong className="mr-2">Consumer Address:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-                <div className="border-b border-gray-400 pb-1 pt-2 flex">
-                  <strong className="mr-2">Reason:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-                <div className="border-b border-gray-400 pb-1 pt-2 flex">
-                  <strong className="mr-2">Consumer Signature:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 border-t border-gray-300 pt-6">
-              <h4 className="font-bold text-lg mb-4">Acknowledgment of Receipt of Right to Cancel</h4>
-              <p className="mb-6">I acknowledge receipt of this notice informing me of my right to cancel this contract within three business days of its execution.</p>
-              
-              <div className="space-y-6 max-w-lg">
-                <div className="border-b border-gray-400 pb-1 flex">
-                  <strong className="mr-2">Consumer Name:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-                <div className="border-b border-gray-400 pb-1 flex">
-                  <strong className="mr-2">Consumer Signature:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-                <div className="border-b border-gray-400 pb-1 flex">
-                  <strong className="mr-2">Date:</strong> 
-                  <span className="flex-1 min-w-[200px]"></span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-12 pt-6">
-              <p className="font-bold mb-2">Notes:</p>
-              <ol className="list-decimal pl-6 space-y-2 text-sm">
-                <li><strong>Definition of "Business Day":</strong> Business days exclude Sundays and federal holidays.</li>
-                <li><strong>Retention of Copy:</strong> Both the contractor and the consumer should retain a copy of this notice for their records.</li>
-                <li><strong>Legal Compliance:</strong> This document is crafted in accordance with Kentucky's consumer protection laws, including provisions under federal and state home solicitation sales acts.</li>
-              </ol>
             </div>
           </div>
           

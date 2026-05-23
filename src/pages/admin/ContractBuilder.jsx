@@ -22,6 +22,10 @@ export default function ContractBuilder() {
   const [paymentTerms, setPaymentTerms] = useState('');
   const [contractDate, setContractDate] = useState(new Date().toISOString().split('T')[0]);
   
+  const defaultCancelDate = new Date();
+  defaultCancelDate.setDate(defaultCancelDate.getDate() + 3);
+  const [cancellationDate, setCancellationDate] = useState(defaultCancelDate.toISOString().split('T')[0]);
+  
   const printRef = useRef(null);
 
   useEffect(() => {
@@ -169,6 +173,7 @@ export default function ContractBuilder() {
           contract_payment_terms: paymentTerms,
           contract_company_sig: companySig,
           contract_date: contractDate,
+          contract_cancellation_date: cancellationDate,
           status: 'sent'
         })
         .eq('id', id);
@@ -273,14 +278,25 @@ export default function ContractBuilder() {
         </p>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Fecha del Contrato</label>
-            <input 
-              type="date" 
-              value={contractDate}
-              onChange={(e) => setContractDate(e.target.value)}
-              className="w-full md:w-1/3 bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white"
-            />
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">Fecha del Contrato</label>
+              <input 
+                type="date" 
+                value={contractDate}
+                onChange={(e) => setContractDate(e.target.value)}
+                className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">Fecha Límite de Cancelación</label>
+              <input 
+                type="date" 
+                value={cancellationDate}
+                onChange={(e) => setCancellationDate(e.target.value)}
+                className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white"
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">Términos de Pago (Editable)</label>
@@ -439,9 +455,9 @@ export default function ContractBuilder() {
           
           <div className="bg-gray-50 p-6 border border-gray-200 rounded text-sm mb-6">
             <p className="font-bold mb-2">Notice of Right to Cancel</p>
-            <p className="mb-4">You, the consumer, have the right to cancel this contract without penalty or obligation by delivering written notice of your intent to cancel to the contractor no later than midnight of the third business day following the date of the contract execution.</p>
+            <p className="mb-4">You, the consumer, have the right to cancel this contract without penalty or obligation by delivering written notice of your intent to cancel to the contractor no later than midnight of <strong>{cancellationDate}</strong>.</p>
             
-            <p className="mb-4">If you cancel, any payments made by you under this contract will be returned within 10 business days of the contractor's receipt of your cancellation notice. However, if cancellation occurs after the 3rd day following the date of this agreement, the contractor will retain fifty percent (50%) of the deposit as a cancellation fee, and the remaining fifty percent (50%) will be refunded to you within 10 business days.</p>
+            <p className="mb-4">If you cancel, any payments made by you under this contract will be returned within 10 business days of the contractor's receipt of your cancellation notice. However, if cancellation occurs after <strong>{cancellationDate}</strong>, the contractor will retain fifty percent (50%) of the deposit as a cancellation fee, and the remaining fifty percent (50%) will be refunded to you within 10 business days.</p>
             
             <p className="font-bold mb-2">How to Cancel</p>
             <p>To cancel this contract, you must notify the contractor in writing. Send your cancellation notice to the following address:</p>
@@ -449,55 +465,6 @@ export default function ContractBuilder() {
             <p>5910 PRESTON HWY</p>
             <p>(502) 338-3720</p>
             <p>barbaconstruct@gmail.com</p>
-          </div>
-
-          {/* Cancellation Form */}
-          <div className="mt-8 border-t border-gray-300 pt-6">
-            <h3 className="font-bold text-lg mb-2">Cancellation Form</h3>
-            <p className="mb-6">If you wish to cancel this contract, please complete and return this form to the address provided above.</p>
-            
-            <h4 className="font-bold uppercase mb-4">NOTICE OF CANCELLATION</h4>
-            <div className="space-y-4 max-w-lg">
-              <p><strong>To:</strong> Barba Construction<br/>5910 Preston Hwy, Louisville, KY 40219</p>
-              <div className="border-b border-gray-400 pb-1 pt-4">
-                <strong>Consumer Name:</strong> <span className="inline-block w-64"></span>
-              </div>
-              <div className="border-b border-gray-400 pb-1 pt-2">
-                <strong>Consumer Address:</strong> <span className="inline-block w-64"></span>
-              </div>
-              <div className="border-b border-gray-400 pb-1 pt-2">
-                <strong>Reason:</strong> <span className="inline-block w-64"></span>
-              </div>
-              <div className="border-b border-gray-400 pb-1 pt-2">
-                <strong>Consumer Signature:</strong> <span className="inline-block w-64"></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 border-t border-gray-300 pt-6">
-            <h4 className="font-bold text-lg mb-4">Acknowledgment of Receipt of Right to Cancel</h4>
-            <p className="mb-6">I acknowledge receipt of this notice informing me of my right to cancel this contract within three business days of its execution.</p>
-            
-            <div className="space-y-6 max-w-lg">
-              <div className="border-b border-gray-400 pb-1">
-                <strong>Consumer Name:</strong> <span className="inline-block w-64"></span>
-              </div>
-              <div className="border-b border-gray-400 pb-1">
-                <strong>Consumer Signature:</strong> <span className="inline-block w-64"></span>
-              </div>
-              <div className="border-b border-gray-400 pb-1">
-                <strong>Date:</strong> <span className="inline-block w-64"></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-12 pt-6">
-            <p className="font-bold mb-2">Notes:</p>
-            <ol className="list-decimal pl-6 space-y-2 text-sm">
-              <li><strong>Definition of "Business Day":</strong> Business days exclude Sundays and federal holidays.</li>
-              <li><strong>Retention of Copy:</strong> Both the contractor and the consumer should retain a copy of this notice for their records.</li>
-              <li><strong>Legal Compliance:</strong> This document is crafted in accordance with Kentucky's consumer protection laws, including provisions under federal and state home solicitation sales acts.</li>
-            </ol>
           </div>
         </div>
         
