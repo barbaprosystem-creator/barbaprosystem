@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
@@ -189,6 +189,11 @@ export default function EstimatesList() {
                     <button className="icon-btn success" title="Aprobar" onClick={() => updateStatus(est.id,'approved')}><CheckCircle size={15}/></button>
                     <button className="icon-btn danger" title="Rechazar" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
                   </>}
+                  {est.status==='approved' && (
+                    <button className="icon-btn" title="Generar Contrato" onClick={() => navigate(`/admin/contract/${est.id}`)}>
+                      <FileSignature size={15}/>
+                    </button>
+                  )}
                   <button className="icon-btn danger" title="Eliminar" onClick={() => deleteEstimate(est.id)}><Trash2 size={15}/></button>
                 </td>
               </tr>
