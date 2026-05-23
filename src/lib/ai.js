@@ -55,6 +55,44 @@ IMPORTANTE: Sé extremadamente preciso. No agregues relleno. NO uses Markdown co
   }
 }
 
+export async function refineProposalContext(currentText, instructions) {
+  const prompt = `
+Eres el asistente de ventas experto de Barba Construction.
+Aquí tienes el borrador actual de la propuesta de un cliente:
+
+--- INICIO DEL BORRADOR ---
+${currentText}
+--- FIN DEL BORRADOR ---
+
+El vendedor ha solicitado la siguiente modificación o ajuste:
+"${instructions}"
+
+Por favor, reescribe el borrador aplicando EXACTAMENTE lo que pide el vendedor, pero manteniendo el tono profesional, limpio y la estructura original. 
+Devuelve ÚNICAMENTE el texto de la propuesta modificada, sin saludos ni comentarios extras. NO uses formato Markdown (como **asteriscos**), usa texto plano estructurado.
+`;
+
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    
+    return data.choices[0].message.content;
+  } catch (err) {
+    console.error('Error llamando a la IA:', err);
+    throw err;
+  }
+}
+
 export async function askCopilot(messages, contextString = null) {
   let systemMessage = `Eres "Barba Copilot", el asistente inteligente y oráculo operativo exclusivo de Barba Construction.
 Tu misión es ayudar a la gerencia, vendedores y encargados de operaciones. Responde siempre en español, con un tono ultra-profesional, resolutivo y eficiente.

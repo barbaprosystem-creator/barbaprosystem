@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { X, Sparkles, FileText } from 'lucide-react';
-import { generateProposalContext } from '../../lib/ai';
+import { generateProposalContext, refineProposalContext } from '../../lib/ai';
+import { Send } from 'lucide-react';
 
 export default function AiProposalModal({ isOpen, onClose, items, total, clientName, onSaveAndSend }) {
   const [proposalText, setProposalText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [language, setLanguage] = useState('en');
+  const [customInstruction, setCustomInstruction] = useState('');
 
   if (!isOpen) return null;
 
@@ -16,6 +18,21 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
     try {
       const text = await generateProposalContext(clientName, items, total, language);
       setProposalText(text);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefine = async () => {
+    if (!customInstruction.trim() || !proposalText) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const text = await refineProposalContext(proposalText, customInstruction);
+      setProposalText(text);
+      setCustomInstruction('');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -84,7 +101,7 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
           )}
 
           {proposalText && !loading && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300 flex flex-col h-full">
               <label className="text-xs font-bold text-[#888888] uppercase tracking-wider flex items-center justify-between">
                 <span>Texto de la Propuesta (Editable)</span>
                 <span className="text-purple-400 font-normal capitalize">✨ Generado por IA</span>
@@ -92,9 +109,30 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
               <textarea 
                 value={proposalText}
                 onChange={(e) => setProposalText(e.target.value)}
-                className="w-full h-72 p-5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a] text-[#f0f0f0] text-sm leading-relaxed focus:outline-none focus:border-purple-500/50 resize-none shadow-inner"
+                className="w-full flex-1 min-h-[200px] p-5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a] text-[#f0f0f0] text-sm leading-relaxed focus:outline-none focus:border-purple-500/50 resize-none shadow-inner"
               />
-              <p className="text-xs text-[#555555]">Este texto se inyectará en la plantilla PDF junto con el bloque de firmas.</p>
+              
+              {/* ChatGPT-like Chat Input for refinement */}
+              <div className="flex gap-2 items-center bg-[#1a1a1a] p-2 rounded-xl border border-[#333]">
+                <input 
+                  type="text"
+                  value={customInstruction}
+                  onChange={e => setCustomInstruction(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleRefine();
+                  }}
+                  placeholder="Ej: Hazlo más corto, o añade que incluiremos pintura gratis..."
+                  className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none px-3 py-1"
+                />
+                <button 
+                  onClick={handleRefine}
+                  disabled={!customInstruction.trim() || loading}
+                  className="p-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-colors disabled:opacity-50"
+                  title="Aplicar cambios con IA"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
             </div>
           )}
         </div>
