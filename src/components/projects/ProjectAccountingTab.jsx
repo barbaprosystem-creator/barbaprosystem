@@ -1,16 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera, X } from 'lucide-react';
+import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera, X, FileImage } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { extractReceiptData } from '../../lib/ai';
 
 export default function ProjectAccountingTab({ projectId }) {
-  const [expenses, setExpenses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [form, setForm] = useState({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
-  const fileInputRef = useRef(null);
+  const [expenses, setExpenses]     = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [showModal, setShowModal]   = useState(false);
+  const [aiLoading, setAiLoading]   = useState(false);
+  const [aiStatus, setAiStatus]     = useState('');   // progress message
+  const [form, setForm]             = useState({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+  const fileInputRef                = useRef(null);
 
   useEffect(() => { fetchExpenses(); }, [projectId]);
 
@@ -41,65 +42,99 @@ export default function ProjectAccountingTab({ projectId }) {
     setLoading(false);
   }
 
-  const handleImageUpload = async (e) => {
+  // ── Convert any file (image or PDF) → base64 JPEG for vision API ──────────
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     setAiLoading(true);
+    setAiStatus(isPDF ? 'Convirtiendo PDF…' : 'Comprimiendo imagen…');
+
     try {
-      // Comprimir la imagen para evitar error 413 Payload Too Large
+      let base64String;
+
+      if (isPDF) {
+        // ── PDF path: use pdfjs-dist to render first page ──
+        base64String = await renderPdfPageToBase64(file);
+      } else {
+        // ── Image path: resize + compress to JPEG ──
+        base64String = await resizeImageToBase64(file);
+      }
+
+      setAiStatus('Analizando con IA…');
+      const extracted = await extractReceiptData(base64String, 'image/jpeg');
+
+      if (extracted) {
+        setForm(prev => ({
+          ...prev,
+          amount:      extracted.total       || prev.amount,
+          vendor:      extracted.vendor      || prev.vendor,
+          date:        extracted.date        || prev.date,
+          description: extracted.items?.join(', ') || prev.description,
+        }));
+      }
+      setAiStatus('');
+    } catch (err) {
+      console.error(err);
+      alert('Error al procesar el archivo: ' + err.message);
+      setAiStatus('');
+    } finally {
+      setAiLoading(false);
+      // reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  // Renders page 1 of a PDF file to a base64 JPEG string
+  async function renderPdfPageToBase64(file) {
+    const pdfjsLib = await import('pdfjs-dist');
+    // Point to the bundled worker (Vite copies it to /assets/)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page        = await pdf.getPage(1);
+
+    // Render at 1.5x scale for good quality without huge size
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas   = document.createElement('canvas');
+    canvas.width   = viewport.width;
+    canvas.height  = viewport.height;
+
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    // Return base64 without the data:... prefix
+    return canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
+  }
+
+  // Resizes an image file and returns base64 JPEG
+  function resizeImageToBase64(file) {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
+      reader.onerror = reject;
       reader.onload = (event) => {
         const img = new Image();
-        img.onload = async () => {
+        img.onerror = reject;
+        img.onload = () => {
+          const MAX_WIDTH = 1200;
+          let w = img.width;
+          let h = img.height;
+          if (w > MAX_WIDTH) { h = Math.round(h * MAX_WIDTH / w); w = MAX_WIDTH; }
+
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1000;
-          let width = img.width;
-          let height = img.height;
-
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          
-          // Extraer base64 comprimido a JPEG calidad 80%
-          const base64String = canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-          
-          try {
-            // Llamar a IA
-            const extracted = await extractReceiptData(base64String, 'image/jpeg');
-            if (extracted) {
-              setForm(prev => ({
-                ...prev,
-                amount: extracted.total || prev.amount,
-                vendor: extracted.vendor || prev.vendor,
-                date: extracted.date || prev.date,
-                description: extracted.items?.join(', ') || prev.description
-              }));
-              alert('¡Datos extraídos con éxito de la imagen!');
-            }
-          } catch (err) {
-            console.error(err);
-            alert('Error al procesar los datos de la IA.');
-          } finally {
-            setAiLoading(false);
-          }
+          canvas.width  = w;
+          canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1]);
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
-    } catch (err) {
-      console.error(err);
-      alert('Error al leer la imagen.');
-      setAiLoading(false);
-    }
-  };
+    });
+  }
 
   const submitExpense = async (e) => {
     e.preventDefault();
@@ -227,9 +262,9 @@ export default function ProjectAccountingTab({ projectId }) {
                 </p>
                 <input 
                   type="file" 
-                  accept="image/*" 
+                  accept="image/*,application/pdf,.pdf"
                   ref={fileInputRef}
-                  onChange={handleImageUpload}
+                  onChange={handleFileUpload}
                   className="hidden"
                 />
                 <button 
@@ -239,8 +274,9 @@ export default function ProjectAccountingTab({ projectId }) {
                   className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                 >
                   {aiLoading ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-                  {aiLoading ? 'Analizando imagen...' : 'Subir Foto de Recibo'}
+                  {aiLoading ? (aiStatus || 'Procesando…') : 'Subir Foto o PDF de Recibo'}
                 </button>
+                <p className="text-[10px] text-blue-400/60 mt-2 text-center">Acepta: JPG · PNG · HEIC · PDF</p>
               </div>
 
               <form id="expense-form" onSubmit={submitExpense} className="space-y-4">
