@@ -140,7 +140,7 @@ export default function PublicContract() {
       
     } catch (err) {
       console.error(err);
-      alert("Error al guardar la firma.");
+      alert("Error al guardar la firma: " + (err.message || err.details || JSON.stringify(err)));
     } finally {
       setSigning(false);
     }
