@@ -114,7 +114,8 @@ ${items.map(i => `ID: ${i.id} | Categoría: ${i.category} | Ítem: ${i.item_name
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
       })
     });
 
@@ -122,11 +123,14 @@ ${items.map(i => `ID: ${i.id} | Categoría: ${i.category} | Ítem: ${i.item_name
     if (data.error) throw new Error(data.error);
     
     let text = data.choices[0].message.content.trim();
-    if (text.startsWith('\`\`\`json')) text = text.slice(7);
-    if (text.startsWith('\`\`\`')) text = text.slice(3);
-    if (text.endsWith('\`\`\`')) text = text.slice(0, -3);
     
-    return JSON.parse(text.trim());
+    // Extract JSON using regex in case there is surrounding text
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("La IA no devolvió un formato JSON válido.");
+    }
+    
+    return JSON.parse(jsonMatch[0]);
   } catch (err) {
     console.error('Error analizando mercado:', err);
     throw err;

@@ -101,11 +101,16 @@ export default function PricingSettings() {
       const marketData = await analyzeMarketPrices(items);
       
       // Update each item in the database
-      const promises = Object.entries(marketData).map(([id, price]) => {
-        return supabase.from('price_catalog').update({ 
-          market_price: price, 
+      const promises = Object.entries(marketData).map(async ([id, price]) => {
+        // Ensure price is a number
+        const numPrice = typeof price === 'string' ? parseFloat(price.replace(/[^0-9.]/g, '')) : Number(price);
+        
+        const { error } = await supabase.from('price_catalog').update({ 
+          market_price: isNaN(numPrice) ? null : numPrice, 
           market_price_updated_at: new Date().toISOString() 
         }).eq('id', id);
+        
+        if (error) throw error;
       });
       
       await Promise.all(promises);
