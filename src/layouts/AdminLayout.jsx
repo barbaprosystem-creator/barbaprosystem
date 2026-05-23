@@ -37,6 +37,7 @@ const navItems = [
   { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
   { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
   { to: '/admin/payroll', icon: Users2, label: 'Payroll' },
+  { to: '/admin/bills', icon: DollarSign, label: 'Biles & Autos' },
   { to: '/admin/brigades', icon: HardHat, label: 'Brigadas' },
   { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
   { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },

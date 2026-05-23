@@ -22,6 +22,7 @@ import ProfitTracker from './pages/admin/ProfitTracker';
 import InboxPage from './pages/admin/InboxPage';
 import PayrollPage from './pages/admin/PayrollPage';
 import ContractBuilder from './pages/admin/ContractBuilder';
+import BillsPage from './pages/admin/BillsPage';
 
 
 // Pages - Sales (POS)
@@ -144,6 +145,7 @@ export default function App() {
           <Route path="interactive-catalog" element={<CatalogAdminPage />} />
           <Route path="profit-tracker" element={<ProfitTracker />} />
           <Route path="payroll" element={<PayrollPage />} />
+          <Route path="bills" element={<BillsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
 
