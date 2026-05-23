@@ -13,15 +13,19 @@ export default function ChatArea({ conversation }) {
     scrollToBottom();
   }, [conversation.mensajes]);
 
-  const handleSendMessage = async (text) => {
+  const handleSendMessage = async (text, subject = '') => {
     try {
+      const contentToSave = conversation.canal === 'email' && subject 
+        ? `**Asunto: ${subject}**\n\n${text}` 
+        : text;
+
       // 1. Guardar localmente en Supabase como "enviado"
       const { data: insertedData, error } = await supabase
         .from('mensajes')
         .insert([{
           conversacion_id: conversation.id,
           direccion: 'outbound',
-          contenido: text,
+          contenido: contentToSave,
           estado_entrega: 'enviado'
         }])
         .select()
@@ -29,8 +33,10 @@ export default function ChatArea({ conversation }) {
         
       if (error) throw error;
       
-      // 2. Enviar el mensaje por Twilio si hay un número de contacto
       const contactPhone = conversation.contacts?.phone;
+      const contactEmail = conversation.contacts?.email;
+
+      // 2a. Enviar el mensaje por Twilio si es SMS o WhatsApp
       if (contactPhone && (conversation.canal === 'sms' || conversation.canal === 'whatsapp')) {
         try {
           const twilioRes = await fetch('/api/send-message', {
@@ -50,7 +56,30 @@ export default function ChatArea({ conversation }) {
           }
         } catch (fetchErr) {
           console.error("Error en la petición a Vercel:", fetchErr);
-          alert("Error de red intentando contactar al servidor. Si estás probando en 'Local' (npm run dev), recuerda que el envío de SMS solo funciona en la versión subida a Vercel.");
+          alert("Error de red intentando contactar al servidor. Si estás probando en 'Local' (npm run dev), recuerda que el envío solo funciona en la versión subida a Vercel.");
+        }
+      } 
+      // 2b. Enviar el mensaje por Resend si es Email
+      else if (contactEmail && conversation.canal === 'email') {
+        try {
+          const emailRes = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: contactEmail,
+              subject: subject || "Actualización de Barba Construction",
+              text: text
+            })
+          });
+          
+          if (!emailRes.ok) {
+            const errorText = await emailRes.text();
+            console.error("Error desde API de Email:", errorText);
+            alert(`Error enviando correo: Asegúrate de configurar RESEND_API_KEY en Vercel. Error: ${emailRes.status}`);
+          }
+        } catch (fetchErr) {
+          console.error("Error en la petición a Vercel (Email):", fetchErr);
+          alert("Error de red intentando contactar al servidor de correos.");
         }
       }
     } catch (err) {
@@ -130,7 +159,7 @@ export default function ChatArea({ conversation }) {
 
       {/* Message Input Area */}
       <div className="z-10 relative">
-        <MessageInput onSend={handleSendMessage} />
+        <MessageInput onSend={handleSendMessage} canal={conversation.canal} />
       </div>
     </div>
   );
