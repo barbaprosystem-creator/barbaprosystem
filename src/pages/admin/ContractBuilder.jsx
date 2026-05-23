@@ -69,8 +69,12 @@ export default function ContractBuilder() {
 
   // Hook up drawing logic for a canvas
   const setupCanvas = (canvas, setSig) => {
-    if (!canvas) return;
     const ctx = canvas.getContext('2d');
+    
+    // Rellenar de blanco para evitar fondo negro en firmas
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
     let isDrawing = false;
 
     const startDrawing = (e) => {
@@ -81,7 +85,8 @@ export default function ContractBuilder() {
     const stopDrawing = () => {
       isDrawing = false;
       ctx.beginPath();
-      setSig(canvas.toDataURL('image/png'));
+      // Usar jpeg para reducir tamaño
+      setSig(canvas.toDataURL('image/jpeg', 0.8));
     };
 
     const draw = (e) => {
@@ -134,7 +139,8 @@ export default function ContractBuilder() {
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
       setSig(null);
     }
   };
@@ -190,9 +196,9 @@ export default function ContractBuilder() {
 
           <h3 style="margin-top: 30px;">2. Payment Terms</h3>
           <div style="background-color: #f9f9f9; padding: 15px; border-left: 4px solid #F5C518;">
-            ${paymentTerms.replace(/\\n/g, '<br/>')}
+            ${(paymentTerms || '').replace(/\n/g, '<br/>')}
           </div>
-          <p><small>Payments may be made by credit card, cash, or check. A processing fee of 2.9% applies to in-person credit card transactions, and a 3.9% processing fee applies to credit card transactions conducted over the phone.</small></p>
+          <p><small>Payments may be made by credit card, cash, or check.</small></p>
 
           <h3 style="margin-top: 30px;">3. Materials and Ownership of Excess Materials</h3>
           <p>Barba Construction may purchase additional materials beyond the estimated project requirements as a precaution to avoid delays. Any unused or excess materials purchased for this project shall remain the sole property of Barba Construction and may be removed from the job site upon project completion.</p>
@@ -249,17 +255,31 @@ export default function ContractBuilder() {
         </div>
       `;
 
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      let bodyStr;
+      try {
+        bodyStr = JSON.stringify({
           to: contact.email,
           subject: `Construction Contract - ${contact.first_name} ${contact.last_name || ''}`,
           html: htmlContent
-        })
+        });
+      } catch (e) {
+        throw new Error('Error al generar el documento. Verifica los datos.');
+      }
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: bodyStr
       });
 
-      const result = await response.json();
+      const textRes = await response.text();
+      let result;
+      try {
+        result = JSON.parse(textRes);
+      } catch (e) {
+        throw new Error('El servidor devolvió una respuesta inválida. ' + textRes.substring(0, 50));
+      }
+
       if (!response.ok) throw new Error(result.error || 'Error al enviar email');
 
       alert('Contrato enviado correctamente al cliente.');
