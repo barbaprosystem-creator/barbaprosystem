@@ -124,7 +124,10 @@ export default function CalendarPage() {
       query = query.eq('created_by', profile?.id);
     }
 
-    const { data } = await query;
+    const { data, error } = await query;
+    if (error) {
+      console.error('Error fetching CRM events:', error);
+    }
     if (data) {
       setCrmEvents(data.map(ev => ({
         id:          ev.id,
