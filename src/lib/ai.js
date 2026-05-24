@@ -531,8 +531,8 @@ REGLAS DE EXTRACCIÓN:
 - IMPORTANTE: No devuelvas NADA más que el objeto JSON crudo (sin marcadores \`\`\`json ni texto alrededor).
 
 TEXTO DEL VENDEDOR:
-"\${inputText}"
-\`;
+"${inputText}"
+`;
 
   try {
     const response = await fetch('/api/ai', {

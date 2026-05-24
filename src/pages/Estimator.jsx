@@ -230,14 +230,14 @@ export default function Estimator() {
       <div className="flex gap-4 mb-6 border-b border-[#374151] pb-2">
         <button 
           onClick={() => setActiveTab('ai')}
-          className={\`flex items-center gap-2 px-4 py-2 font-bold transition-colors \${activeTab === 'ai' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}\`}
+          className={`flex items-center gap-2 px-4 py-2 font-bold transition-colors ${activeTab === 'ai' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}`}
         >
           <Sparkles size={18} />
           Asistente IA (Voz/Texto)
         </button>
         <button 
           onClick={() => setActiveTab('manual')}
-          className={\`flex items-center gap-2 px-4 py-2 font-bold transition-colors \${activeTab === 'manual' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}\`}
+          className={`flex items-center gap-2 px-4 py-2 font-bold transition-colors ${activeTab === 'manual' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}`}
         >
           <Settings2 size={18} />
           Configuración Manual
