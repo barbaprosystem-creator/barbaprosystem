@@ -444,7 +444,7 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
 }
 
 export async function generateEstimateFromText(inputText) {
-  const prompt = \`
+  const prompt = `
 Eres la IA Oficial de Estimados de Barba Construction.
 Tu objetivo es analizar el texto dictado o escrito por el vendedor y extraer los ítems necesarios para construir un estimado en formato JSON estricto.
 

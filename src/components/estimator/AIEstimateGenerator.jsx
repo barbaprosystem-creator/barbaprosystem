@@ -107,11 +107,11 @@ export default function AIEstimateGenerator() {
           <button
             onClick={toggleListening}
             disabled={isLoading}
-            className={\`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all \${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
               isListening 
                 ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 border border-red-500/50' 
                 : 'bg-[#374151]/50 text-white hover:bg-[#374151] border border-transparent'
-            }\`}
+            }`}
           >
             {isListening ? (
               <>
