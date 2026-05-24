@@ -443,70 +443,23 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
   }
 }
 
-export async function generateEstimateFromText(inputText) {
+export async function generateEstimateFromText(inputText, prices = []) {
+  const pricesListStr = prices.length > 0 
+    ? prices.map(p => `- [${p.category.toUpperCase()}] ${p.item_name}: $${p.sell_price} / ${p.unit_type}`).join('\n')
+    : 'No hay precios disponibles en la base de datos. Usa tu mejor criterio.';
+
   const prompt = `
 Eres la IA Oficial de Estimados de Barba Construction.
 Tu objetivo es analizar el texto dictado o escrito por el vendedor y extraer los ítems necesarios para construir un estimado en formato JSON estricto.
 
-=== INICIO BASE DE CONOCIMIENTOS OFICIAL BARBA CONSTRUCTION 2026 ===
+=== INICIO BASE DE CONOCIMIENTOS OFICIAL BARBA CONSTRUCTION ===
 1. IDENTIDAD DE LA COMPAÑÍA
 Nombre: BARBA CONSTRUCTION BUILDER
 Frases obligatorias: FINANCING AVAILABLE, FREE ESTIMATES, 2 YEAR LABOR WARRANTY, MATERIALS AND LABOR INCLUDED
 Estilo visual: Premium, Profesional tipo banco, Logo centrado.
 
-5. TABLA OFICIAL DE PRECIOS 2026
-ROOFING
-Asphalt Roofing: $380/SQ standard, $480/SQ insurance, $350/SQ flip/basic
-Metal Roofing: $900/SQ min, $1200/SQ premium
-Plywood: $80/sheet
-Skylight: $1,250
-Chimney flashing: $1,500
-Pipe boots & roof vents included.
-
-WINDOWS
-Vinyl White: $400 each (Flip/basic: $350-$380)
-Vinyl Sand: $750 each
-Black Window: $1,000 each
-
-SIDING
-Vinyl Horizontal: $590/SQ
-Vertical Vinyl: $750/SQ
-Hardie Board: $1,200/SQ
-Wood Siding: $1,050/SQ
-
-GUTTERS
-6” Gutters: $16–18/LF average (Downspouts included)
-SOFFIT & FASCIA Standard: $9–12/LF
-
-DECKS
-Wood Deck: $35/SQ FT base, Premium $50–65/SQ FT
-Covered Deck: $65/SQ FT
-Wood Pergola: $45/SQ FT
-Covered Pergola: $65/SQ FT
-Metal Roof Pergola: $75/SQ FT
-Polycarbonate Pergola: $85/SQ FT
-
-CONCRETE
-Driveway Replace: $18/SQ FT, New Driveway: $16/SQ FT
-Patio: $14/SQ FT, Sidewalk: $12/SQ FT, Garage Floor: $15/SQ FT, Asphalt Driveway: $15/SQ FT
-
-FENCING
-Wood Fence: Premium $65–85/LF
-Composite Fence: $120–160/LF
-
-FLOORING
-Vinyl Waterproof: $7–12/SQ FT
-Tile Installation: $12–18/SQ FT
-Hardwood: $14–20/SQ FT
-
-ELECTRICAL
-New 200 AMP Panel: $4,500
-New Circuits: $1,200
-Dedicated Dryer Line: $500
-
-NEW CONSTRUCTION
-Full New Construction: $150/SQ FT
-Addition: $135–150/SQ FT
+5. TABLA OFICIAL DE PRECIOS DINÁMICA (DESDE LA BASE DE DATOS)
+${pricesListStr}
 === FIN BASE DE CONOCIMIENTOS ===
 
 REGLAS DE EXTRACCIÓN:
@@ -526,7 +479,7 @@ REGLAS DE EXTRACCIÓN:
   ]
 }
 
-- Asegúrate de que el unitPrice coincida con la Tabla Oficial 2026 proporcionada. Si el texto especifica que es un trabajo "flip" o "insurance", usa esos precios.
+- Asegúrate de que el unitPrice coincida con la Tabla Oficial proporcionada. Si el texto especifica que es un trabajo "flip" o "insurance" y no hay un precio exacto, ajusta lógicamente.
 - Si el usuario dicta medidas crudas (ej "100 pies de cerca"), haz el cálculo.
 - IMPORTANTE: No devuelvas NADA más que el objeto JSON crudo (sin marcadores \`\`\`json ni texto alrededor).
 
@@ -559,6 +512,66 @@ TEXTO DEL VENDEDOR:
     }
   } catch (err) {
     console.error('Error en generateEstimateFromText:', err);
+    throw err;
+  }
+}
+
+export async function chatWithAiTrainer(chatHistory) {
+  const systemPrompt = `
+Eres el Entrenador de IA Oficial de Barba Construction. Tu trabajo es ayudar a Lazaro (el administrador) a modificar o agregar nuevos servicios y precios al catálogo de la empresa.
+
+REGLAS ESTRICTAS:
+1. Siempre responde en formato JSON estricto.
+2. Si el usuario pide agregar o modificar un precio/servicio, DEBES explicarle qué entendiste y PREGUNTARLE si desea guardar los cambios. No uses la acción "save_price" hasta que el usuario responda confirmando ("sí", "ok", "guárdalo").
+3. Si el usuario confirma un cambio pendiente de mensajes anteriores, usa la acción "save_price" y rellena el objeto "data".
+4. Tu JSON debe tener esta estructura exacta:
+{
+  "reply": "Texto de lo que le dices al usuario",
+  "action": "none" | "save_price",
+  "data": {
+    "category": "roofing | siding | windows | gutters | general | deck | fences",
+    "item_name": "NOMBRE EN MAYÚSCULAS",
+    "unit_type": "sq | each | linear_ft | sqft | hour",
+    "sell_price": numero
+  }
+}
+
+EJEMPLO 1 (Usuario pide agregar):
+User: "Agrega lavado a presión a 100 la hora"
+Assistant: { "reply": "Entendido. Quieres agregar LAVADO A PRESIÓN a $100 por hora en la categoría general. ¿Confirmo este cambio y lo guardo?", "action": "none", "data": null }
+
+EJEMPLO 2 (Usuario confirma):
+User: "Sí, guárdalo"
+Assistant: { "reply": "¡Listo! He guardado el servicio LAVADO A PRESIÓN en el catálogo.", "action": "save_price", "data": { "category": "general", "item_name": "LAVADO A PRESIÓN", "unit_type": "hour", "sell_price": 100 } }
+`;
+
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...chatHistory
+        ],
+        temperature: 0.2,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Error conectando con la IA');
+    }
+
+    const aiResponseText = data.choices[0].message.content;
+    const parsedResponse = JSON.parse(aiResponseText);
+    return parsedResponse;
+  } catch (err) {
+    console.error('Error in chatWithAiTrainer:', err);
     throw err;
   }
 }

@@ -22,6 +22,7 @@ import {
   PenLine,
   Users2,
   Image as ImageIcon,
+  BrainCircuit,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
@@ -44,6 +45,7 @@ const navItems = [
   { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },
   { to: '/admin/interactive-catalog', icon: BookOpen, label: 'Catálogo de Clientes' },
   { to: '/admin/showroom', icon: ImageIcon, label: 'Showroom' },
+  { to: '/admin/ai-training', icon: BrainCircuit, label: 'Entrenamiento IA' },
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 

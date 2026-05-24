@@ -61,7 +61,8 @@ export default function AIEstimateGenerator() {
         setIsListening(false);
       }
       
-      const result = await generateEstimateFromText(text);
+      const { prices } = useEstimatorStore.getState();
+      const result = await generateEstimateFromText(text, prices);
       if (result && result.items && Array.isArray(result.items)) {
         result.items.forEach(item => {
           addItem(item);
