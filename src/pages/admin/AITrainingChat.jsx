@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { chatWithAiTrainer } from '../../lib/ai';
-import { Bot, User, Send, Loader2, Sparkles, Database, Code } from 'lucide-react';
+import { Bot, User, Send, Loader2, Sparkles, Database, Code, Mic, MicOff } from 'lucide-react';
 import PinLock from '../../components/PinLock';
 
 const SETUP_SQL = `
@@ -18,10 +18,13 @@ export default function AITrainingChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   useEffect(() => {
     fetchHistory();
+    setupSpeechRecognition();
   }, []);
 
   const scrollToBottom = () => {
@@ -32,6 +35,56 @@ export default function AITrainingChat() {
     scrollToBottom();
   }, [messages]);
 
+  const setupSpeechRecognition = () => {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      console.warn('Speech recognition no está soportado en este navegador.');
+      return;
+    }
+    
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'es-US';
+
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + ' ';
+        }
+      }
+      if (finalTranscript) {
+        setInput(prev => prev + ' ' + finalTranscript.trim());
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error', event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   const fetchHistory = async () => {
     try {
       const { data, error } = await supabase
@@ -40,21 +93,26 @@ export default function AITrainingChat() {
         .order('created_at', { ascending: true });
 
       if (error) {
-        if (error.code === '42P01') {
-          setSetupRequired(true);
-        } else {
-          console.error(error);
-        }
+        console.error("Supabase fetch error:", error);
+        // Si hay cualquier error al hacer fetch, asumimos que falta la tabla y mostramos el Setup SQL
+        setSetupRequired(true);
         return;
       }
       setMessages(data || []);
     } catch (err) {
       console.error(err);
+      setSetupRequired(true);
     }
   };
 
   const handleSend = async () => {
     if (!input.trim()) return;
+    
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    }
+
     
     const userMessage = { role: 'user', content: input.trim() };
     setMessages(prev => [...prev, userMessage]);
@@ -218,11 +276,21 @@ export default function AITrainingChat() {
                     handleSend();
                   }
                 }}
-                placeholder="Escribe tu instrucción a la IA... (ej. Agrega limpieza de canaletas a $250)"
+                placeholder={isListening ? "Escuchando... (habla ahora)" : "Escribe tu instrucción a la IA... (ej. Agrega limpieza de canaletas a $250)"}
                 className="flex-1 bg-transparent border-none text-white p-3 resize-none outline-none max-h-32 min-h-[50px]"
                 rows={1}
                 disabled={loading}
               />
+              <button
+                onClick={toggleListening}
+                disabled={loading}
+                className={`w-12 h-12 flex-shrink-0 rounded-lg flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-0.5 ${
+                  isListening ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30 animate-pulse' : 'bg-[#1e293b] hover:bg-[#374151] text-[#9ca3af]'
+                }`}
+                title={isListening ? "Detener micrófono" : "Dictar por voz"}
+              >
+                {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+              </button>
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || loading}
