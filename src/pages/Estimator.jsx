@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 import ServiceConfigurator from '../components/estimator/ServiceConfigurator';
 import ReceiptSidebar from '../components/estimator/ReceiptSidebar';
 import JobsitePhotos from '../components/estimator/JobsitePhotos';
-import { User, Search, CheckCircle, Loader2, X, FileText } from 'lucide-react';
+import AIEstimateGenerator from '../components/estimator/AIEstimateGenerator';
+import { User, Search, CheckCircle, Loader2, X, FileText, Sparkles, Settings2 } from 'lucide-react';
 
 function ClientSearch({ onSelect, onClear, selectedContact }) {
   const [query, setQuery] = useState('');
@@ -117,6 +118,7 @@ export default function Estimator() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [estimateNum, setEstimateNum] = useState(null);
+  const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'manual'
 
   useEffect(() => { fetchPrices(); }, [fetchPrices]);
 
@@ -224,10 +226,32 @@ export default function Estimator() {
 
       <JobsitePhotos photos={photos} setPhotos={setPhotos} />
 
+      {/* Mode Selector */}
+      <div className="flex gap-4 mb-6 border-b border-[#374151] pb-2">
+        <button 
+          onClick={() => setActiveTab('ai')}
+          className={\`flex items-center gap-2 px-4 py-2 font-bold transition-colors \${activeTab === 'ai' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}\`}
+        >
+          <Sparkles size={18} />
+          Asistente IA (Voz/Texto)
+        </button>
+        <button 
+          onClick={() => setActiveTab('manual')}
+          className={\`flex items-center gap-2 px-4 py-2 font-bold transition-colors \${activeTab === 'manual' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}\`}
+        >
+          <Settings2 size={18} />
+          Configuración Manual
+        </button>
+      </div>
+
       {/* Main 2-column layout */}
       <div className="flex flex-col xl:flex-row gap-6 items-start">
         <div className="flex-1 min-w-0">
-          <ServiceConfigurator />
+          {activeTab === 'ai' ? (
+            <AIEstimateGenerator />
+          ) : (
+            <ServiceConfigurator />
+          )}
         </div>
         <div className="w-full xl:w-96 xl:sticky xl:top-6 flex-none">
           <ReceiptSidebar />

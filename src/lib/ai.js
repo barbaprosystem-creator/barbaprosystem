@@ -442,3 +442,123 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
     throw err;
   }
 }
+
+export async function generateEstimateFromText(inputText) {
+  const prompt = \`
+Eres la IA Oficial de Estimados de Barba Construction.
+Tu objetivo es analizar el texto dictado o escrito por el vendedor y extraer los ítems necesarios para construir un estimado en formato JSON estricto.
+
+=== INICIO BASE DE CONOCIMIENTOS OFICIAL BARBA CONSTRUCTION 2026 ===
+1. IDENTIDAD DE LA COMPAÑÍA
+Nombre: BARBA CONSTRUCTION BUILDER
+Frases obligatorias: FINANCING AVAILABLE, FREE ESTIMATES, 2 YEAR LABOR WARRANTY, MATERIALS AND LABOR INCLUDED
+Estilo visual: Premium, Profesional tipo banco, Logo centrado.
+
+5. TABLA OFICIAL DE PRECIOS 2026
+ROOFING
+Asphalt Roofing: $380/SQ standard, $480/SQ insurance, $350/SQ flip/basic
+Metal Roofing: $900/SQ min, $1200/SQ premium
+Plywood: $80/sheet
+Skylight: $1,250
+Chimney flashing: $1,500
+Pipe boots & roof vents included.
+
+WINDOWS
+Vinyl White: $400 each (Flip/basic: $350-$380)
+Vinyl Sand: $750 each
+Black Window: $1,000 each
+
+SIDING
+Vinyl Horizontal: $590/SQ
+Vertical Vinyl: $750/SQ
+Hardie Board: $1,200/SQ
+Wood Siding: $1,050/SQ
+
+GUTTERS
+6” Gutters: $16–18/LF average (Downspouts included)
+SOFFIT & FASCIA Standard: $9–12/LF
+
+DECKS
+Wood Deck: $35/SQ FT base, Premium $50–65/SQ FT
+Covered Deck: $65/SQ FT
+Wood Pergola: $45/SQ FT
+Covered Pergola: $65/SQ FT
+Metal Roof Pergola: $75/SQ FT
+Polycarbonate Pergola: $85/SQ FT
+
+CONCRETE
+Driveway Replace: $18/SQ FT, New Driveway: $16/SQ FT
+Patio: $14/SQ FT, Sidewalk: $12/SQ FT, Garage Floor: $15/SQ FT, Asphalt Driveway: $15/SQ FT
+
+FENCING
+Wood Fence: Premium $65–85/LF
+Composite Fence: $120–160/LF
+
+FLOORING
+Vinyl Waterproof: $7–12/SQ FT
+Tile Installation: $12–18/SQ FT
+Hardwood: $14–20/SQ FT
+
+ELECTRICAL
+New 200 AMP Panel: $4,500
+New Circuits: $1,200
+Dedicated Dryer Line: $500
+
+NEW CONSTRUCTION
+Full New Construction: $150/SQ FT
+Addition: $135–150/SQ FT
+=== FIN BASE DE CONOCIMIENTOS ===
+
+REGLAS DE EXTRACCIÓN:
+- Basándote en el texto del vendedor, identifica todos los servicios y materiales mencionados.
+- Calcula las cantidades. (Ejemplo: si dice "un techo de asfalto de 15 squares", la cantidad es 15, el precio unitario es 380 si es estándar. El total es 15 * 380).
+- Devuelve un JSON con este formato exacto:
+{
+  "items": [
+    {
+      "service": "roofing",
+      "name": "Nombre descriptivo premium del servicio",
+      "details": "Detalles (ej: 15 SQ @ $380/SQ)",
+      "quantity": 15,
+      "unitPrice": 380,
+      "total": 5700
+    }
+  ]
+}
+
+- Asegúrate de que el unitPrice coincida con la Tabla Oficial 2026 proporcionada. Si el texto especifica que es un trabajo "flip" o "insurance", usa esos precios.
+- Si el usuario dicta medidas crudas (ej "100 pies de cerca"), haz el cálculo.
+- IMPORTANTE: No devuelvas NADA más que el objeto JSON crudo (sin marcadores \`\`\`json ni texto alrededor).
+
+TEXTO DEL VENDEDOR:
+"\${inputText}"
+\`;
+
+  try {
+    const response = await fetch('/api/ai', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        response_format: { type: 'json_object' }
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error);
+    
+    let content = data.choices[0].message.content;
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      console.error('Error parseando JSON de la IA:', content);
+      throw new Error('La respuesta de la IA no fue un JSON válido.');
+    }
+  } catch (err) {
+    console.error('Error en generateEstimateFromText:', err);
+    throw err;
+  }
+}
