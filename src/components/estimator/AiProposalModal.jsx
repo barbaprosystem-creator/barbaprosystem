@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Sparkles, FileText } from 'lucide-react';
 import { generateProposalContext, refineProposalContext } from '../../lib/ai';
 import { Send } from 'lucide-react';
@@ -40,8 +41,8 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
       <div className="w-full max-w-3xl bg-[#111111] border border-[#2a2a2a] rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
         
         {/* Header */}
@@ -159,6 +160,7 @@ export default function AiProposalModal({ isOpen, onClose, items, total, clientN
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
