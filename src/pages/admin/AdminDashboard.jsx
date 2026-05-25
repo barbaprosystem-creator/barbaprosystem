@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { useLanguage } from '../../i18n/LanguageContext';
 import { 
   Users, Briefcase, FileText, DollarSign, Wallet, TrendingUp, AlertTriangle, Clock,
   Calendar, CheckCircle, ChevronRight, Activity, ArrowUpRight, Bell, Calendar as CalIcon,
@@ -55,6 +56,7 @@ function AlertBanner({ payments }) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [stats, setStats] = useState({
     totalLeads: 0, activeProjects: 0, estimatesSent: 0,
     totalRevenue: 0, pendingPayments: 0, closedThisMonth: 0,
@@ -192,20 +194,20 @@ export default function AdminDashboard() {
       <AlertBanner payments={payments} />
 
       <div className="stats-grid">
-        <StatCard icon={Users}        label="Total Leads"        value={stats.totalLeads}               accent="#60a5fa" sub={`${stats.wonLeads} ganados`} />
-        <StatCard icon={FolderKanban} label="Proyectos Activos"  value={stats.activeProjects}           accent="#34d399" />
-        <StatCard icon={FileText}     label="Estimados Enviados" value={stats.estimatesSent}            accent="#fbbf24" />
-        <StatCard icon={DollarSign}   label="Revenue en Obra"    value={formatCurrency(stats.totalRevenue)}  accent="#a78bfa" />
-        <StatCard icon={Clock}        label="Pagos Pendientes"   value={formatCurrency(stats.pendingPayments)} accent="#fb923c" />
-        <StatCard icon={AlertTriangle}label="Pagos Vencidos"     value={formatCurrency(stats.overduePayments)} accent="#ef4444" />
+        <StatCard icon={Users}        label={t('dashboard.totalLeads')}       value={stats.totalLeads}               accent="#60a5fa" sub={`${stats.wonLeads} ${t('status.won').toLowerCase()}`} />
+        <StatCard icon={FolderKanban} label={t('dashboard.activeProjects')}   value={stats.activeProjects}           accent="#34d399" />
+        <StatCard icon={FileText}     label={t('dashboard.estimatesSent')}    value={stats.estimatesSent}            accent="#fbbf24" />
+        <StatCard icon={DollarSign}   label={t('dashboard.totalRevenue')}     value={formatCurrency(stats.totalRevenue)}  accent="#a78bfa" />
+        <StatCard icon={Clock}        label={t('dashboard.pendingPayments')}  value={formatCurrency(stats.pendingPayments)} accent="#fb923c" />
+        <StatCard icon={AlertTriangle}label="Pagos Vencidos"                   value={formatCurrency(stats.overduePayments)} accent="#ef4444" />
       </div>
 
       <div className="dashboard-sections">
         {/* Active Projects */}
         <section className="dash-section">
-          <h2>Proyectos en Obra</h2>
+          <h2>{t('dashboard.activeProjectsList')}</h2>
           {activeProjects.length === 0 ? (
-            <p className="text-muted">No hay proyectos activos.</p>
+            <p className="text-muted">{t('dashboard.noProjects')}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {activeProjects.map(p => (
@@ -257,9 +259,9 @@ export default function AdminDashboard() {
 
         {/* Recent Leads */}
         <section className="dash-section">
-          <h2>Leads Recientes</h2>
+          <h2>{t('dashboard.recentLeads')}</h2>
           {recentLeads.length === 0 ? (
-            <p className="text-muted">No hay leads todavia.</p>
+            <p className="text-muted">{t('dashboard.noLeads')}</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {recentLeads.map(lead => (

@@ -2,18 +2,27 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
-
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../../i18n/LanguageContext';
 
-const STATUS_MAP = {
-  draft: { label:'Borrador', color:'#6b7280' },
-  sent: { label:'Enviado', color:'#3b82f6' },
-  approved: { label:'Aprobado', color:'#10b981' },
-  rejected: { label:'Rechazado', color:'#ef4444' },
+const STATUS_COLORS = {
+  draft: '#6b7280',
+  sent: '#3b82f6',
+  approved: '#10b981',
+  rejected: '#ef4444',
 };
 
 export default function EstimatesList() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+
+  const STATUS_MAP = {
+    draft:    { label: t('status.draft'),     color: STATUS_COLORS.draft },
+    sent:     { label: t('status.sent'),      color: STATUS_COLORS.sent },
+    approved: { label: t('status.approved'),  color: STATUS_COLORS.approved },
+    rejected: { label: t('status.rejected'),  color: STATUS_COLORS.rejected },
+  };
+
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -152,22 +161,22 @@ export default function EstimatesList() {
     return `${e.contact?.first_name||''} ${e.contact?.last_name||''}`.toLowerCase().includes(s) || String(e.estimate_number).includes(s);
   });
 
-  if(loading) return <div className="page-loading"><Loader2 size={32} className="spin"/><p>Cargando estimados...</p></div>;
+  if(loading) return <div className="page-loading"><Loader2 size={32} className="spin"/><p>{t('actions.loading')}</p></div>;
 
   return (
     <div className="estimates-page">
       <div className="crm-toolbar">
-        <div className="crm-toolbar-left"><h1>Estimados</h1><span className="crm-count">{estimates.length} total</span></div>
+        <div className="crm-toolbar-left"><h1>{t('estimates.title')}</h1><span className="crm-count">{estimates.length} {t('common.total_count')}</span></div>
         <div className="crm-toolbar-right">
-          <div className="crm-search"><Search size={16}/><input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)}/></div>
+          <div className="crm-search"><Search size={16}/><input placeholder={t('actions.search') + '...'} value={search} onChange={e => setSearch(e.target.value)}/></div>
           <button className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#333] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors" onClick={() => setShowSummaryModal(true)}>
-            <BarChart2 size={16}/><span>Resumen Ventas</span>
+            <BarChart2 size={16}/><span>{t('estimates.salesSummary')}</span>
           </button>
-          <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>{t('estimates.newEstimate')}</span></button>
         </div>
       </div>
       <div className="estimate-tabs">
-        {[{id:'all',label:'Todos'},...Object.entries(STATUS_MAP).map(([id,v])=>({id,label:v.label}))].map(tab => (
+        {[{id:'all',label:t('common.all')},...Object.entries(STATUS_MAP).map(([id,v])=>({id,label:v.label}))].map(tab => (
           <button key={tab.id} className={`estimate-tab ${filterStatus===tab.id?'active':''}`} onClick={() => setFilterStatus(tab.id)}>
             {tab.label}<span className="tab-count">{tab.id==='all'?estimates.length:estimates.filter(e=>e.status===tab.id).length}</span>
           </button>
@@ -175,7 +184,7 @@ export default function EstimatesList() {
       </div>
       <div className="crm-list">
         <table>
-          <thead><tr><th>#</th><th>Cliente</th><th>Direccion</th><th>Total</th><th>Estado</th><th>Creado por</th><th>Fecha</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('estimates.client')}</th><th>{t('common.address')}</th><th>{t('estimates.total')}</th><th>{t('estimates.status')}</th><th>Creado por</th><th>{t('estimates.date')}</th><th>{t('estimates.actions')}</th></tr></thead>
           <tbody>
             {filtered.map(est => (
               <tr key={est.id} className="crm-list-row">
@@ -205,7 +214,7 @@ export default function EstimatesList() {
                 </td>
               </tr>
             ))}
-            {filtered.length === 0 && <tr><td colSpan="8" className="text-center py-8 text-[#888]">No se encontraron estimados.</td></tr>}
+            {filtered.length === 0 && <tr><td colSpan="8" className="text-center py-8 text-[#888]">{t('estimates.noEstimates')}</td></tr>}
           </tbody>
         </table>
       </div>

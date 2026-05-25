@@ -14,19 +14,21 @@ import {
   Calendar
 } from 'lucide-react';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
-
-const navItems = [
-  { to: '/pos/dashboard', icon: LayoutDashboard, label: 'Dashboard', end: false },
-  { to: '/pos/estimator', icon: Calculator, label: 'Nuevo Estimado', end: false },
-  { to: '/pos/pipeline', icon: Activity, label: 'Pipeline', end: false },
-  { to: '/pos/calendar', icon: Calendar, label: 'Calendario', end: false },
-  { to: '/pos/clients', icon: Users, label: 'Clientes', end: false },
-  { to: '/pos/showroom', icon: ImageIcon, label: 'Showroom', end: false },
-  { to: '/pos/catalog', icon: Package, label: 'Catálogo', end: false },
-];
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function POSLayout({ onSignOut, profile }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { t } = useLanguage();
+
+  const navItems = [
+    { to: '/pos/dashboard', icon: LayoutDashboard, label: t('nav.dashboard'),     end: false },
+    { to: '/pos/estimator', icon: Calculator,       label: t('nav.createEstimate'), end: false },
+    { to: '/pos/pipeline',  icon: Activity,         label: 'Pipeline',             end: false },
+    { to: '/pos/calendar',  icon: Calendar,         label: t('nav.calendar'),      end: false },
+    { to: '/pos/clients',   icon: Users,            label: t('crm.leads'),         end: false },
+    { to: '/pos/showroom',  icon: ImageIcon,        label: t('nav.showroom'),      end: false },
+    { to: '/pos/catalog',   icon: Package,          label: t('nav.clientCatalog'), end: false },
+  ];
 
   return (
     <div className="admin-layout">
@@ -94,7 +96,7 @@ export default function POSLayout({ onSignOut, profile }) {
                 <span className="admin-user-role">Vendedor</span>
               </div>
             </div>
-            <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
+            <button className="admin-logout-btn" onClick={onSignOut} title={t('nav.signout')}>
               <LogOut size={18} />
             </button>
           </div>

@@ -3,18 +3,29 @@ import { supabase } from '../../lib/supabase';
 import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
+import { useLanguage } from '../../i18n/LanguageContext';
 
-const STATUS_MAP = {
-  pending:     { label: 'Pendiente',   color: '#6b7280' },
-  scheduled:   { label: 'Agendado',    color: '#3b82f6' },
-  in_progress: { label: 'En Progreso', color: '#f59e0b' },
-  completed:   { label: 'Completado',  color: '#10b981' },
-  on_hold:     { label: 'En Espera',   color: '#ef4444' },
+const STATUS_COLORS = {
+  pending:     '#6b7280',
+  scheduled:   '#3b82f6',
+  in_progress: '#f59e0b',
+  completed:   '#10b981',
+  on_hold:     '#ef4444',
 };
 
 const EMPTY_FORM = { title: '', address: '', sold_price: 0, status: 'pending', start_date: '' };
 
 export default function ProjectsList() {
+  const { t } = useLanguage();
+
+  const STATUS_MAP = {
+    pending:     { label: t('status.pending'),    color: STATUS_COLORS.pending },
+    scheduled:   { label: t('status.scheduled'),  color: STATUS_COLORS.scheduled },
+    in_progress: { label: t('status.inProgress'), color: STATUS_COLORS.in_progress },
+    completed:   { label: t('status.completed'),  color: STATUS_COLORS.completed },
+    on_hold:     { label: t('status.onHold'),     color: STATUS_COLORS.on_hold },
+  };
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -147,22 +158,22 @@ export default function ProjectsList() {
       p.address?.toLowerCase().includes(s);
   });
 
-  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Cargando proyectos...</p></div>;
+  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>{t('actions.loading')}</p></div>;
 
   return (
     <div className="projects-page">
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
-          <h1>Proyectos</h1>
-          <span className="crm-count">{projects.length} total</span>
+          <h1>{t('projects.title')}</h1>
+          <span className="crm-count">{projects.length} {t('common.total_count')}</span>
         </div>
         <div className="crm-toolbar-right">
           <div className="crm-search">
             <Search size={16} />
-            <input placeholder="Buscar proyecto..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input placeholder={t('projects.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <button className="btn-primary" onClick={() => setCreateModalOpen(true)}>
-            <Plus size={18} /><span>Nuevo Proyecto</span>
+            <Plus size={18} /><span>{t('projects.newProject')}</span>
           </button>
         </div>
       </div>
@@ -170,7 +181,7 @@ export default function ProjectsList() {
       {/* Status Tabs */}
       <div className="estimate-tabs">
         <button className={`estimate-tab ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>
-          Todos <span className="tab-count">{projects.length}</span>
+          {t('common.all')} <span className="tab-count">{projects.length}</span>
         </button>
         {Object.entries(STATUS_MAP).map(([id, v]) => (
           <button key={id} className={`estimate-tab ${filterStatus === id ? 'active' : ''}`} onClick={() => setFilterStatus(id)}>
@@ -259,7 +270,7 @@ export default function ProjectsList() {
             <div className="project-card-footer">
               <div className="project-dates">
                 <Calendar size={13} />
-                <span>{project.start_date ? formatDate(project.start_date) : 'Sin fecha'}</span>
+                <span>{project.start_date ? formatDate(project.start_date) : t('projects.noDate')}</span>
               </div>
               {project.sold_price > 0 && (
                 <span className="project-price">{formatCurrency(project.sold_price)}</span>
@@ -270,8 +281,8 @@ export default function ProjectsList() {
         {filtered.length === 0 && (
           <div className="projects-empty">
             <TrendingUp size={48} />
-            <p>No hay proyectos{filterStatus !== 'all' ? ` con estado "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
-            <p className="text-sm">Los proyectos se crean automáticamente al aprobar estimados, o puedes crearlos manualmente.</p>
+            <p>{t('projects.noProjects')}{filterStatus !== 'all' ? ` con estado "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
+            <p className="text-sm">{t('projects.createdAutomatically')}</p>
           </div>
         )}
       </div>
@@ -281,39 +292,39 @@ export default function ProjectsList() {
         <div className="modal-overlay" onClick={() => setCreateModalOpen(false)}>
           <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Nuevo Proyecto Manual</h2>
+              <h2>{t('projects.manualProject')}</h2>
               <button className="modal-close" onClick={() => setCreateModalOpen(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleCreateSubmit} className="crm-form">
               <div className="crm-form-grid">
                 <div className="form-group full-width">
-                  <label>Título del Proyecto *</label>
+                  <label>{t('projects.title_field')} *</label>
                   <input required value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})} placeholder="Ej. Cambio de techo Familia Smith" />
                 </div>
                 <div className="form-group full-width">
-                  <label>Dirección</label>
-                  <input value={newProject.address} onChange={e => setNewProject({...newProject, address: e.target.value})} placeholder="Dirección de la obra" />
+                  <label>{t('projects.address')}</label>
+                  <input value={newProject.address} onChange={e => setNewProject({...newProject, address: e.target.value})} placeholder={t('projects.address')} />
                 </div>
                 <div className="form-group">
-                  <label>Precio de Venta ($)</label>
+                  <label>{t('projects.salePrice')} ($)</label>
                   <input type="number" min="0" step="0.01" value={newProject.sold_price} onChange={e => setNewProject({...newProject, sold_price: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>Estado</label>
+                  <label>{t('common.status')}</label>
                   <select value={newProject.status} onChange={e => setNewProject({...newProject, status: e.target.value})}>
                     {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Fecha de Inicio</label>
+                  <label>{t('projects.startDate')}</label>
                   <input type="date" value={newProject.start_date} onChange={e => setNewProject({...newProject, start_date: e.target.value})} />
                 </div>
               </div>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setCreateModalOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-secondary" onClick={() => setCreateModalOpen(false)}>{t('actions.cancel')}</button>
                 <button type="submit" className="btn-primary" disabled={saving}>
                   {saving ? <Loader2 size={18} className="spin" /> : null}
-                  Crear Proyecto
+                  {t('actions.create')} {t('projects.title')}
                 </button>
               </div>
             </form>
@@ -326,35 +337,35 @@ export default function ProjectsList() {
         <div className="modal-overlay" onClick={() => setEditModalOpen(false)}>
           <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Editar Proyecto</h2>
+              <h2>{t('actions.edit')} {t('projects.title')}</h2>
               <button className="modal-close" onClick={() => setEditModalOpen(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleEditSubmit} className="crm-form">
               <div className="crm-form-grid">
                 <div className="form-group full-width">
-                  <label>Título del Proyecto *</label>
+                  <label>{t('projects.title_field')} *</label>
                   <input required value={editProject.title} onChange={e => setEditProject({...editProject, title: e.target.value})} />
                 </div>
                 <div className="form-group full-width">
-                  <label>Dirección</label>
-                  <input value={editProject.address} onChange={e => setEditProject({...editProject, address: e.target.value})} placeholder="Dirección de la obra" />
+                  <label>{t('projects.address')}</label>
+                  <input value={editProject.address} onChange={e => setEditProject({...editProject, address: e.target.value})} placeholder={t('projects.address')} />
                 </div>
                 <div className="form-group">
-                  <label>Precio de Venta ($)</label>
+                  <label>{t('projects.salePrice')} ($)</label>
                   <input type="number" min="0" step="0.01" value={editProject.sold_price} onChange={e => setEditProject({...editProject, sold_price: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>Estado</label>
+                  <label>{t('common.status')}</label>
                   <select value={editProject.status} onChange={e => setEditProject({...editProject, status: e.target.value})}>
                     {Object.entries(STATUS_MAP).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Fecha de Inicio</label>
+                  <label>{t('projects.startDate')}</label>
                   <input type="date" value={editProject.start_date} onChange={e => setEditProject({...editProject, start_date: e.target.value})} />
                 </div>
                 <div className="form-group">
-                  <label>Progreso (%) — {editProject.progress_pct}%</label>
+                  <label>{t('projects.progress')} (%) — {editProject.progress_pct}%</label>
                   <input
                     type="range" min="0" max="100" step="5"
                     value={editProject.progress_pct}
@@ -364,10 +375,10 @@ export default function ProjectsList() {
                 </div>
               </div>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={() => setEditModalOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-secondary" onClick={() => setEditModalOpen(false)}>{t('actions.cancel')}</button>
                 <button type="submit" className="btn-primary" disabled={editSaving}>
                   {editSaving ? <Loader2 size={18} className="spin" /> : null}
-                  Guardar Cambios
+                  {t('actions.save')}
                 </button>
               </div>
             </form>
@@ -388,16 +399,15 @@ export default function ProjectsList() {
               }}>
                 <AlertTriangle size={28} color="#ef4444" />
               </div>
-              <h2 style={{ color: '#fff', marginBottom: '8px' }}>¿Eliminar proyecto?</h2>
+              <h2 style={{ color: '#fff', marginBottom: '8px' }}>{t('projects.deleteConfirm')}</h2>
               <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.5' }}>
-                Estás a punto de eliminar permanentemente el proyecto:<br />
                 <strong style={{ color: '#fff' }}>"{deleteTarget.title}"</strong><br />
-                Esta acción no se puede deshacer.
+                {t('projects.deleteWarning')}
               </p>
             </div>
             <div className="modal-actions" style={{ paddingTop: '8px' }}>
               <button className="btn-secondary" onClick={() => setDeleteTarget(null)}>
-                Cancelar
+                {t('actions.cancel')}
               </button>
               <button
                 onClick={handleDelete}
@@ -410,7 +420,7 @@ export default function ProjectsList() {
                 }}
               >
                 {deleteLoading ? <Loader2 size={16} className="spin" /> : <Trash2 size={16} />}
-                Sí, eliminar
+                {t('actions.yes')}, {t('actions.delete')}
               </button>
             </div>
           </div>

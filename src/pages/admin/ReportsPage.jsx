@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import PinLock from '../../components/PinLock';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const COLORS = {
   completed:   '#10b981',
@@ -32,6 +33,7 @@ function CurrencyTooltip({ active, payload, label }) {
 }
 
 export default function ReportsPage() {
+  const { t } = useLanguage();
   const [loading, setLoading]           = useState(true);
   const [stats, setStats]               = useState({});
   const [statusChart, setStatusChart]   = useState([]);
@@ -119,7 +121,7 @@ export default function ReportsPage() {
   if (loading) return (
     <div className="rpt-loading">
       <div className="rpt-spinner" />
-      <span>Cargando reportes...</span>
+      <span>{t('actions.loading')}</span>
     </div>
   );
 
@@ -147,7 +149,7 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
-          <h1>Reportes & Analytics</h1>
+          <h1>{t('reports.title')} & Analytics</h1>
           <span className="rpt-subtitle">2026 · Tiempo real</span>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import OmnichannelChat from '../../components/chat/OmnichannelChat';
 import ClientDetail from './ClientDetail';
 import { Eye } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const PIPELINE_STAGES = [
   { id: 'new_lead',       label: 'Nuevo',            color: '#3b82f6' },
@@ -37,6 +38,7 @@ const srcMap = Object.fromEntries(SOURCES.map(s => [s.id, s]));
 
 function ContactForm({ contact, onSave, onClose, salespeople }) {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [form, setForm] = useState(contact || {
     first_name: '', last_name: '', email: '', phone: '',
     address: '', city: '', state: 'KY', zip: '',
@@ -76,7 +78,7 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content crm-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{contact?.id ? 'Editar Lead' : 'Nuevo Lead'}</h2>
+          <h2>{contact?.id ? t('crm.newLead') : t('crm.newLead')}</h2>
           <button className="modal-close" onClick={onClose}><X size={20} /></button>
         </div>
 
@@ -115,11 +117,11 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
 
         <form onSubmit={handleSubmit} className="crm-form">
           <div className="crm-form-grid">
-            <div className="form-group"><label>Nombre *</label><input value={form.first_name} onChange={e => set('first_name', e.target.value)} required /></div>
+            <div className="form-group"><label>{t('common.name')} *</label><input value={form.first_name} onChange={e => set('first_name', e.target.value)} required /></div>
             <div className="form-group"><label>Apellido *</label><input value={form.last_name} onChange={e => set('last_name', e.target.value)} required /></div>
-            <div className="form-group"><label>Telefono</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(502) 555-0000" /></div>
-            <div className="form-group"><label>Email</label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
-            <div className="form-group full-width"><label>Direccion</label><input value={form.address} onChange={e => set('address', e.target.value)} /></div>
+            <div className="form-group"><label>{t('common.phone')}</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(502) 555-0000" /></div>
+            <div className="form-group"><label>{t('common.email')}</label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
+            <div className="form-group full-width"><label>{t('common.address')}</label><input value={form.address} onChange={e => set('address', e.target.value)} /></div>
             <div className="form-group"><label>Ciudad</label><input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Louisville" /></div>
             <div className="form-group"><label>Estado</label><input value={form.state} onChange={e => set('state', e.target.value)} /></div>
             <div className="form-group"><label>ZIP</label><input value={form.zip} onChange={e => set('zip', e.target.value)} /></div>
@@ -158,10 +160,10 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
             <div className="form-group full-width"><label>Notas</label><textarea value={form.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} /></div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>{t('actions.cancel')}</button>
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? <Loader2 size={18} className="spin" /> : null}
-              {contact?.id ? 'Guardar Cambios' : 'Crear Lead'}
+              {contact?.id ? t('actions.save') : t('crm.newLead')}
             </button>
           </div>
         </form>
@@ -224,6 +226,7 @@ function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
 
 export default function CRMPipeline() {
   const { profile } = useAuth();
+  const { t } = useLanguage();
   const [contacts, setContacts] = useState([]);
   const [salespeople, setSalespeople] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -285,7 +288,7 @@ export default function CRMPipeline() {
     ...s, count: contacts.filter(c => c.source === s.id).length,
   })).filter(s => s.count > 0);
 
-  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Cargando pipeline...</p></div>;
+  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>{t('actions.loading')}</p></div>;
 
   return (
     <>
@@ -295,7 +298,7 @@ export default function CRMPipeline() {
     <div className="crm-page">
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
-          <h1>CRM Pipeline</h1>
+          <h1>{t('crm.title')}</h1>
           <span className="crm-count">{contacts.length} leads</span>
         </div>
         <div className="crm-toolbar-right">
@@ -312,7 +315,7 @@ export default function CRMPipeline() {
             </button>
           </div>
           <button className="btn-primary" onClick={() => { setEditLead(null); setShowForm(true); }}>
-            <Plus size={18} /><span>Nuevo Lead</span>
+            <Plus size={18} /><span>{t('crm.newLead')}</span>
           </button>
         </div>
       </div>
@@ -388,9 +391,9 @@ export default function CRMPipeline() {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th><th>Telefono</th><th>Direccion</th>
-                <th>Origen</th><th>Calidad</th><th>Etapa</th>
-                <th>Asignado</th><th>Fecha</th><th></th>
+                <th>{t('common.name')}</th><th>{t('common.phone')}</th><th>{t('common.address')}</th>
+                <th>Origen</th><th>Calidad</th><th>{t('crm.stage')}</th>
+                <th>{t('crm.assignedTo')}</th><th>{t('common.date')}</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -441,7 +444,7 @@ export default function CRMPipeline() {
                   </tr>
                 );
               })}
-              {filtered.length === 0 && <tr><td colSpan={9} className="crm-empty-row">No hay leads</td></tr>}
+              {filtered.length === 0 && <tr><td colSpan={9} className="crm-empty-row">{t('crm.leads')}: 0</td></tr>}
             </tbody>
           </table>
         </div>

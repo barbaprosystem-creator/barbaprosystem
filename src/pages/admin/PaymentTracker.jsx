@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Search, Loader2, DollarSign, CheckCircle, Clock, AlertTriangle, Plus, Bell, X, BellRing } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
+import { useLanguage } from '../../i18n/LanguageContext';
 
-const STATUS_MAP = {
-  pending:  { label: 'Pendiente', color: '#f59e0b', icon: Clock },
-  received: { label: 'Recibido',  color: '#10b981', icon: CheckCircle },
-  overdue:  { label: 'Vencido',   color: '#ef4444', icon: AlertTriangle },
+const STATUS_COLORS = {
+  pending:  '#f59e0b',
+  received: '#10b981',
+  overdue:  '#ef4444',
 };
-const TYPE_MAP = { deposit: 'Deposito', partial: 'Parcial', final: 'Final' };
+const TYPE_MAP  = { deposit: 'Deposito', partial: 'Parcial', final: 'Final' };
 const METHOD_MAP = { check: 'Cheque', zelle: 'Zelle', cash: 'Efectivo', card: 'Tarjeta', financing: 'Financiamiento' };
 
 function daysUntil(dateStr) {
@@ -17,6 +18,7 @@ function daysUntil(dateStr) {
 }
 
 function AddPaymentModal({ projects, contacts, onSave, onClose }) {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     project_id: '', contact_id: '', amount: '',
     payment_type: 'deposit', payment_method: 'check',
@@ -50,13 +52,13 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content crm-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '520px' }}>
         <div className="modal-header">
-          <h2>Registrar Pago</h2>
+          <h2>{t('payments.newPayment')}</h2>
           <button className="modal-close" onClick={onClose}><X size={20} /></button>
         </div>
         <form onSubmit={handleSubmit} className="crm-form">
           <div className="crm-form-grid">
             <div className="form-group full-width">
-              <label>Proyecto</label>
+              <label>{t('payments.project')}</label>
               <select value={form.project_id} onChange={e => handleProjectChange(e.target.value)} required>
                 <option value="">-- Selecciona proyecto --</option>
                 {projects.map(p => (
@@ -67,11 +69,11 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Monto *</label>
+              <label>{t('payments.amount')} *</label>
               <input type="number" value={form.amount} onChange={e => set('amount', e.target.value)} placeholder="0.00" step="0.01" required />
             </div>
             <div className="form-group">
-              <label>Tipo</label>
+              <label>{t('common.type')}</label>
               <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}>
                 <option value="deposit">Deposito</option>
                 <option value="partial">Parcial</option>
@@ -79,7 +81,7 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Metodo</label>
+              <label>{t('payments.method')}</label>
               <select value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
                 <option value="check">Cheque</option>
                 <option value="zelle">Zelle</option>
@@ -89,7 +91,7 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Estado</label>
+              <label>{t('common.status')}</label>
               <select value={form.status} onChange={e => set('status', e.target.value)}>
                 <option value="pending">Pendiente</option>
                 <option value="received">Recibido</option>
@@ -97,16 +99,16 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
               </select>
             </div>
             <div className="form-group">
-              <label>Fecha de Vencimiento</label>
+              <label>{t('common.date')}</label>
               <input type="date" value={form.due_date} onChange={e => set('due_date', e.target.value)} />
             </div>
             <div className="form-group full-width">
-              <label>Notas</label>
+              <label>{t('common.notes')}</label>
               <textarea value={form.notes} onChange={e => set('notes', e.target.value)} rows={2} />
             </div>
           </div>
           <div className="modal-actions">
-            <button type="button" className="btn-secondary" onClick={onClose}>Cancelar</button>
+            <button type="button" className="btn-secondary" onClick={onClose}>{t('actions.cancel')}</button>
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? <Loader2 size={18} className="spin" /> : <DollarSign size={16} />}
               Registrar Pago
@@ -211,6 +213,14 @@ function ReminderModal({ payment, onClose }) {
 }
 
 export default function PaymentTracker() {
+  const { t } = useLanguage();
+
+  const STATUS_MAP = {
+    pending:  { label: t('status.pending'),   color: STATUS_COLORS.pending,  icon: Clock },
+    received: { label: 'Recibido',            color: STATUS_COLORS.received, icon: CheckCircle },
+    overdue:  { label: t('status.overdue'),   color: STATUS_COLORS.overdue,  icon: AlertTriangle },
+  };
+
   const [payments, setPayments] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -256,13 +266,13 @@ export default function PaymentTracker() {
     overdue:  payments.filter(p => p.status === 'overdue').reduce((s, p) => s + (p.amount || 0), 0),
   };
 
-  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Cargando pagos...</p></div>;
+  if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>{t('actions.loading')}</p></div>;
 
   return (
     <div className="payments-page">
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
-          <h1>Pagos</h1>
+          <h1>{t('payments.title')}</h1>
           <span className="crm-count">{payments.length} registros</span>
         </div>
         <div className="crm-toolbar-right">
@@ -271,7 +281,7 @@ export default function PaymentTracker() {
             <input placeholder="Buscar proyecto o cliente..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <button className="btn-primary" onClick={() => setShowAdd(true)}>
-            <Plus size={18} /><span>Registrar Pago</span>
+            <Plus size={18} /><span>{t('payments.newPayment')}</span>
           </button>
         </div>
       </div>
@@ -279,10 +289,10 @@ export default function PaymentTracker() {
       {/* Summary Cards */}
       <div className="payment-summary">
         {[
-          { label: 'Total Facturado', val: totals.total,    icon: DollarSign,  cls: '',        filter: 'all' },
-          { label: 'Recibido',        val: totals.received, icon: CheckCircle, cls: 'success', filter: 'received' },
-          { label: 'Pendiente',       val: totals.pending,  icon: Clock,       cls: 'warning', filter: 'pending' },
-          { label: 'Vencido',         val: totals.overdue,  icon: AlertTriangle,cls: 'danger', filter: 'overdue' },
+          { label: 'Total Facturado',  val: totals.total,    icon: DollarSign,   cls: '',        filter: 'all' },
+          { label: 'Recibido',         val: totals.received, icon: CheckCircle,  cls: 'success', filter: 'received' },
+          { label: t('status.pending'), val: totals.pending,  icon: Clock,        cls: 'warning', filter: 'pending' },
+          { label: t('status.overdue'), val: totals.overdue,  icon: AlertTriangle,cls: 'danger',  filter: 'overdue' },
         ].map(card => (
           <div
             key={card.filter}
@@ -304,9 +314,9 @@ export default function PaymentTracker() {
         <table>
           <thead>
             <tr>
-              <th>Proyecto</th><th>Cliente</th><th>Tipo</th>
-              <th>Metodo</th><th>Monto</th><th>Estado</th>
-              <th>Vence</th><th>Pagado</th><th>Acciones</th>
+              <th>{t('payments.project')}</th><th>{t('payments.client')}</th><th>{t('common.type')}</th>
+              <th>{t('payments.method')}</th><th>{t('payments.amount')}</th><th>{t('common.status')}</th>
+              <th>Vence</th><th>Pagado</th><th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>

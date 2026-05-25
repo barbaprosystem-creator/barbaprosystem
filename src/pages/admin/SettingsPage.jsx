@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Users, Plus, Trash2, Loader2, X, Shield, ShieldCheck, Eye, Pencil, Lock } from 'lucide-react';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const ROLE_MAP = {
   admin: { label: 'Administrador', color: '#ef4444' },
@@ -10,6 +11,7 @@ const ROLE_MAP = {
 };
 
 export default function SettingsPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -119,7 +121,7 @@ export default function SettingsPage() {
   return (
     <div className="settings-page">
       <div className="crm-toolbar">
-        <div className="crm-toolbar-left"><h1>Configuracion</h1></div>
+        <div className="crm-toolbar-left"><h1>{t('settings.title')}</h1></div>
       </div>
 
       {/* User Management */}
@@ -135,10 +137,10 @@ export default function SettingsPage() {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
+                <th>{t('common.name')}</th>
                 <th>Rol</th>
-                <th>Creado</th>
-                <th>Acciones</th>
+                <th>{t('common.date')}</th>
+                <th>{t('common.actions')}</th>
               </tr>
             </thead>
             <tbody>
