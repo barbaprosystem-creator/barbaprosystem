@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 const STATUS_MAP = {
   draft: { label:'Borrador', color:'#6b7280' },
@@ -13,7 +13,7 @@ const STATUS_MAP = {
 };
 
 export default function EstimatesList() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [estimates, setEstimates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -163,7 +163,7 @@ export default function EstimatesList() {
           <button className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#333] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors" onClick={() => setShowSummaryModal(true)}>
             <BarChart2 size={16}/><span>Resumen Ventas</span>
           </button>
-          <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
+          <button className="btn-primary" onClick={() => router.push('/admin/estimator')}><Plus size={18}/><span>Nuevo Estimado</span></button>
         </div>
       </div>
       <div className="estimate-tabs">
@@ -197,7 +197,7 @@ export default function EstimatesList() {
                     <button className="icon-btn danger" title="Rechazar" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
                   </>}
                   {est.status==='approved' && (
-                    <button className="icon-btn" title="Generar Contrato" onClick={() => navigate(`/admin/contract/${est.id}`)}>
+                    <button className="icon-btn" title="Generar Contrato" onClick={() => router.push(`/admin/contract/${est.id}`)}>
                       <FileSignature size={15}/>
                     </button>
                   )}

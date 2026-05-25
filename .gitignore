@@ -31,3 +31,7 @@ dist-ssr
 
 # Scripts with credentials
 scripts/
+
+# Next.js build output
+.next/
+out/

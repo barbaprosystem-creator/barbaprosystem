@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   LayoutDashboard,
   Users,
@@ -49,7 +50,8 @@ const navItems = [
   { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
 ];
 
-export default function AdminLayout({ profile, onSignOut }) {
+export default function AdminLayout({ profile, onSignOut, children }) {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isPrivacyMode, setIsPrivacyMode] = useState(() => {
     return localStorage.getItem('barba_privacy_mode') === 'true';
@@ -108,21 +110,23 @@ export default function AdminLayout({ profile, onSignOut }) {
         </div>
 
         <ul className="admin-nav">
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `admin-nav-item ${isActive ? 'active' : ''}`
-                }
-              >
-                <item.icon size={18} strokeWidth={1.8} />
-                <span>{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            const isActive = item.end
+              ? router.pathname === item.to
+              : router.pathname.startsWith(item.to);
+            return (
+              <li key={item.to}>
+                <Link
+                  href={item.to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <item.icon size={18} strokeWidth={1.8} />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="admin-sidebar-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
@@ -156,7 +160,7 @@ export default function AdminLayout({ profile, onSignOut }) {
       </nav>
 
       <main className="admin-main">
-        <Outlet />
+        {children}
       </main>
 
       <GlobalChatbot />

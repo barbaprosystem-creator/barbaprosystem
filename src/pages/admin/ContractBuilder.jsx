@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency } from '../../lib/utils';
 import { ArrowLeft, Send, Printer, FileText, Loader, Eraser } from 'lucide-react';
@@ -7,8 +7,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 export default function ContractBuilder() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const router = useRouter();
+  const { id } = router.query;
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [estimate, setEstimate] = useState(null);
@@ -229,7 +229,7 @@ export default function ContractBuilder() {
       if (!response.ok) throw new Error(result.error || 'Error al enviar email');
 
       alert('Contrato enviado correctamente al cliente.');
-      navigate('/admin/estimates');
+      router.push('/admin/estimates');
 
     } catch (err) {
       console.error(err);
@@ -249,7 +249,7 @@ export default function ContractBuilder() {
     <div className="p-6 max-w-5xl mx-auto pb-24 print:p-0">
       {/* Header Actions (hidden in print) */}
       <div className="flex items-center justify-between mb-6 print:hidden">
-        <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white flex items-center gap-2">
+      <button onClick={() => router.back()} className="text-gray-400 hover:text-white flex items-center gap-2">
           <ArrowLeft size={20} /> Volver a Estimados
         </button>
         <div className="flex items-center gap-3">

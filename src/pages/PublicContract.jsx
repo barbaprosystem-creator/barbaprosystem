@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useRouter } from 'next/router';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../lib/utils';
 import { FileSignature, Eraser, Loader, Printer } from 'lucide-react';
@@ -7,7 +7,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
 export default function PublicContract() {
-  const { id } = useParams();
+  const router = useRouter();
+  const { id } = router.query;
   const [loading, setLoading] = useState(true);
   const [signing, setSigning] = useState(false);
   const [estimate, setEstimate] = useState(null);

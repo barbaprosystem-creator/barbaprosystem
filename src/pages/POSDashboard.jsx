@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { TrendingUp, Users, FileText, DollarSign, Clock, Activity, ArrowRight, CalendarDays, Wallet } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../hooks/useAuth';
 
 export default function POSDashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   
   // States
   const [loading, setLoading] = useState(true);
@@ -167,7 +168,7 @@ export default function POSDashboard() {
             </div>
             <h2 className="text-lg font-bold">Leads Recientes</h2>
           </div>
-          <Link to="/pos/pipeline" className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1 font-medium">
+          <Link href="/pos/pipeline" className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1 font-medium">
             Ir al CRM Pipeline <ArrowRight size={16} />
           </Link>
         </div>
@@ -198,7 +199,7 @@ export default function POSDashboard() {
                   {recentLeads.map((lead) => {
                     const s = statusMap[lead.status] || { label: lead.status, cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                     return (
-                      <tr key={lead.id} onClick={() => navigate('/pos/pipeline')} className="hover:bg-[#1a1a1a]/50 transition-colors cursor-pointer">
+                      <tr key={lead.id} onClick={() => router.push('/pos/pipeline')} className="hover:bg-[#1a1a1a]/50 transition-colors cursor-pointer">
                         <td className="py-4 px-6">
                           <div className="font-semibold text-[#e0e0e0]">{lead.full_name}</div>
                         </td>

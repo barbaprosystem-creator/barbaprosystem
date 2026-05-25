@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   LayoutDashboard,
   Calculator,
@@ -25,7 +26,8 @@ const navItems = [
   { to: '/pos/catalog', icon: Package, label: 'Catálogo', end: false },
 ];
 
-export default function POSLayout({ onSignOut, profile }) {
+export default function POSLayout({ onSignOut, profile, children }) {
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
@@ -63,21 +65,21 @@ export default function POSLayout({ onSignOut, profile }) {
         </div>
 
         <ul className="admin-nav">
-          {navItems.map((item) => (
-            <li key={item.to}>
-              <NavLink
-                to={item.to}
-                end={item.end}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className={({ isActive }) =>
-                  `admin-nav-item ${isActive ? 'active' : ''}`
-                }
-              >
-                <item.icon size={20} />
-                <span>{item.label}</span>
-              </NavLink>
-            </li>
-          ))}
+          {navItems.map((item) => {
+            const isActive = router.pathname.startsWith(item.to);
+            return (
+              <li key={item.to}>
+                <Link
+                  href={item.to}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`admin-nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <item.icon size={20} />
+                  <span>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="admin-sidebar-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
@@ -102,7 +104,7 @@ export default function POSLayout({ onSignOut, profile }) {
       </nav>
 
       <main className="admin-main">
-        <Outlet />
+        {children}
       </main>
     </div>
   );
