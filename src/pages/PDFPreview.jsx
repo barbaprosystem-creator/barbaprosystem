@@ -1,11 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { FileText, Download, CheckCircle, CreditCard, Loader, Package } from 'lucide-react';
-import { useRouter } from 'next/router';
+import { useParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 export default function PDFPreview() {
-  const router = useRouter();
-  const { id } = router.query;
+  const { id } = useParams();
   const canvasRef = useRef(null);
   const [isSigned, setIsSigned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);

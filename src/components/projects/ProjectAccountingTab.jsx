@@ -89,9 +89,11 @@ export default function ProjectAccountingTab({ projectId }) {
   // Renders page 1 of a PDF file to a base64 JPEG string
   async function renderPdfPageToBase64(file) {
     const pdfjsLib = await import('pdfjs-dist');
-    // Use CDN worker for Next.js compatibility (import.meta.url not available in CJS context)
-    const pdfjsVersion = pdfjsLib.version || '4.10.38';
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`;
+    // Point to the bundled worker (Vite copies it to /assets/)
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url
+    ).toString();
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

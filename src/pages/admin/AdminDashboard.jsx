@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { 
@@ -54,7 +54,7 @@ function AlertBanner({ payments }) {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     totalLeads: 0, activeProjects: 0, estimatesSent: 0,
     totalRevenue: 0, pendingPayments: 0, closedThisMonth: 0,
@@ -209,7 +209,7 @@ export default function AdminDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {activeProjects.map(p => (
-                <div key={p.id} onClick={() => router.push('/admin/projects')} style={{
+                <div key={p.id} onClick={() => navigate('/admin/projects')} style={{
                   display: 'flex', alignItems: 'center', gap: '16px',
                   padding: '16px', background: '#1e293b', borderRadius: '12px',
                   border: '1px solid #374151', cursor: 'pointer'
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {recentLeads.map(lead => (
-                <div key={lead.id} onClick={() => router.push('/admin/crm')} style={{
+                <div key={lead.id} onClick={() => navigate('/admin/crm')} style={{
                   display: 'flex', alignItems: 'center', gap: '14px',
                   padding: '14px', background: '#1e293b', borderRadius: '12px',
                   border: '1px solid #374151', cursor: 'pointer'

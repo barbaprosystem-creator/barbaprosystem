@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { HardHat, Send, CheckCircle2, ChevronRight, Phone, Mail, MapPin, Hammer, ShieldCheck, Wrench, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '../lib/supabase';
@@ -356,7 +356,7 @@ export default function LandingPage() {
                     
                     {/* TWILIO COMPLIANCE TEXT - MANDATORY */}
                     <div className="bg-[#1a1a1a] border border-[#222] rounded-xl p-4 text-xs text-gray-400 leading-relaxed">
-                      By providing your phone number, you agree to receive text messages from Barba Construction regarding your estimate, project updates, and appointments. Message and data rates may apply. Message frequency varies. Reply STOP to opt-out or HELP for help. View our <Link href="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link href="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
+                      By providing your phone number, you agree to receive text messages from Barba Construction regarding your estimate, project updates, and appointments. Message and data rates may apply. Message frequency varies. Reply STOP to opt-out or HELP for help. View our <Link to="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
                     </div>
                   </div>
 
@@ -395,10 +395,10 @@ export default function LandingPage() {
             <span className="font-bold tracking-widest text-sm">BARBA CONSTRUCTION &copy; {new Date().getFullYear()}</span>
           </div>
           <div className="text-gray-500 text-sm flex flex-wrap justify-center gap-6">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
-            <Link href="/eula" className="hover:text-white transition-colors">EULA</Link>
-            <Link href="/login" className="text-[#FACB00] hover:text-white transition-colors flex items-center gap-1 md:ml-4 md:pl-4 md:border-l border-[#333]">
+            <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link to="/eula" className="hover:text-white transition-colors">EULA</Link>
+            <Link to="/login" className="text-[#FACB00] hover:text-white transition-colors flex items-center gap-1 md:ml-4 md:pl-4 md:border-l border-[#333]">
                Employee Login
             </Link>
           </div>

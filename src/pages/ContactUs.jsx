@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { HardHat, Send, CheckCircle2 } from 'lucide-react';
 
 export default function ContactUs() {
@@ -60,7 +60,7 @@ export default function ContactUs() {
               
               {/* TWILIO COMPLIANCE TEXT - DO NOT REMOVE */}
               <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-3 text-xs text-gray-400 leading-relaxed">
-                By providing your phone number, you agree to receive text messages from Barba Construction regarding your estimate, project updates, and appointments. Message and data rates may apply. Message frequency varies. Reply STOP to opt-out or HELP for help. View our <Link href="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link href="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
+                By providing your phone number, you agree to receive text messages from Barba Construction regarding your estimate, project updates, and appointments. Message and data rates may apply. Message frequency varies. Reply STOP to opt-out or HELP for help. View our <Link to="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
               </div>
             </div>
 
