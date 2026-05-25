@@ -426,27 +426,6 @@ export default function ProjectsList() {
 }
 
 
-const STATUS_MAP = {
-  pending:     { label: 'Pendiente',   color: '#6b7280' },
-  scheduled:   { label: 'Agendado',    color: '#3b82f6' },
-  in_progress: { label: 'En Progreso', color: '#f59e0b' },
-  completed:   { label: 'Completado',  color: '#10b981' },
-  on_hold:     { label: 'En Espera',   color: '#ef4444' },
-};
-
-export default function ProjectsList() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [selectedProjectId, setSelectedProjectId] = useState(null); // -> detail view
-  
-  // Manual project creation
-  const [createModalOpen, setCreateModalOpen] = useState(false);
-  const [newProject, setNewProject] = useState({
-    title: '', address: '', sold_price: 0, status: 'pending', start_date: ''
-  });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchProjects(); }, []);
 
