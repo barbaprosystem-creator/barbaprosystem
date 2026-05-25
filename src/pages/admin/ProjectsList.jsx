@@ -186,54 +186,49 @@ export default function ProjectsList() {
             key={project.id}
             className="project-card"
             onClick={() => setSelectedProjectId(project.id)}
-            style={{ cursor: 'pointer', position: 'relative' }}
+            style={{ cursor: 'pointer' }}
             title="Ver pipeline del proyecto"
           >
-            {/* Action buttons — top right corner */}
-            <div
-              style={{ position: 'absolute', top: '12px', right: '12px', display: 'flex', gap: '6px', zIndex: 10 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                onClick={e => openEdit(e, project)}
-                title="Editar proyecto"
-                style={{
-                  width: '30px', height: '30px', borderRadius: '8px', border: 'none',
-                  background: 'rgba(59,130,246,0.15)', color: '#3b82f6',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', transition: 'background 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.background = 'rgba(59,130,246,0.3)'}
-                onMouseOut={e => e.currentTarget.style.background = 'rgba(59,130,246,0.15)'}
-              >
-                <Pencil size={14} />
-              </button>
-              <button
-                onClick={e => openDelete(e, project)}
-                title="Eliminar proyecto"
-                style={{
-                  width: '30px', height: '30px', borderRadius: '8px', border: 'none',
-                  background: 'rgba(239,68,68,0.15)', color: '#ef4444',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  cursor: 'pointer', transition: 'background 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.background = 'rgba(239,68,68,0.3)'}
-                onMouseOut={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
-              >
-                <Trash2 size={14} />
-              </button>
-            </div>
-
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span className="stage-badge" style={{ background: STATUS_MAP[project.status]?.color }}>
                   {STATUS_MAP[project.status]?.label}
                 </span>
-                <ChevronRight size={14} color="#6b7280" />
+                {/* Edit / Delete inline buttons */}
+                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                  <button
+                    onClick={e => openEdit(e, project)}
+                    title="Editar proyecto"
+                    style={{
+                      width: '26px', height: '26px', borderRadius: '6px', border: 'none',
+                      background: 'rgba(59,130,246,0.15)', color: '#3b82f6',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', flexShrink: 0
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(59,130,246,0.3)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(59,130,246,0.15)'}
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={e => openDelete(e, project)}
+                    title="Eliminar proyecto"
+                    style={{
+                      width: '26px', height: '26px', borderRadius: '6px', border: 'none',
+                      background: 'rgba(239,68,68,0.15)', color: '#ef4444',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', flexShrink: 0
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(239,68,68,0.3)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
               </div>
             </div>
-            <h3 className="project-title" style={{ paddingRight: '72px' }}>{project.title}</h3>
+            <h3 className="project-title">{project.title}</h3>
             {project.contact && (
               <div className="project-detail">
                 <User size={14} />
