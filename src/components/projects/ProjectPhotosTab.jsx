@@ -45,14 +45,30 @@ export default function ProjectPhotosTab({ projectId }) {
     if (!file) return;
 
     setUploading(true);
+    let fileToUpload = file;
+    let fileExt = file.name.split('.').pop().toLowerCase();
+
     try {
-      const fileExt = file.name.split('.').pop();
+      const isHEIC = fileExt === 'heic' || fileExt === 'heif' || file.type === 'image/heic' || file.type === 'image/heif';
+
+      if (isHEIC) {
+        const heic2any = (await import('heic2any')).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        fileToUpload = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+        fileExt = 'jpg';
+      }
+
       const fileName = `${projectId}-${Date.now()}.${fileExt}`;
       const filePath = `${projectId}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('jobsite_photos')
-        .upload(filePath, file);
+        .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 

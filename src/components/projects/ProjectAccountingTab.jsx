@@ -4,6 +4,43 @@ import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileTe
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { extractReceiptData } from '../../lib/ai';
 
+// Helper to clean total amount extracted by AI
+const cleanTotal = (totalVal) => {
+  if (totalVal === undefined || totalVal === null) return '';
+  const str = String(totalVal).replace(/[$,\s]/g, '');
+  const parsed = parseFloat(str);
+  return isNaN(parsed) ? '' : parsed.toFixed(2);
+};
+
+// Helper to normalize dates to YYYY-MM-DD
+const cleanDate = (dateVal) => {
+  if (!dateVal) return new Date().toISOString().split('T')[0];
+  const str = String(dateVal).trim();
+  
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  
+  const mdMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if (mdMatch) {
+    const [_, m, d, y] = mdMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
+  const ymMatch = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+  if (ymMatch) {
+    const [_, y, m, d] = ymMatch;
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+
+  try {
+    const parsed = new Date(str);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString().split('T')[0];
+    }
+  } catch (e) {}
+
+  return new Date().toISOString().split('T')[0];
+};
+
 export default function ProjectAccountingTab({ projectId }) {
   const [expenses, setExpenses]     = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -47,19 +84,34 @@ export default function ProjectAccountingTab({ projectId }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     setAiLoading(true);
-    setAiStatus(isPDF ? 'Convirtiendo PDF…' : 'Comprimiendo imagen…');
+    let fileToProcess = file;
+    const isHEIC = file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif') || file.type === 'image/heic' || file.type === 'image/heif';
 
     try {
+      if (isHEIC) {
+        setAiStatus('Convirtiendo HEIC a JPG…');
+        const heic2any = (await import('heic2any')).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: 'image/jpeg',
+          quality: 0.8
+        });
+        const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        fileToProcess = new File([blob], file.name.replace(/\.[^/.]+$/, ".jpg"), { type: 'image/jpeg' });
+      }
+
+      const isPDF = fileToProcess.type === 'application/pdf' || fileToProcess.name.toLowerCase().endsWith('.pdf');
+      setAiStatus(isPDF ? 'Convirtiendo PDF…' : 'Comprimiendo imagen…');
+
       let base64String;
 
       if (isPDF) {
         // ── PDF path: use pdfjs-dist to render first page ──
-        base64String = await renderPdfPageToBase64(file);
+        base64String = await renderPdfPageToBase64(fileToProcess);
       } else {
         // ── Image path: resize + compress to JPEG ──
-        base64String = await resizeImageToBase64(file);
+        base64String = await resizeImageToBase64(fileToProcess);
       }
 
       setAiStatus('Analizando con IA…');
@@ -68,16 +120,16 @@ export default function ProjectAccountingTab({ projectId }) {
       if (extracted) {
         setForm(prev => ({
           ...prev,
-          amount:      extracted.total       || prev.amount,
-          vendor:      extracted.vendor      || prev.vendor,
-          date:        extracted.date        || prev.date,
-          description: extracted.items?.join(', ') || prev.description,
+          amount:      cleanTotal(extracted.total)   || prev.amount,
+          vendor:      extracted.vendor              || prev.vendor,
+          date:        cleanDate(extracted.date)      || prev.date,
+          description: extracted.items?.join(', ')   || prev.description,
         }));
       }
       setAiStatus('');
     } catch (err) {
       console.error(err);
-      alert('Error al procesar el archivo: ' + err.message);
+      alert('Error al procesar el archivo: ' + (err.message || 'Error desconocido'));
       setAiStatus('');
     } finally {
       setAiLoading(false);
