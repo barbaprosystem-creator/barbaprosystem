@@ -37,85 +37,52 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let mounted = true;
 
-    const timeout = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Auth timeout')), 8000)
-    );
+    // STEP 1: Get the initial session immediately from Supabase's own cache.
+    // This is near-instant because it reads from localStorage — no network needed.
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+      if (!mounted) return;
+      
+      setSession(s);
 
-    async function init() {
-      const fallbackToLocal = () => {
-        try {
-          const stored = localStorage.getItem('barba-crm-auth-token');
-          if (stored) return { data: { session: JSON.parse(stored) }, error: null };
-        } catch(e) {}
-        return { data: { session: null }, error: null };
-      };
-
-      try {
-        let response;
-        try {
-          response = await Promise.race([
-            supabase.auth.getSession(),
-            new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 5000))
-          ]);
-          
-          if (response?.error) {
-            console.warn('Supabase session error, falling back to local storage', response.error);
-            response = fallbackToLocal();
-          }
-        } catch (e) {
-          console.warn('Supabase getSession timeout, falling back to local storage');
-          response = fallbackToLocal();
-          // If we time out, the localStorage might be corrupted and causing issues
-          // We don't remove it yet to preserve offline capabilities, but we catch it.
-        }
-
+      if (s?.user) {
+        const p = await fetchProfile(s.user.id);
         if (!mounted) return;
-
-        const s = response?.data?.session;
-        setSession(s);
-
-        if (s?.user) {
-          const p = await fetchProfile(s.user.id);
-          if (!mounted) return;
-
-          if (p) {
-            setProfile(p);
-          } else {
-            const meta = s.user.user_metadata || {};
-            setProfile({
-              id: s.user.id,
-              full_name: meta.full_name || s.user.email,
-              role: meta.role || 'salesperson',
-              is_active: true,
-            });
-          }
+        if (p) {
+          setProfile(p);
+        } else {
+          const meta = s.user.user_metadata || {};
+          setProfile({
+            id: s.user.id,
+            full_name: meta.full_name || s.user.email,
+            role: meta.role || 'salesperson',
+            is_active: true,
+          });
         }
-      } catch (err) {
-        console.error('Fatal auth init error:', err);
-      } finally {
-        if (mounted) setLoading(false);
       }
-    }
 
-    Promise.race([init(), timeout]).catch(() => {
+      if (mounted) setLoading(false);
+    }).catch((err) => {
+      console.error('getSession error:', err);
       if (mounted) setLoading(false);
     });
 
+    // STEP 2: Subscribe to auth state changes (login, logout, token refresh).
+    // This fires automatically when the token refreshes in the background.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
-        const updateState = (updates) => {
-          if (!mounted) return;
-          if (updates.session !== undefined) setSession(updates.session);
-          if (updates.profile !== undefined) setProfile(updates.profile);
-          setLoading(false);
-        };
+        if (!mounted) return;
 
         if (!s?.user) {
-          updateState({ session: null, profile: null });
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
           return;
         }
 
+        setSession(s);
         const p = await fetchProfile(s.user.id);
+        if (!mounted) return;
+
         const fallback = (() => {
           const meta = s.user.user_metadata || {};
           return {
@@ -126,7 +93,8 @@ export function AuthProvider({ children }) {
           };
         })();
 
-        updateState({ session: s, profile: p || fallback });
+        setProfile(p || fallback);
+        setLoading(false);
       }
     );
 
