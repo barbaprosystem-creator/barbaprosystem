@@ -202,7 +202,7 @@ export default function ProjectsList() {
           >
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
                 <span className="stage-badge" style={{ background: STATUS_MAP[project.status]?.color }}>
                   {STATUS_MAP[project.status]?.label}
                 </span>

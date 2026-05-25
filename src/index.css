@@ -1105,7 +1105,7 @@ body {
 .crm-list-row:hover td { background: var(--bg-card-hover); }
 .lead-name-cell { font-weight: 600; }
 .source-badge { font-size: 0.75rem; background: var(--bg-input); padding: 3px 10px; border-radius: 999px; color: var(--text-secondary); }
-.stage-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; color: #fff; }
+.stage-badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; color: #fff; white-space: nowrap; flex-shrink: 0; }
 .crm-empty-row { text-align: center; color: var(--text-muted); padding: 40px 16px !important; }
 
 /* Estimate Tabs */
