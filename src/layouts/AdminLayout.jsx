@@ -25,30 +25,11 @@ import {
   BrainCircuit,
 } from 'lucide-react';
 import GlobalChatbot from '../components/chat/GlobalChatbot';
-
-const navItems = [
-  { to: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
-  { to: '/admin/inbox', icon: MessageSquare, label: 'Inbox' },
-  { to: '/admin/crm', icon: Users, label: 'CRM Pipeline' },
-  { to: '/admin/estimator', icon: PenLine, label: 'Crear Estimado' },
-  { to: '/admin/estimates', icon: FileText, label: 'Lista Estimados' },
-  { to: '/admin/projects', icon: FolderKanban, label: 'Proyectos' },
-  { to: '/admin/profit-tracker', icon: DollarSign, label: 'Profit Tracker' },
-  { to: '/admin/payments', icon: DollarSign, label: 'Pagos' },
-  { to: '/admin/calendar', icon: CalendarDays, label: 'Calendario' },
-  { to: '/admin/reports', icon: BarChart3, label: 'Reportes' },
-  { to: '/admin/payroll', icon: Users2, label: 'Payroll' },
-  { to: '/admin/bills', icon: DollarSign, label: 'Biles & Autos' },
-  { to: '/admin/brigades', icon: HardHat, label: 'Brigadas' },
-  { to: '/admin/pricing', icon: Tag, label: 'Motor de Precios' },
-  { to: '/admin/materials-catalog', icon: PackageSearch, label: 'Catálogo Interno' },
-  { to: '/admin/interactive-catalog', icon: BookOpen, label: 'Catálogo de Clientes' },
-  { to: '/admin/showroom', icon: ImageIcon, label: 'Showroom' },
-  { to: '/admin/ai-training', icon: BrainCircuit, label: 'Entrenamiento IA' },
-  { to: '/admin/settings', icon: Settings, label: 'Configuracion' },
-];
+import LanguageSwitcher from '../components/common/LanguageSwitcher';
+import { useLanguage } from '../i18n/LanguageContext';
 
 export default function AdminLayout({ profile, onSignOut }) {
+  const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isPrivacyMode, setIsPrivacyMode] = useState(() => {
     return localStorage.getItem('barba_privacy_mode') === 'true';
@@ -63,6 +44,28 @@ export default function AdminLayout({ profile, onSignOut }) {
     localStorage.setItem('barba_privacy_mode', isPrivacyMode);
   }, [isPrivacyMode]);
 
+  const navItems = [
+    { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
+    { to: '/admin/inbox', icon: MessageSquare, label: t('nav.inbox') },
+    { to: '/admin/crm', icon: Users, label: t('nav.crm') },
+    { to: '/admin/estimator', icon: PenLine, label: t('nav.createEstimate') },
+    { to: '/admin/estimates', icon: FileText, label: t('nav.estimatesList') },
+    { to: '/admin/projects', icon: FolderKanban, label: t('nav.projects') },
+    { to: '/admin/profit-tracker', icon: DollarSign, label: t('nav.profitTracker') },
+    { to: '/admin/payments', icon: DollarSign, label: t('nav.payments') },
+    { to: '/admin/calendar', icon: CalendarDays, label: t('nav.calendar') },
+    { to: '/admin/reports', icon: BarChart3, label: t('nav.reports') },
+    { to: '/admin/payroll', icon: Users2, label: t('nav.payroll') },
+    { to: '/admin/bills', icon: DollarSign, label: t('nav.bills') },
+    { to: '/admin/brigades', icon: HardHat, label: t('nav.brigades') },
+    { to: '/admin/pricing', icon: Tag, label: t('nav.pricing') },
+    { to: '/admin/materials-catalog', icon: PackageSearch, label: t('nav.internalCatalog') },
+    { to: '/admin/interactive-catalog', icon: BookOpen, label: t('nav.clientCatalog') },
+    { to: '/admin/showroom', icon: ImageIcon, label: t('nav.showroom') },
+    { to: '/admin/ai-training', icon: BrainCircuit, label: t('nav.aiTraining') },
+    { to: '/admin/settings', icon: Settings, label: t('nav.settings') },
+  ];
+
   return (
     <div className="admin-layout">
       {/* Mobile Header */}
@@ -75,7 +78,7 @@ export default function AdminLayout({ profile, onSignOut }) {
           <button 
             className="p-2 text-[#888] hover:text-white transition-colors"
             onClick={() => setIsPrivacyMode(!isPrivacyMode)}
-            title={isPrivacyMode ? "Mostrar Precios" : "Ocultar Precios"}
+            title={isPrivacyMode ? t('nav.showprices') : t('nav.hideprices')}
           >
             {isPrivacyMode ? <EyeOff size={22} /> : <Eye size={22} />}
           </button>
@@ -98,9 +101,8 @@ export default function AdminLayout({ profile, onSignOut }) {
           </div>
           <div className="admin-brand">
             <span className="admin-brand-name">BARBA PRO</span>
-            <span className="admin-brand-role">Administracion</span>
+            <span className="admin-brand-role">{t('nav.administration')}</span>
           </div>
-          {/* Close button for mobile inside sidebar */}
           <button className="md:hidden ml-auto p-1 text-[#888] hover:text-white" onClick={() => setIsMobileMenuOpen(false)}>
             <X size={20} />
           </button>
@@ -125,13 +127,14 @@ export default function AdminLayout({ profile, onSignOut }) {
         </ul>
 
         <div className="admin-sidebar-footer" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
+          <LanguageSwitcher />
 
           <button 
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 text-[#888888] hover:bg-[#1a1a1a] hover:text-[#e0e0e0]"
             onClick={() => setIsPrivacyMode(!isPrivacyMode)}
           >
             {isPrivacyMode ? <EyeOff size={18} /> : <Eye size={18} />}
-            <span>{isPrivacyMode ? 'Mostrar Precios' : 'Ocultar Precios'}</span>
+            <span>{isPrivacyMode ? t('nav.showprices') : t('nav.hideprices')}</span>
           </button>
 
           <div className="flex items-center justify-between w-full mt-2 pt-2 border-t border-[#1e1e1e]">
@@ -144,7 +147,7 @@ export default function AdminLayout({ profile, onSignOut }) {
                 <span className="admin-user-role">CEO</span>
               </div>
             </div>
-            <button className="admin-logout-btn" onClick={onSignOut} title="Cerrar Sesion">
+            <button className="admin-logout-btn" onClick={onSignOut} title={t('nav.signout')}>
               <LogOut size={18} />
             </button>
           </div>
@@ -159,4 +162,3 @@ export default function AdminLayout({ profile, onSignOut }) {
     </div>
   );
 }
-
