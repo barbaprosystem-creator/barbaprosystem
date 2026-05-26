@@ -445,8 +445,13 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
 
 export async function generateEstimateFromText(inputText, prices = []) {
   const pricesListStr = prices.length > 0 
-    ? prices.map(p => `- [${p.category.toUpperCase()}] ${p.item_name}: $${p.sell_price} / ${p.unit_type}`).join('\n')
+    ? prices.map(p => `- [${p.category.toUpperCase()}] ${p.item_name}: $${p.sell_price} / ${p.unit_type}${p.convert_unit_ai ? ' (AUTO-CONVERT ENABLED)' : ''}`).join('\n')
     : 'No hay precios disponibles en la base de datos. Usa tu mejor criterio.';
+
+  const convertItems = prices.filter(p => p.convert_unit_ai);
+  const conversionRulesStr = convertItems.length > 0
+    ? convertItems.map(p => `- Para "${p.item_name}" (${p.category}): La unidad oficial es "${p.unit_type}". DEBES convertir cualquier cantidad expresada en otras unidades (por ejemplo, si te dicen "2000 sqft" de Asphalt Roof y la unidad es "sq", conviértelo a "20 sq" porque 1 sq = 100 sqft; si dicen "15 squares" de horizontal siding y la unidad es "sqft", conviértelo a "1500 sqft", etc.).`).join('\n')
+    : '';
 
   const prompt = `
 Eres la IA Oficial de Estimados de Barba Construction.
@@ -462,9 +467,14 @@ Estilo visual: Premium, Profesional tipo banco, Logo centrado.
 ${pricesListStr}
 === FIN BASE DE CONOCIMIENTOS ===
 
+${conversionRulesStr ? `=== REGLAS OBLIGATORIAS DE CONVERSIÓN DE MEDIDAS ===
+${conversionRulesStr}
+` : ''}
+
 REGLAS DE EXTRACCIÓN:
 - Basándote en el texto del vendedor, identifica todos los servicios y materiales mencionados.
 - Calcula las cantidades. (Ejemplo: si dice "un techo de asfalto de 15 squares", la cantidad es 15, el precio unitario es 380 si es estándar. El total es 15 * 380).
+- Si un ítem tiene activa la conversión automática (AUTO-CONVERT ENABLED) y el usuario dicta medidas en otras unidades, realiza la conversión matemática correspondiente antes de calcular el total y rellenar la cantidad. (Por ejemplo, si la unidad del ítem es "sq", 2000 sqft se convierten a 20).
 - Devuelve un JSON con este formato exacto:
 {
   "items": [

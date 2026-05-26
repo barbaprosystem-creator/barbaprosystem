@@ -90,6 +90,23 @@ export default function PricingSettings() {
     fetchItems();
   }
 
+  async function toggleConvertUnitAI(id, currentValue) {
+    const newValue = !currentValue;
+    // Optimistic update
+    setItems(prev => prev.map(item => item.id === id ? { ...item, convert_unit_ai: newValue } : item));
+    
+    const { error } = await supabase
+      .from('price_catalog')
+      .update({ convert_unit_ai: newValue })
+      .eq('id', id);
+      
+    if (error) {
+      // Revert if error
+      setItems(prev => prev.map(item => item.id === id ? { ...item, convert_unit_ai: currentValue } : item));
+      alert('Error al guardar configuración de conversión: ' + error.message);
+    }
+  }
+
   async function analyzeMarket() {
     if (items.length === 0) {
       alert('No hay ítems para analizar.');
@@ -230,6 +247,7 @@ export default function PricingSettings() {
                 <th>Ítem / Descripción</th>
                 <th>Unidad</th>
                 <th>Precio Venta</th>
+                <th>Conv. IA</th>
                 <th>Mercado (IA)</th>
                 <th style={{ width: 100 }}>Acciones</th>
               </tr>
@@ -265,6 +283,7 @@ export default function PricingSettings() {
                         onChange={e => setEditForm({ ...editForm, sell_price: e.target.value })} />
                     </td>
                     <td style={{ color: '#888' }}>-</td>
+                    <td style={{ color: '#888' }}>-</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn-icon success" onClick={saveEdit} title="Guardar" disabled={saving}>
@@ -286,6 +305,29 @@ export default function PricingSettings() {
                     </td>
                     <td className="unit-type">{item.unit_type}</td>
                     <td className="sell-price" style={{ fontSize: '15px' }}>{formatCurrency(item.sell_price)}</td>
+                    <td>
+                      <button
+                        onClick={() => toggleConvertUnitAI(item.id, item.convert_unit_ai)}
+                        title={item.convert_unit_ai ? "Desactivar conversión de unidades IA" : "Activar conversión automática de unidades para la IA"}
+                        style={{
+                          background: item.convert_unit_ai ? 'rgba(249, 115, 22, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                          border: `1px solid ${item.convert_unit_ai ? '#f97316' : '#444'}`,
+                          borderRadius: '6px',
+                          color: item.convert_unit_ai ? '#f97316' : '#888',
+                          padding: '4px 10px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          transition: 'all 0.15s',
+                        }}
+                      >
+                        <Sparkles size={12} />
+                        {item.convert_unit_ai ? 'Activo' : 'Inactivo'}
+                      </button>
+                    </td>
                     <td>
                       {item.market_price ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
