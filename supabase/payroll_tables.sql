@@ -5,8 +5,10 @@ CREATE TABLE IF NOT EXISTS payroll_workers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   group_name text NOT NULL DEFAULT 'General',
+  payment_type text NOT NULL DEFAULT 'daily' CHECK (payment_type IN ('daily', 'hourly')),
   daily_rate numeric NOT NULL DEFAULT 0,
   daily_rate_2 numeric,
+  hourly_rate numeric NOT NULL DEFAULT 0,
   active boolean DEFAULT true,
   notes text,
   created_at timestamptz DEFAULT now()

@@ -80,8 +80,10 @@ CREATE TABLE payroll_workers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   group_name text NOT NULL DEFAULT 'General',
+  payment_type text NOT NULL DEFAULT 'daily',
   daily_rate numeric NOT NULL DEFAULT 0,
   daily_rate_2 numeric,
+  hourly_rate numeric NOT NULL DEFAULT 0,
   active boolean DEFAULT true,
   notes text,
   created_at timestamptz DEFAULT now()
@@ -283,8 +285,10 @@ function WorkerModal({ worker, groups, onSave, onClose }) {
   const [form, setForm] = useState({
     name: worker?.name || '',
     group_name: worker?.group_name || 'GRUPO REGULAR',
+    payment_type: worker?.payment_type || 'daily',
     daily_rate: worker?.daily_rate || '',
     daily_rate_2: worker?.daily_rate_2 || '',
+    hourly_rate: worker?.hourly_rate || '',
     active: worker?.active !== false,
     notes: worker?.notes || '',
     newGroup: '',
@@ -295,14 +299,18 @@ function WorkerModal({ worker, groups, onSave, onClose }) {
   const allGroups = [...new Set([...PRESET_GROUPS, ...groups])];
 
   async function handleSave() {
-    if (!form.name.trim() || !form.daily_rate) return;
+    if (!form.name.trim()) return;
+    if (form.payment_type === 'daily' && !form.daily_rate) return;
+    if (form.payment_type === 'hourly' && !form.hourly_rate) return;
     setSaving(true);
     const groupName = useNewGroup ? form.newGroup.trim() : form.group_name;
     const data = {
       name: form.name.trim(),
       group_name: groupName || 'General',
-      daily_rate: parseFloat(form.daily_rate) || 0,
-      daily_rate_2: form.daily_rate_2 ? parseFloat(form.daily_rate_2) : null,
+      payment_type: form.payment_type,
+      daily_rate: form.payment_type === 'daily' ? (parseFloat(form.daily_rate) || 0) : 0,
+      daily_rate_2: form.payment_type === 'daily' && form.daily_rate_2 ? parseFloat(form.daily_rate_2) : null,
+      hourly_rate: form.payment_type === 'hourly' ? (parseFloat(form.hourly_rate) || 0) : 0,
       active: form.active,
       notes: form.notes.trim() || null,
     };
@@ -332,8 +340,19 @@ function WorkerModal({ worker, groups, onSave, onClose }) {
         {useNewGroup ? '← Usar grupo existente' : '+ Crear nuevo grupo'}
       </button>
 
-      <Input label="Pago diario ($)" type="number" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} placeholder="0.00" />
-      <Input label="Pago diario 2 (opcional)" type="number" value={form.daily_rate_2} onChange={e => setForm(f => ({ ...f, daily_rate_2: e.target.value }))} placeholder="0.00" />
+      <Select label="Tipo de Pago" value={form.payment_type} onChange={e => setForm(f => ({ ...f, payment_type: e.target.value }))}>
+        <option value="daily">Pago Diario</option>
+        <option value="hourly">Pago por Horas</option>
+      </Select>
+
+      {form.payment_type === 'daily' ? (
+        <>
+          <Input label="Pago diario ($)" type="number" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} placeholder="0.00" />
+          <Input label="Pago diario 2 (opcional)" type="number" value={form.daily_rate_2} onChange={e => setForm(f => ({ ...f, daily_rate_2: e.target.value }))} placeholder="0.00" />
+        </>
+      ) : (
+        <Input label="Pago por hora ($)" type="number" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} placeholder="0.00" />
+      )}
       <Input label="Notas" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Observaciones..." />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -343,7 +362,7 @@ function WorkerModal({ worker, groups, onSave, onClose }) {
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
         <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
-        <Btn onClick={handleSave} disabled={saving || !form.name.trim() || !form.daily_rate}>
+        <Btn onClick={handleSave} disabled={saving || !form.name.trim() || (form.payment_type === 'daily' && !form.daily_rate) || (form.payment_type === 'hourly' && !form.hourly_rate)}>
           {saving ? 'Guardando…' : (worker?.id ? 'Actualizar' : 'Agregar')}
         </Btn>
       </div>
@@ -416,13 +435,88 @@ function AdjustmentRow({ workerId, weekStart, adjustments, onChange }) {
 // ---------------------------------------------------------------------------
 // Worker Row in Semana Tab
 // ---------------------------------------------------------------------------
-function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceToggle, onAdjustmentChange, onEdit, savingMap }) {
-  const workedSet = new Set(
-    attendance.filter(a => a.worker_id === worker.id && a.worked).map(a => a.work_date)
+// Hourly Attendance Input Sub-component
+function HourlyAttendanceInput({ label, date, workerId, attendanceRecord, onSaveHours, saving }) {
+  const [val, setVal] = useState(
+    attendanceRecord?.hours !== null && attendanceRecord?.hours !== undefined 
+      ? String(attendanceRecord.hours) 
+      : ''
   );
 
-  const daysWorked = weekDates.filter(d => workedSet.has(toISO(d))).length;
-  const subtotal = daysWorked * (worker.daily_rate || 0);
+  useEffect(() => {
+    setVal(
+      attendanceRecord?.hours !== null && attendanceRecord?.hours !== undefined 
+        ? String(attendanceRecord.hours) 
+        : ''
+    );
+  }, [attendanceRecord?.hours]);
+
+  function handleBlur() {
+    const numericVal = val.trim() === '' ? null : parseFloat(val);
+    const currentVal = 
+      attendanceRecord?.hours !== null && attendanceRecord?.hours !== undefined 
+        ? attendanceRecord.hours 
+        : null;
+    if (numericVal !== currentVal) {
+      onSaveHours(workerId, toISO(date), numericVal);
+    }
+  }
+
+  const hasHours = attendanceRecord?.hours > 0;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <input
+        type="number"
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onBlur={handleBlur}
+        disabled={saving}
+        placeholder={label}
+        title={`${label} - Ingrese horas`}
+        style={{
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          border: hasHours ? 'none' : `1.5px solid #333`,
+          background: hasHours ? GREEN : '#111',
+          color: '#fff',
+          textAlign: 'center',
+          fontSize: 12,
+          fontWeight: 700,
+          outline: 'none',
+          boxShadow: hasHours ? `0 0 10px ${GREEN}88` : 'none',
+          transition: 'all 0.18s ease',
+          opacity: saving ? 0.6 : 1,
+          cursor: saving ? 'wait' : 'text',
+        }}
+      />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Worker Row in Semana Tab
+// ---------------------------------------------------------------------------
+function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceToggle, onAttendanceHoursSave, onAdjustmentChange, onEdit, savingMap }) {
+  const isHourly = worker.payment_type === 'hourly';
+  const workerAtt = attendance.filter(a => a.worker_id === worker.id);
+
+  let subtotal = 0;
+  let summaryText = '';
+  
+  if (isHourly) {
+    const totalHours = workerAtt.reduce((sum, a) => sum + (parseFloat(a.hours) || 0), 0);
+    subtotal = totalHours * (worker.hourly_rate || 0);
+    summaryText = `${totalHours} hrs`;
+  } else {
+    const daysWorked = weekDates.filter(d => {
+      const iso = toISO(d);
+      return workerAtt.some(a => a.work_date === iso && a.worked);
+    }).length;
+    subtotal = daysWorked * (worker.daily_rate || 0);
+    summaryText = `${daysWorked}d`;
+  }
 
   const bonus = adjustments.filter(a => a.type === 'bonus' && a.worker_id === worker.id).reduce((s, a) => s + (a.amount || 0), 0);
   const discount = adjustments.filter(a => a.type === 'discount' && a.worker_id === worker.id).reduce((s, a) => s + (a.amount || 0), 0);
@@ -439,10 +533,12 @@ function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceTog
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{worker.name}</span>
           <GroupBadge name={worker.group_name} />
-          <span style={{ fontSize: 11, color: TEXT_MUTED }}>{formatCurrency(worker.daily_rate)}/día</span>
+          <span style={{ fontSize: 11, color: TEXT_MUTED }}>
+            {isHourly ? `${formatCurrency(worker.hourly_rate)}/hora` : `${formatCurrency(worker.daily_rate)}/día`}
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 12, color: TEXT_MUTED }}>{daysWorked}d</span>
+          <span style={{ fontSize: 12, color: TEXT_MUTED }}>{summaryText}</span>
           <span style={{ fontWeight: 700, color: total >= 0 ? ACCENT : '#ef4444', fontSize: 15 }}>{formatCurrency(total)}</span>
           <Btn small variant="ghost" onClick={() => onEdit(worker)}>✏️</Btn>
         </div>
@@ -452,17 +548,33 @@ function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceTog
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {weekDates.map((d, i) => {
           const iso = toISO(d);
-          const worked = workedSet.has(iso);
+          const attRecord = workerAtt.find(a => a.work_date === iso);
           const key = `${worker.id}-${iso}`;
-          return (
-            <AttendanceBubble
-              key={iso}
-              label={DAY_LABELS[i]}
-              worked={worked}
-              saving={savingMap[key]}
-              onClick={() => onAttendanceToggle(worker.id, iso, worked)}
-            />
-          );
+          
+          if (isHourly) {
+            return (
+              <HourlyAttendanceInput
+                key={iso}
+                label={DAY_LABELS[i]}
+                date={d}
+                workerId={worker.id}
+                attendanceRecord={attRecord}
+                onSaveHours={onAttendanceHoursSave}
+                saving={savingMap[key]}
+              />
+            );
+          } else {
+            const worked = !!attRecord?.worked;
+            return (
+              <AttendanceBubble
+                key={iso}
+                label={DAY_LABELS[i]}
+                worked={worked}
+                saving={savingMap[key]}
+                onClick={() => onAttendanceToggle(worker.id, iso, worked)}
+              />
+            );
+          }
         })}
       </div>
 
@@ -480,7 +592,7 @@ function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceTog
 // ---------------------------------------------------------------------------
 // Semana Tab
 // ---------------------------------------------------------------------------
-function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceToggle, onAdjustmentChange, onEditWorker, savingMap }) {
+function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceToggle, onAttendanceHoursSave, onAdjustmentChange, onEditWorker, savingMap }) {
   const activeWorkers = workers.filter(w => w.active);
   const grouped = groupBy(activeWorkers, 'group_name');
   const groupNames = Object.keys(grouped).sort();
@@ -512,6 +624,7 @@ function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceTo
               attendance={attendance}
               adjustments={adjustments.filter(a => a.worker_id === worker.id)}
               onAttendanceToggle={onAttendanceToggle}
+              onAttendanceHoursSave={onAttendanceHoursSave}
               onAdjustmentChange={onAdjustmentChange}
               onEdit={onEditWorker}
               savingMap={savingMap}
@@ -556,17 +669,27 @@ function MesTab({ workers }) {
   const activeWorkers = workers.filter(w => w.active);
 
   const rows = activeWorkers.map(w => {
-    const days = attendance.filter(a => a.worker_id === w.id).length;
-    const subtotal = days * (w.daily_rate || 0);
+    const workerAtt = attendance.filter(a => a.worker_id === w.id);
+    const isHourly = w.payment_type === 'hourly';
+    let qty = 0;
+    let subtotal = 0;
+    
+    if (isHourly) {
+      qty = workerAtt.reduce((sum, a) => sum + (parseFloat(a.hours) || 0), 0);
+      subtotal = qty * (w.hourly_rate || 0);
+    } else {
+      qty = workerAtt.length;
+      subtotal = qty * (w.daily_rate || 0);
+    }
+
     const bonus = adjustments.filter(a => a.worker_id === w.id && a.type === 'bonus').reduce((s, a) => s + a.amount, 0);
     const disc  = adjustments.filter(a => a.worker_id === w.id && a.type === 'discount').reduce((s, a) => s + a.amount, 0);
     const reimb = adjustments.filter(a => a.worker_id === w.id && a.type === 'reimbursement').reduce((s, a) => s + a.amount, 0);
     const total = subtotal + bonus - disc + reimb;
-    return { ...w, days, subtotal, bonus, disc, reimb, total };
+    return { ...w, qty, isHourly, subtotal, bonus, disc, reimb, total };
   });
 
   const grandTotal = rows.reduce((s, r) => s + r.total, 0);
-  const totalDays  = rows.reduce((s, r) => s + r.days, 0);
 
   return (
     <div>
@@ -581,7 +704,7 @@ function MesTab({ workers }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {['Trabajador', 'Grupo', 'Días', 'Subtotal', 'Bonos', 'Desc.', 'Reimb.', 'Total'].map(h => (
+              {['Trabajador', 'Grupo', 'Días / Horas', 'Subtotal', 'Bonos', 'Desc.', 'Reimb.', 'Total'].map(h => (
                 <th key={h} style={{ padding: '8px 12px', color: TEXT_MUTED, textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -591,7 +714,7 @@ function MesTab({ workers }) {
               <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}11`, background: i % 2 === 0 ? '#ffffff04' : 'transparent' }}>
                 <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 600 }}>{r.name}</td>
                 <td style={{ padding: '10px 12px' }}><GroupBadge name={r.group_name} /></td>
-                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.days}</td>
+                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.isHourly ? `${r.qty} hrs` : `${r.qty} d`}</td>
                 <td style={{ padding: '10px 12px', color: '#ccc' }}>{formatCurrency(r.subtotal)}</td>
                 <td style={{ padding: '10px 12px', color: GREEN }}>{r.bonus > 0 ? `+${formatCurrency(r.bonus)}` : '—'}</td>
                 <td style={{ padding: '10px 12px', color: '#ef4444' }}>{r.disc > 0 ? `-${formatCurrency(r.disc)}` : '—'}</td>
@@ -603,7 +726,7 @@ function MesTab({ workers }) {
           <tfoot>
             <tr style={{ borderTop: `1px solid ${BORDER}` }}>
               <td colSpan={2} style={{ padding: '10px 12px', color: TEXT_MUTED, fontWeight: 700 }}>TOTAL</td>
-              <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 700 }}>{totalDays}</td>
+              <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 700 }}>—</td>
               <td colSpan={4} />
               <td style={{ padding: '10px 12px', color: ACCENT, fontWeight: 800, fontSize: 15 }}>{formatCurrency(grandTotal)}</td>
             </tr>
@@ -647,8 +770,15 @@ function AnoTab({ workers }) {
         const adjM = adjustments.filter(a => a.week_start.startsWith(prefix));
         let total = 0;
         workers.filter(w => w.active).forEach(w => {
-          const days = attM.filter(a => a.worker_id === w.id).length;
-          const sub  = days * (w.daily_rate || 0);
+          const workerAtt = attM.filter(a => a.worker_id === w.id);
+          let sub = 0;
+          if (w.payment_type === 'hourly') {
+            const totalHours = workerAtt.reduce((sum, a) => sum + (parseFloat(a.hours) || 0), 0);
+            sub = totalHours * (w.hourly_rate || 0);
+          } else {
+            const days = workerAtt.length;
+            sub  = days * (w.daily_rate || 0);
+          }
           const bon  = adjM.filter(a => a.worker_id === w.id && a.type === 'bonus').reduce((s, a) => s + a.amount, 0);
           const dis  = adjM.filter(a => a.worker_id === w.id && a.type === 'discount').reduce((s, a) => s + a.amount, 0);
           const rei  = adjM.filter(a => a.worker_id === w.id && a.type === 'reimbursement').reduce((s, a) => s + a.amount, 0);
@@ -662,15 +792,23 @@ function AnoTab({ workers }) {
       const wData = workers.filter(w => w.active).map(w => {
         const attW = attendance.filter(a => a.worker_id === w.id);
         const adjW = adjustments.filter(a => a.worker_id === w.id);
-        const days = attW.length;
-        const sub  = days * (w.daily_rate || 0);
+        const isHourly = w.payment_type === 'hourly';
+        let qty = 0;
+        let sub = 0;
+        if (isHourly) {
+          qty = attW.reduce((sum, a) => sum + (parseFloat(a.hours) || 0), 0);
+          sub = qty * (w.hourly_rate || 0);
+        } else {
+          qty = attW.length;
+          sub = qty * (w.daily_rate || 0);
+        }
         const bon  = adjW.filter(a => a.type === 'bonus').reduce((s, a) => s + a.amount, 0);
         const dis  = adjW.filter(a => a.type === 'discount').reduce((s, a) => s + a.amount, 0);
         const rei  = adjW.filter(a => a.type === 'reimbursement').reduce((s, a) => s + a.amount, 0);
         const total = sub + bon - dis + rei;
         // Approximate weeks
-        const weeks = Math.ceil(days / 5) || 1;
-        return { ...w, days, total, weeks, avg: total / weeks };
+        const weeks = Math.ceil(isHourly ? (qty / 40) : (qty / 5)) || 1;
+        return { ...w, qty, total, weeks, avg: total / weeks, isHourly };
       }).sort((a, b) => b.total - a.total);
       setWorkerData(wData);
 
@@ -718,7 +856,7 @@ function AnoTab({ workers }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {['Trabajador', 'Grupo', 'Días Total', 'Total Pagado', 'Sem. Aprox.', 'Prom./Semana'].map(h => (
+              {['Trabajador', 'Grupo', 'Asistencia/Horas', 'Total Pagado', 'Sem. Aprox.', 'Prom./Semana'].map(h => (
                 <th key={h} style={{ padding: '8px 12px', color: TEXT_MUTED, textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -728,7 +866,7 @@ function AnoTab({ workers }) {
               <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}11`, background: i % 2 === 0 ? '#ffffff04' : 'transparent' }}>
                 <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 600 }}>{r.name}</td>
                 <td style={{ padding: '10px 12px' }}><GroupBadge name={r.group_name} /></td>
-                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.days}</td>
+                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.isHourly ? `${r.qty} hrs` : `${r.qty} d`}</td>
                 <td style={{ padding: '10px 12px', color: ACCENT, fontWeight: 700 }}>{formatCurrency(r.total)}</td>
                 <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.weeks}</td>
                 <td style={{ padding: '10px 12px', color: '#ccc' }}>{formatCurrency(r.avg)}</td>
@@ -796,8 +934,14 @@ function TrabajadoresTab({ workers, onRefresh }) {
               <div>
                 <div style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{w.name}</div>
                 <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
-                  {formatCurrency(w.daily_rate)}/día
-                  {w.daily_rate_2 ? ` · ${formatCurrency(w.daily_rate_2)}/día (2)` : ''}
+                  {w.payment_type === 'hourly' ? (
+                    `${formatCurrency(w.hourly_rate)}/hora`
+                  ) : (
+                    <>
+                      {formatCurrency(w.daily_rate)}/día
+                      {w.daily_rate_2 ? ` · ${formatCurrency(w.daily_rate_2)}/día (2)` : ''}
+                    </>
+                  )}
                 </div>
               </div>
               <GroupBadge name={w.group_name} />
@@ -960,6 +1104,42 @@ export default function PayrollPage() {
     setSavingMap(m => { const n = { ...m }; delete n[key]; return n; });
   }
 
+  // ── Attendance hours save ──────────────────────────────────────────────────
+  async function handleAttendanceHoursSave(workerId, workDate, hours) {
+    const key = `${workerId}-${workDate}`;
+    setSavingMap(m => ({ ...m, [key]: true }));
+
+    const worked = hours !== null && hours > 0;
+
+    // Optimistic update
+    setAttendance(prev => {
+      const exists = prev.find(a => a.worker_id === workerId && a.work_date === workDate);
+      if (exists) {
+        return prev.map(a =>
+          a.worker_id === workerId && a.work_date === workDate
+            ? { ...a, worked, hours }
+            : a
+        );
+      }
+      return [...prev, { id: `temp-${key}`, worker_id: workerId, work_date: workDate, worked, hours }];
+    });
+
+    const { data, error } = await supabase
+      .from('payroll_attendance')
+      .upsert({ worker_id: workerId, work_date: workDate, worked, hours }, { onConflict: 'worker_id,work_date' })
+      .select()
+      .single();
+
+    if (!error && data) {
+      setAttendance(prev =>
+        prev.map(a =>
+          a.worker_id === workerId && a.work_date === workDate ? data : a
+        ).filter(a => !a.id.startsWith('temp-') || a.worker_id !== workerId || a.work_date !== workDate)
+      );
+    }
+    setSavingMap(m => { const n = { ...m }; delete n[key]; return n; });
+  }
+
   // ── Adjustment change ─────────────────────────────────────────────────────
   function handleAdjustmentChange(newAdj, oldId) {
     setAdjustments(prev => {
@@ -977,11 +1157,18 @@ export default function PayrollPage() {
   const weekAdjustments = adjustments.filter(a => a.week_start === weekISO);
 
   const totalPayroll = activeWorkers.reduce((sum, w) => {
-    const daysWorked = weekDates.filter(d => {
-      const iso = toISO(d);
-      return attendance.some(a => a.worker_id === w.id && a.work_date === iso && a.worked);
-    }).length;
-    const sub = daysWorked * (w.daily_rate || 0);
+    const workerAtt = attendance.filter(a => a.worker_id === w.id);
+    let sub = 0;
+    if (w.payment_type === 'hourly') {
+      const totalHours = workerAtt.reduce((s, a) => s + (parseFloat(a.hours) || 0), 0);
+      sub = totalHours * (w.hourly_rate || 0);
+    } else {
+      const daysWorked = weekDates.filter(d => {
+        const iso = toISO(d);
+        return workerAtt.some(a => a.work_date === iso && a.worked);
+      }).length;
+      sub = daysWorked * (w.daily_rate || 0);
+    }
     const bon  = weekAdjustments.filter(a => a.worker_id === w.id && a.type === 'bonus').reduce((s, a) => s + a.amount, 0);
     const disc = weekAdjustments.filter(a => a.worker_id === w.id && a.type === 'discount').reduce((s, a) => s + a.amount, 0);
     const reimb= weekAdjustments.filter(a => a.worker_id === w.id && a.type === 'reimbursement').reduce((s, a) => s + a.amount, 0);
@@ -1105,6 +1292,7 @@ export default function PayrollPage() {
                   attendance={attendance}
                   adjustments={adjustments}
                   onAttendanceToggle={handleAttendanceToggle}
+                  onAttendanceHoursSave={handleAttendanceHoursSave}
                   onAdjustmentChange={handleAdjustmentChange}
                   onEditWorker={handleEditWorker}
                   savingMap={savingMap}
