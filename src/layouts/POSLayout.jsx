@@ -11,7 +11,10 @@ import {
   Menu,
   X,
   Activity,
-  Calendar
+  Calendar,
+  Tag,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -22,12 +25,15 @@ export default function POSLayout({ onSignOut, profile }) {
 
   const navItems = [
     { to: '/pos/dashboard', icon: LayoutDashboard, label: t('nav.dashboard'),     end: false },
+    { to: '/pos/inbox',     icon: MessageSquare,    label: t('nav.inbox'),         end: false },
     { to: '/pos/estimator', icon: Calculator,       label: t('nav.createEstimate'), end: false },
+    { to: '/pos/estimates', icon: FileText,         label: t('nav.estimatesList'),  end: false },
     { to: '/pos/pipeline',  icon: Activity,         label: 'Pipeline',             end: false },
     { to: '/pos/calendar',  icon: Calendar,         label: t('nav.calendar'),      end: false },
     { to: '/pos/clients',   icon: Users,            label: t('crm.leads'),         end: false },
     { to: '/pos/showroom',  icon: ImageIcon,        label: t('nav.showroom'),      end: false },
     { to: '/pos/catalog',   icon: Package,          label: t('nav.clientCatalog'), end: false },
+    { to: '/pos/pricing',   icon: Tag,              label: t('nav.pricing'),        end: false },
   ];
 
   return (

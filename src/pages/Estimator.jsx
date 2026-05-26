@@ -112,7 +112,18 @@ function ClientSearch({ onSelect, onClear, selectedContact }) {
 }
 
 export default function Estimator() {
-  const { fetchPrices, receiptItems, getGrandTotal, getSubtotal, clearReceipt } = useEstimatorStore();
+  const { 
+    fetchPrices, 
+    receiptItems, 
+    getGrandTotal, 
+    getSubtotal, 
+    clearReceipt,
+    selectedContactId,
+    setSelectedContactId,
+    editingEstimateId,
+    setEditingEstimateId
+  } = useEstimatorStore();
+  
   const [contact, setContact] = useState(null);
   const [photos, setPhotos] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -121,6 +132,20 @@ export default function Estimator() {
   const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'manual'
 
   useEffect(() => { fetchPrices(); }, [fetchPrices]);
+
+  useEffect(() => {
+    if (!selectedContactId) {
+      setContact(null);
+      return;
+    }
+    supabase.from('contacts')
+      .select('id, first_name, last_name, phone, address')
+      .eq('id', selectedContactId)
+      .single()
+      .then(({ data }) => {
+        if (data) setContact(data);
+      });
+  }, [selectedContactId]);
 
   const handleSave = async () => {
     if (!receiptItems.length) { alert('Agrega al menos un servicio al estimado.'); return; }
@@ -154,7 +179,7 @@ export default function Estimator() {
         }
 
       const payload = {
-        contact_id: contact?.id || null,
+        contact_id: selectedContactId || null,
         created_by: user?.id,
         status: 'draft',
         work_type: [...new Set(receiptItems.map(i => i.service))].join(', '),
@@ -163,12 +188,55 @@ export default function Estimator() {
         scope_of_work: finalScope,
         valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       };
-      const { data, error } = await supabase.from('estimates').insert(payload).select('estimate_number').single();
-      if (error) throw error;
-      setEstimateNum(data.estimate_number);
+
+      let estId;
+      let estNum;
+
+      if (editingEstimateId) {
+        const { data, error } = await supabase
+          .from('estimates')
+          .update(payload)
+          .eq('id', editingEstimateId)
+          .select('id, estimate_number')
+          .single();
+        if (error) throw error;
+        estId = data.id;
+        estNum = data.estimate_number;
+
+        // Delete previous items to reinsert updated list
+        await supabase.from('estimate_items').delete().eq('estimate_id', editingEstimateId);
+      } else {
+        const { data, error } = await supabase
+          .from('estimates')
+          .insert(payload)
+          .select('id, estimate_number')
+          .single();
+        if (error) throw error;
+        estId = data.id;
+        estNum = data.estimate_number;
+      }
+
+      // Save estimate items
+      if (receiptItems.length > 0) {
+        await supabase.from('estimate_items').insert(
+          receiptItems.map(item => ({
+            estimate_id: estId,
+            description: item.name,
+            details: item.details,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+            total: item.total,
+            service_type: item.service
+          }))
+        );
+      }
+
+      setEstimateNum(estNum);
       setSaved(true);
       clearReceipt();
       setPhotos([]);
+      setEditingEstimateId(null);
+      setSelectedContactId('');
     } catch (err) { alert('Error al guardar: ' + err.message); }
     finally { setSaving(false); }
   };
@@ -219,8 +287,8 @@ export default function Estimator() {
         </div>
         <ClientSearch
           selectedContact={contact}
-          onSelect={setContact}
-          onClear={() => setContact(null)}
+          onSelect={(c) => setSelectedContactId(c.id)}
+          onClear={() => setSelectedContactId('')}
         />
       </div>
 

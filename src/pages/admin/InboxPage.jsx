@@ -115,7 +115,13 @@ export default function InboxPage() {
             contenido,
             creado_en,
             direccion,
-            estado_entrega
+            estado_entrega,
+            sender_id,
+            profiles (
+              id,
+              full_name,
+              role
+            )
           )
         `)
         .order('ultima_interaccion', { ascending: false })

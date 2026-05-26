@@ -154,7 +154,7 @@ export default function PricingSettings() {
     <div className="pricing-page">
       <header className="admin-page-header">
         <div>
-          <h1><Tag size={22} /> Motor de Precios</h1>
+          <h1><Tag size={22} /> Precios</h1>
           <p className="text-muted">Edita tus precios de venta directos para los estimadores.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>

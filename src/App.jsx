@@ -29,6 +29,7 @@ import AITrainingChat from './pages/admin/AITrainingChat';
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
 import Estimator from './pages/Estimator';
+import POSEstimates from './pages/POSEstimates';
 import Clients from './pages/Clients';
 import Showroom from './pages/Showroom';
 import PDFPreview from './pages/PDFPreview';
@@ -163,12 +164,15 @@ export default function App() {
         >
           <Route index element={<Navigate to="estimator" replace />} />
           <Route path="dashboard" element={<POSDashboard />} />
+          <Route path="inbox" element={<InboxPage />} />
           <Route path="estimator" element={<Estimator />} />
+          <Route path="estimates" element={<POSEstimates />} />
           <Route path="pipeline" element={<CRMPipeline />} />
           <Route path="calendar" element={<CalendarPage />} />
           <Route path="clients" element={<Clients />} />
           <Route path="showroom" element={<Showroom />} />
           <Route path="catalog" element={<PublicCatalogPage />} />
+          <Route path="pricing" element={<PricingSettings />} />
           <Route path="pdf-preview" element={<PDFPreview />} />
         </Route>
 

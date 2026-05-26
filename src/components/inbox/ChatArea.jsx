@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import MessageInput from './MessageInput';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function ChatArea({ conversation }) {
   const messagesEndRef = useRef(null);
+  const { profile } = useAuth();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -26,7 +28,8 @@ export default function ChatArea({ conversation }) {
           conversacion_id: conversation.id,
           direccion: 'outbound',
           contenido: contentToSave,
-          estado_entrega: 'enviado'
+          estado_entrega: 'enviado',
+          sender_id: profile?.id
         }])
         .select()
         .single();
@@ -140,6 +143,9 @@ export default function ChatArea({ conversation }) {
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.contenido}</p>
+                {isOutbound && msg.profiles?.full_name && (
+                  <p className="text-[10px] text-gray-500 font-semibold mt-1">Por: {msg.profiles.full_name}</p>
+                )}
                 <div className={`text-[10px] mt-1.5 flex justify-end items-center gap-1.5 ${isOutbound ? 'text-gray-500' : 'text-[var(--gold)] opacity-80'}`}>
                   {new Date(msg.creado_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   {isOutbound && (

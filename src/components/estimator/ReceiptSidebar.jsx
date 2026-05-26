@@ -15,16 +15,28 @@ const SERVICE_COLORS = {
 const fmt = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 export default function ReceiptSidebar() {
-  const { receiptItems, removeItem, taxRate, setTaxRate, getSubtotal, getTax, getGrandTotal } = useEstimatorStore();
+  const { 
+    receiptItems, 
+    removeItem, 
+    taxRate, 
+    setTaxRate, 
+    getSubtotal, 
+    getTax, 
+    getGrandTotal,
+    selectedContactId,
+    setSelectedContactId,
+    editingEstimateId,
+    setEditingEstimateId,
+    clearReceipt
+  } = useEstimatorStore();
   const { profile } = useAuth();
   const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState('');
   const [saving, setSaving] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const getClientName = () => {
-    if (!selectedClient) return '';
-    const c = clients.find(cl => cl.id === selectedClient);
+    if (!selectedContactId) return '';
+    const c = clients.find(cl => cl.id === selectedContactId);
     return c ? `${c.first_name} ${c.last_name}` : '';
   };
 
@@ -34,15 +46,14 @@ export default function ReceiptSidebar() {
   }, []);
 
   const handleSave = async (status, aiProposalText = null) => {
-    if (!selectedClient || receiptItems.length === 0) return;
+    if (!selectedContactId || receiptItems.length === 0) return;
     setSaving(true);
     const subtotal = getSubtotal();
     const tax     = getTax();
     const total   = getGrandTotal();
 
-    // En el futuro guardaremos aiProposalText en un campo 'notes' o 'ai_proposal' de la DB
     const payload = { 
-      contact_id: selectedClient, 
+      contact_id: selectedContactId, 
       status, 
       subtotal, 
       grand_total: total, 
@@ -53,11 +64,31 @@ export default function ReceiptSidebar() {
       created_by: profile?.id
     };
 
-    const { data: estimate, error } = await supabase
-      .from('estimates')
-      .insert(payload)
-      .select()
-      .single();
+    let estimate = null;
+    let error = null;
+
+    if (editingEstimateId) {
+      const { data, error: err } = await supabase
+        .from('estimates')
+        .update(payload)
+        .eq('id', editingEstimateId)
+        .select()
+        .single();
+      estimate = data;
+      error = err;
+      
+      if (!error && estimate) {
+        await supabase.from('estimate_items').delete().eq('estimate_id', editingEstimateId);
+      }
+    } else {
+      const { data, error: err } = await supabase
+        .from('estimates')
+        .insert(payload)
+        .select()
+        .single();
+      estimate = data;
+      error = err;
+    }
 
     if (!error && estimate) {
       await supabase.from('estimate_items').insert(
@@ -74,7 +105,7 @@ export default function ReceiptSidebar() {
 
       // Si el estado es 'sent', enviar el correo al cliente
       if (status === 'sent') {
-        const client = clients.find(c => c.id === selectedClient);
+        const client = clients.find(c => c.id === selectedContactId);
         if (client && client.email) {
           try {
             const proposalLink = `https://barbaprosystem.com/p/${estimate.id}`;
@@ -125,7 +156,7 @@ export default function ReceiptSidebar() {
                   <p style="color: #444444; line-height: 1.6; font-size: 14px;">Quedo a tu entera disposición para cualquier consulta o aclaración que puedas necesitar sobre esta propuesta.</p>
                   <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
                     Atentamente,<br/>
-                    <strong>Miguel Sosa</strong><br/>
+                    <strong>${profile?.full_name || 'Equipo de Ventas'}</strong><br/>
                     <span style="color: #666666;">Barba Construction</span>
                   </p>
                 </div>
@@ -161,6 +192,10 @@ export default function ReceiptSidebar() {
       } else {
         alert('Estimado guardado como borrador.');
       }
+      
+      clearReceipt();
+      setEditingEstimateId(null);
+      setSelectedContactId('');
     } else {
       console.error(error);
       alert('Error al guardar el estimado.');
@@ -189,8 +224,8 @@ export default function ReceiptSidebar() {
       <div className="p-5 border-b border-[#2a2a2a]/50 space-y-1.5">
         <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">Cliente</p>
         <select
-          value={selectedClient}
-          onChange={e => setSelectedClient(e.target.value)}
+          value={selectedContactId}
+          onChange={e => setSelectedContactId(e.target.value)}
           className="w-full px-3 py-2.5 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a]/60 text-[#f0f0f0] text-sm focus:outline-none focus:border-[#F5C518]/60 transition-colors"
         >
           <option value="">-- Seleccionar cliente --</option>

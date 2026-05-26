@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from "../../lib/supabase";
 import { twilioService } from '../../services/twilioService';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function OmnichannelChat({ clienteId, clienteTelefono }) {
+  const { profile } = useAuth();
   const [conversacionId, setConversacionId] = useState(null);
   const [lastInteractionDate, setLastInteractionDate] = useState(null);
   const [mensajes, setMensajes] = useState([]);
@@ -37,7 +39,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
         // 1.2 Si existe, cargar mensajes
         const { data, error } = await supabase
           .from('mensajes')
-          .select('*')
+          .select('*, profiles(full_name)')
           .eq('conversacion_id', conv.id)
           .order('creado_en', { ascending: true });
           
@@ -66,7 +68,11 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
         },
         (payload) => {
           // Agregar el nuevo mensaje a la lista al instante
-          setMensajes((prev) => [...prev, payload.new]);
+          const newMsg = payload.new;
+          if (newMsg.direccion === 'outbound' && newMsg.sender_id === profile?.id) {
+            newMsg.profiles = { full_name: profile.full_name };
+          }
+          setMensajes((prev) => [...prev, newMsg]);
           scrollToBottom();
         }
       )
@@ -94,7 +100,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
     setEnviando(true);
     try {
       // Disparamos el mensaje a través de nuestra Edge Function
-      await twilioService.sendStandardMessage(conversacionId, clienteTelefono, nuevoMensaje, 'whatsapp', clienteId);
+      await twilioService.sendStandardMessage(conversacionId, clienteTelefono, nuevoMensaje, 'whatsapp', clienteId, profile?.id);
       setNuevoMensaje('');
     } catch (error) {
       alert("Error al enviar mensaje");
@@ -111,7 +117,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
       await twilioService.sendWhatsAppTemplate(conversacionId, clienteTelefono, 'cotizacion_lista', {
         "1": "Cliente",
         "2": "#EST-1024"
-      }, clienteId);
+      }, clienteId, profile?.id);
       alert("Plantilla enviada exitosamente. Se ha reabierto la sesión de 24h.");
     } catch (error) {
       alert("Error al enviar la plantilla");
@@ -134,6 +140,9 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
               }`}
             >
               <p className="text-sm">{msg.contenido}</p>
+              {msg.direccion === 'outbound' && msg.profiles?.full_name && (
+                <p className="text-[10px] text-black/50 font-bold mt-0.5">Por: {msg.profiles.full_name}</p>
+              )}
               <span className={`text-[10px] mt-1 block text-right ${msg.direccion === 'outbound' ? 'text-black/60' : 'text-gray-400'}`}>
                 {new Date(msg.creado_en).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
               </span>

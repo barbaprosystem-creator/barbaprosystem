@@ -21,11 +21,11 @@ export const twilioService = {
    * @param {string} mensaje - Contenido del mensaje de texto
    * @param {string} canal - 'whatsapp', 'instagram' o 'facebook'
    */
-  async sendStandardMessage(conversacionId: string, to: string, mensaje: string, canal: string = 'whatsapp', clienteId?: string) {
+  async sendStandardMessage(conversacionId: string, to: string, mensaje: string, canal: string = 'whatsapp', clienteId?: string, senderId?: string) {
     try {
       // Invocamos la Edge Function que hablará con Twilio y guardará en la base de datos
       const { data, error } = await supabase.functions.invoke('send-message', {
-        body: { conversacionId, clienteId, to, mensaje, canal, tipo: 'standard' }
+        body: { conversacionId, clienteId, to, mensaje, canal, tipo: 'standard', senderId }
       });
 
       if (error) throw error;
@@ -46,8 +46,9 @@ export const twilioService = {
    * @param {string} templateName - Nombre de la plantilla en Twilio (ej: 'cotizacion_lista')
    * @param {Record<string, string>} variables - Variables dinámicas (ej: { 1: 'Juan', 2: '12345' })
    * @param {string} clienteId - (Opcional) UUID del cliente, por si se necesita crear la conversación
+   * @param {string} senderId - (Opcional) UUID del usuario emisor
    */
-  async sendWhatsAppTemplate(conversacionId: string, to: string, templateName: string, variables: Record<string, string>, clienteId?: string) {
+  async sendWhatsAppTemplate(conversacionId: string, to: string, templateName: string, variables: Record<string, string>, clienteId?: string, senderId?: string) {
     try {
       const { data, error } = await supabase.functions.invoke('send-message', {
         body: { 
@@ -57,7 +58,8 @@ export const twilioService = {
           canal: 'whatsapp', 
           tipo: 'template',
           templateName,
-          variables 
+          variables,
+          senderId
         }
       });
 

@@ -20,6 +20,12 @@ export const useEstimatorStore = create((set, get) => ({
     set({ prices: data || [], loadingPrices: false });
   },
 
+  // Editing & Selection State
+  selectedContactId: '',
+  setSelectedContactId: (id) => set({ selectedContactId: id }),
+  editingEstimateId: null,
+  setEditingEstimateId: (id) => set({ editingEstimateId: id }),
+
   // Receipt
   receiptItems: [],
   taxRate: 0,
@@ -257,5 +263,46 @@ export const useEstimatorStore = create((set, get) => ({
     
     const unitPrice = prices[plumbConfig.type] || 350;
     addItem({ service: 'plumbing', name: `Plumbing/Ext - ${typeLabels[plumbConfig.type]}`, details: `${qty} uds @ $${unitPrice.toFixed(2)}/ud`, quantity: qty, unitPrice, total: qty * unitPrice });
+  },
+
+  loadEstimate: async (id) => {
+    try {
+      const { data: estimate, error: estError } = await supabase
+        .from('estimates')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
+      if (estError) throw estError;
+      
+      const { data: items, error: itemsError } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', id);
+        
+      if (itemsError) throw itemsError;
+      
+      const mappedItems = (items || []).map(item => ({
+        id: item.id,
+        service: item.service_type,
+        name: item.description,
+        details: item.details,
+        quantity: parseFloat(item.quantity) || 1,
+        unitPrice: parseFloat(item.unit_price) || 0,
+        total: parseFloat(item.total) || 0
+      }));
+      
+      set({
+        editingEstimateId: estimate.id,
+        selectedContactId: estimate.contact_id || '',
+        receiptItems: mappedItems,
+        taxRate: 0
+      });
+      
+      return estimate;
+    } catch (err) {
+      console.error('Error loading estimate:', err);
+      throw err;
+    }
   },
 }));

@@ -19,7 +19,7 @@ serve(async (req) => {
   }
 
   try {
-    const { conversacionId, clienteId, to, mensaje, canal = 'whatsapp', tipo, templateName, variables } = await req.json();
+    const { conversacionId, clienteId, to, mensaje, canal = 'whatsapp', tipo, templateName, variables, senderId } = await req.json();
     const supabase = createClient(supabaseUrl!, supabaseServiceKey!);
 
     let activeConversacionId = conversacionId;
@@ -137,7 +137,8 @@ serve(async (req) => {
       direccion: "outbound",
       contenido: tipo === 'template' ? `[Plantilla: ${templateName}]` : mensaje,
       twilio_message_sid: twilioData.sid,
-      estado_entrega: 'enviado'
+      estado_entrega: 'enviado',
+      sender_id: senderId
     });
 
     // Actualizar la última interacción
