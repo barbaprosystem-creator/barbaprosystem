@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Loader2, Send, CheckCircle, XCircle, FileText, Edit, BarChart2 } from 'lucide-react';
+import { Search, Loader2, Send, CheckCircle, XCircle, FileText, Edit, BarChart2, X, Image as ImageIcon } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -13,6 +13,17 @@ const STATUS_COLORS = {
   approved: '#10b981',
   rejected: '#ef4444',
 };
+
+// Parser helper to extract photo URLs from scope_of_work
+function extractPhotosFromScope(scope) {
+  if (!scope) return [];
+  const parts = scope.split('[FOTOS DE INSPECCIÓN]');
+  if (parts.length < 2) return [];
+  return parts[1]
+    .split('\n')
+    .map(url => url.trim())
+    .filter(url => url.startsWith('http'));
+}
 
 export default function POSEstimates() {
   const navigate = useNavigate();
@@ -32,6 +43,10 @@ export default function POSEstimates() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sendingEmailId, setSendingEmailId] = useState(null);
+
+  // Gallery Modal state
+  const [activeGalleryPhotos, setActiveGalleryPhotos] = useState(null);
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
   useEffect(() => {
     if (profile?.id) {
@@ -159,6 +174,28 @@ export default function POSEstimates() {
     }
   }
 
+  const renderPhotosCell = (est) => {
+    const urls = extractPhotosFromScope(est.scope_of_work);
+    if (urls.length === 0) return <span className="text-[#555]">-</span>;
+    return (
+      <div 
+        onClick={() => { setActiveGalleryPhotos(urls); setActivePhotoIndex(0); }}
+        className="relative w-10 h-10 rounded-lg overflow-hidden border border-[#2a2a2a] cursor-pointer hover:scale-105 transition-all shadow-md group flex items-center justify-center bg-[#111]"
+      >
+        <img 
+          src={urls[0]} 
+          alt="Inspección" 
+          className="w-full h-full object-cover"
+        />
+        {urls.length > 1 && (
+          <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-[10px] font-bold text-white group-hover:bg-black/40 transition-colors">
+            +{urls.length - 1}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const filtered = estimates.filter(e => {
     if (filterStatus !== 'all' && e.status !== filterStatus) return false;
     if (!search) return true;
@@ -225,6 +262,7 @@ export default function POSEstimates() {
                 <th className="px-6 py-4">#</th>
                 <th className="px-6 py-4">{t('estimates.client')}</th>
                 <th className="px-6 py-4">{t('common.address')}</th>
+                <th className="px-6 py-4">Fotos</th>
                 <th className="px-6 py-4">{t('estimates.total')}</th>
                 <th className="px-6 py-4">{t('estimates.status')}</th>
                 <th className="px-6 py-4">{t('estimates.date')}</th>
@@ -242,6 +280,9 @@ export default function POSEstimates() {
                   </td>
                   <td className="px-6 py-4 text-gray-400">
                     {est.contact?.address || '-'}
+                  </td>
+                  <td className="px-6 py-4">
+                    {renderPhotosCell(est)}
                   </td>
                   <td className="px-6 py-4 font-bold text-[#f0f0f0]">
                     {formatCurrency(est.grand_total)}
@@ -295,7 +336,7 @@ export default function POSEstimates() {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="text-center py-12 text-[#555] font-semibold">
+                  <td colSpan="8" className="text-center py-12 text-[#555] font-semibold">
                     {t('estimates.noEstimates')}
                   </td>
                 </tr>
@@ -304,6 +345,79 @@ export default function POSEstimates() {
           </table>
         </div>
       </div>
+
+      {/* PHOTO GALLERY LIGHTBOX MODAL */}
+      {activeGalleryPhotos && (
+        <div 
+          className="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-50 p-4 animate-fade-in"
+          onClick={() => setActiveGalleryPhotos(null)}
+        >
+          {/* Close button */}
+          <button 
+            onClick={() => setActiveGalleryPhotos(null)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white bg-[#111]/80 hover:bg-[#222] p-3 rounded-full transition-all z-50 border border-white/10"
+            title="Cerrar"
+          >
+            <X size={20} />
+          </button>
+          
+          <div 
+            className="relative max-w-4xl w-full flex flex-col items-center gap-4"
+            onClick={(e) => e.stopPropagation()} // Prevent close on body click
+          >
+            {/* Main Stage */}
+            <div className="relative w-full aspect-[4/3] max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-[#222] flex items-center justify-center shadow-2xl">
+              <img 
+                src={activeGalleryPhotos[activePhotoIndex]} 
+                alt={`Foto de Inspección ${activePhotoIndex + 1}`}
+                className="max-w-full max-h-full object-contain select-none"
+              />
+              
+              {activeGalleryPhotos.length > 1 && (
+                <>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePhotoIndex((prev) => (prev === 0 ? activeGalleryPhotos.length - 1 : prev - 1));
+                    }}
+                    className="absolute left-4 w-12 h-12 rounded-full bg-[#111]/80 hover:bg-[#222] text-white flex items-center justify-center border border-white/10 hover:scale-105 active:scale-95 transition-all text-lg font-bold"
+                  >
+                    ‹
+                  </button>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActivePhotoIndex((prev) => (prev === activeGalleryPhotos.length - 1 ? 0 : prev + 1));
+                    }}
+                    className="absolute right-4 w-12 h-12 rounded-full bg-[#111]/80 hover:bg-[#222] text-white flex items-center justify-center border border-white/10 hover:scale-105 active:scale-95 transition-all text-lg font-bold"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {/* Thumbnail Strip */}
+            {activeGalleryPhotos.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto max-w-full pb-2 px-4 no-scrollbar">
+                {activeGalleryPhotos.map((url, idx) => (
+                  <button
+                    key={url}
+                    onClick={() => setActivePhotoIndex(idx)}
+                    className={`w-16 h-12 rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${idx === activePhotoIndex ? 'border-[#f97316] scale-105 shadow-lg shadow-[#f97316]/20' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                  >
+                    <img src={url} className="w-full h-full object-cover" alt="" />
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            <p className="text-white/60 text-xs font-semibold tracking-widest uppercase">
+              Foto {activePhotoIndex + 1} de {activeGalleryPhotos.length}
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
