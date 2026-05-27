@@ -61,6 +61,11 @@ export default function Clients() {
         alert('Error updating client.');
       }
     } else {
+      // Auto-assign to current salesperson if the user has that role
+      if (profile?.role === 'salesperson') {
+        payload.assigned_to = profile.id;
+      }
+
       const { data, error } = await supabase
         .from('contacts')
         .insert([payload])
@@ -86,12 +91,12 @@ export default function Clients() {
   );
 
   const statusMap = {
-    new_lead: { label: 'New', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+    new_lead: { label: 'New Lead', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
     contacted: { label: 'Contacted', cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-    appointment: { label: 'Appointment', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-    estimated: { label: 'Estimated', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
-    won: { label: 'Won', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-    lost: { label: 'Lost', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    appointment_set: { label: 'Appointment Set', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+    estimate_sent: { label: 'Estimate Sent', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+    closed_won: { label: 'Won', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    closed_lost: { label: 'Lost', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
   };
 
   return (

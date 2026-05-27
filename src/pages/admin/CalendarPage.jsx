@@ -55,16 +55,22 @@ export default function CalendarPage() {
   const [crmEvents, setCrmEvents]           = useState([]);   // from Supabase
   const [googleEvents, setGoogleEvents]     = useState([]);   // from Google Calendar API
   const [showForm, setShowForm]             = useState(false);
-  const [form, setForm]                     = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date(), assigned_to: '' });
+  const [form, setForm]                     = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date(), assigned_to: '', contact_id: '' });
   const [isSyncing, setIsSyncing]           = useState(false);
   const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
   const [users, setUsers]                   = useState([]);
+  const [contacts, setContacts]             = useState([]);
   const [selectedEvent, setSelectedEvent]   = useState(null);
   const [googleRefreshToken, setGoogleRefreshToken] = useState(null);
 
   // Load users
   useEffect(() => {
     supabase.from('profiles').select('id, full_name, role').then(({ data }) => setUsers(data || []));
+  }, []);
+
+  // Load contacts
+  useEffect(() => {
+    supabase.from('contacts').select('id, first_name, last_name').order('first_name').then(({ data }) => setContacts(data || []));
   }, []);
 
   // Load stored Google refresh token
@@ -196,7 +202,7 @@ export default function CalendarPage() {
   ];
 
   const handleSelectSlot = ({ start, end }) => {
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '' });
+    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '', contact_id: '' });
     setSelectedEvent(null);
     setShowForm(true);
   };
@@ -222,8 +228,17 @@ export default function CalendarPage() {
         created_by:    user.id,
         calendar_type: tabConfig.calendarType,
         assigned_to:   form.assigned_to || null,
+        contact_id:    form.contact_id || null,
       });
       if (error) throw error;
+
+      // 1b. Auto-transition client to appointment_set in pipeline if associated
+      if (form.contact_id) {
+        await supabase
+          .from('contacts')
+          .update({ pipeline_status: 'appointment_set' })
+          .eq('id', form.contact_id);
+      }
 
       // 2. Sync to Google Calendar
       let targetToken = googleRefreshToken;
@@ -500,6 +515,19 @@ export default function CalendarPage() {
                             .map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
                         </select>
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-1">Associate Client (CRM Lead)</label>
+                      <select
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                        value={form.contact_id || ''}
+                        onChange={e => setForm({ ...form, contact_id: e.target.value })}
+                      >
+                        <option value="">-- No Client --</option>
+                        {contacts.map(c => (
+                          <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>

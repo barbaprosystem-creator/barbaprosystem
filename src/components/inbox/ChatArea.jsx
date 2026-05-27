@@ -35,6 +35,27 @@ export default function ChatArea({ conversation }) {
         .single();
         
       if (error) throw error;
+
+      // Auto-transition pipeline status to 'contacted' if it's currently 'new_lead'
+      const contactId = conversation.contact_id || conversation.contacts?.id;
+      if (contactId) {
+        supabase
+          .from('contacts')
+          .select('pipeline_status')
+          .eq('id', contactId)
+          .single()
+          .then(({ data: contactData }) => {
+            if (contactData?.pipeline_status === 'new_lead') {
+              supabase
+                .from('contacts')
+                .update({ pipeline_status: 'contacted' })
+                .eq('id', contactId)
+                .then(({ error: updateErr }) => {
+                  if (updateErr) console.error('Error updating status to contacted:', updateErr);
+                });
+            }
+          });
+      }
       
       const contactPhone = conversation.contacts?.phone;
       const contactEmail = conversation.contacts?.email;

@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     // 2. Buscar si el cliente ya existe en Supabase (tabla contacts)
     let { data: cliente, error: clienteError } = await supabase
       .from('contacts')
-      .select('id')
+      .select('id, pipeline_status')
       .eq('phone', telefonoCliente)
       .maybeSingle(); // maybeSingle para que no tire error si no hay ninguno
 
@@ -48,7 +48,8 @@ export default async function handler(req, res) {
         .insert([{ 
           first_name: 'Nuevo',
           last_name: `Contacto ${telefonoCliente}`,
-          phone: telefonoCliente 
+          phone: telefonoCliente,
+          pipeline_status: 'contacted'
         }])
         .select()
         .single();
@@ -58,6 +59,14 @@ export default async function handler(req, res) {
         throw nuevoClienteError;
       }
       cliente = nuevoCliente;
+    } else {
+      // Si el cliente ya existe pero su estado en el pipeline es 'new_lead', lo movemos a 'contacted'
+      if (cliente.pipeline_status === 'new_lead') {
+        await supabase
+          .from('contacts')
+          .update({ pipeline_status: 'contacted' })
+          .eq('id', cliente.id);
+      }
     }
 
     // 3. Buscar o Crear una Conversación Activa

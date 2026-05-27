@@ -962,14 +962,18 @@ body {
 }
 
 .item-name-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  vertical-align: middle;
 }
 
-.item-name-cell small {
-  color: var(--text-muted);
+.pricing-item-name {
+  font-weight: 600;
+  margin-bottom: 3px;
+  color: var(--text-primary);
+}
+
+.pricing-item-desc {
   font-size: 0.78rem;
+  color: var(--text-muted);
 }
 
 .sell-price {
