@@ -23,6 +23,11 @@ export default function SettingsPage() {
   const [pinStep, setPinStep] = useState(0); // 0: Idle, 1: OTP Sent, 2: Loading
   const [pinMessage, setPinMessage] = useState('');
 
+  // Change Password state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
   useEffect(() => { fetchUsers(); }, []);
 
   async function fetchUsers() {
@@ -116,6 +121,30 @@ export default function SettingsPage() {
     setNewPin('');
     setOtpCode('');
     setPinMessage('');
+  }
+
+  async function handlePasswordChange(e) {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      alert('Password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match.');
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      alert('Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      alert('Error changing password: ' + err.message);
+    } finally {
+      setChangingPassword(false);
+    }
   }
 
   return (
@@ -276,7 +305,46 @@ export default function SettingsPage() {
           )}
         </div>
       </div>
+
+      {/* Change Password Section */}
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <h2><Lock size={20}/> Change Password</h2>
+          <p>Update your personal account password for accessing the CRM.</p>
+        </div>
+        <form onSubmit={handlePasswordChange} className="bg-[#1a1a1a] p-5 rounded-xl border border-[#333] max-w-lg mt-4 space-y-4">
+          <div>
+            <label className="text-sm text-gray-400 block mb-1">New Password</label>
+            <input 
+              required
+              type="password" 
+              value={newPassword} 
+              onChange={e => setNewPassword(e.target.value)}
+              className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white outline-none focus:border-[var(--accent)]"
+              placeholder="Min. 6 characters"
+            />
+          </div>
+          <div>
+            <label className="text-sm text-gray-400 block mb-1">Confirm New Password</label>
+            <input 
+              required
+              type="password" 
+              value={confirmPassword} 
+              onChange={e => setConfirmPassword(e.target.value)}
+              className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white outline-none focus:border-[var(--accent)]"
+              placeholder="Confirm password"
+            />
+          </div>
+          <button 
+            type="submit"
+            className="btn-primary w-full flex items-center justify-center gap-2" 
+            disabled={changingPassword || newPassword.length < 6 || confirmPassword.length < 6}
+          >
+            {changingPassword ? <Loader2 className="animate-spin" size={16}/> : <Lock size={16}/>}
+            {changingPassword ? 'Updating...' : 'Update Password'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
-
