@@ -27,7 +27,9 @@ export default function ReceiptSidebar() {
     setSelectedContactId,
     editingEstimateId,
     setEditingEstimateId,
-    clearReceipt
+    clearReceipt,
+    notes,
+    setNotes
   } = useEstimatorStore();
   const { profile } = useAuth();
   const [clients, setClients] = useState([]);
@@ -48,6 +50,12 @@ export default function ReceiptSidebar() {
   const handleSave = async (status, aiProposalText = null) => {
     if (!selectedContactId || receiptItems.length === 0) return;
     setSaving(true);
+
+    if (aiProposalText !== null) {
+      setNotes(aiProposalText);
+    }
+    const currentNotes = aiProposalText !== null ? aiProposalText : notes;
+
     const subtotal = getSubtotal();
     const tax     = getTax();
     const total   = getGrandTotal();
@@ -57,7 +65,7 @@ export default function ReceiptSidebar() {
       status, 
       subtotal, 
       grand_total: total, 
-      notes: aiProposalText,
+      notes: currentNotes,
       scope_of_work: receiptItems.map(i => `${i.name}: ${i.details}`).join('\n'),
       work_type: [...new Set(receiptItems.map(i => i.service))].join(', '),
       valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
@@ -121,7 +129,7 @@ export default function ReceiptSidebar() {
                   <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
                   
                   <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
+                    ${currentNotes ? currentNotes.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
                   </div>
                   
                   <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
@@ -231,6 +239,18 @@ export default function ReceiptSidebar() {
           <option value="">-- Seleccionar cliente --</option>
           {clients.map(c => <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>)}
         </select>
+      </div>
+
+      {/* Email Message / Notes */}
+      <div className="p-5 border-b border-[#2a2a2a]/50 space-y-1.5">
+        <p className="text-xs font-bold text-[#888888] uppercase tracking-widest">Mensaje de Propuesta (Email)</p>
+        <textarea
+          value={notes}
+          onChange={e => setNotes(e.target.value)}
+          placeholder="Escribe un mensaje personalizado o genera uno con IA abajo..."
+          rows={4}
+          className="w-full px-3 py-2 rounded-xl bg-[#0d0d0d] border border-[#2a2a2a]/60 text-[#f0f0f0] text-sm focus:outline-none focus:border-[#F5C518]/60 transition-colors resize-y placeholder-[#555555]"
+        />
       </div>
 
       {/* Items */}

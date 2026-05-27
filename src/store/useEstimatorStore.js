@@ -25,13 +25,15 @@ export const useEstimatorStore = create((set, get) => ({
   setSelectedContactId: (id) => set({ selectedContactId: id }),
   editingEstimateId: null,
   setEditingEstimateId: (id) => set({ editingEstimateId: id }),
+  notes: '',
+  setNotes: (notes) => set({ notes }),
 
   // Receipt
   receiptItems: [],
   taxRate: 0,
   addItem: (item) => set(s => ({ receiptItems: [{ ...item, id: Date.now() }, ...s.receiptItems] })),
   removeItem: (id) => set(s => ({ receiptItems: s.receiptItems.filter(i => i.id !== id) })),
-  clearReceipt: () => set({ receiptItems: [] }),
+  clearReceipt: () => set({ receiptItems: [], notes: '' }),
   setTaxRate: (r) => set({ taxRate: parseFloat(r) || 0 }),
   getSubtotal: () => get().receiptItems.reduce((s, i) => s + i.total, 0),
   getTax: () => get().getSubtotal() * get().taxRate / 100,
@@ -296,7 +298,8 @@ export const useEstimatorStore = create((set, get) => ({
         editingEstimateId: estimate.id,
         selectedContactId: estimate.contact_id || '',
         receiptItems: mappedItems,
-        taxRate: 0
+        taxRate: 0,
+        notes: estimate.notes || ''
       });
       
       return estimate;

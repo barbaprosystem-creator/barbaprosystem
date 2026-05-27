@@ -121,7 +121,9 @@ export default function Estimator() {
     selectedContactId,
     setSelectedContactId,
     editingEstimateId,
-    setEditingEstimateId
+    setEditingEstimateId,
+    notes,
+    setNotes
   } = useEstimatorStore();
   
   const [contact, setContact] = useState(null);
@@ -186,6 +188,7 @@ export default function Estimator() {
         subtotal: getSubtotal(),
         grand_total: getGrandTotal(),
         scope_of_work: finalScope,
+        notes: notes,
         valid_until: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
       };
 

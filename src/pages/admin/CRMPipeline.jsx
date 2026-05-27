@@ -177,38 +177,46 @@ function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
   const q = QUALITY[lead.lead_quality];
   return (
     <div className="lead-card" draggable onDragStart={e => e.dataTransfer.setData('leadId', lead.id)} onClick={() => onClick(lead)}>
-      <div className="lead-card-header">
-        <span className="lead-name">{lead.first_name} {lead.last_name}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {q && <span title={q.label} style={{ fontSize: '10px' }}>{q.dot}</span>}
-          {src && (
+      <div className="lead-card-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: '6px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+          <span className="lead-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+            {lead.first_name} {lead.last_name}
+          </span>
+          {q && <span title={q.label} style={{ fontSize: '10px', flexShrink: 0 }}>{q.dot}</span>}
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+          {src ? (
             <span
               title={src.label}
               style={{
-                fontSize: '11px', fontWeight: '700', padding: '2px 6px',
+                fontSize: '10px', fontWeight: '700', padding: '2px 6px',
                 borderRadius: '4px', background: src.color + '22',
                 color: src.color, border: `1px solid ${src.color}44`,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                maxWidth: '120px'
               }}
             >
               {src.icon} {src.label}
             </span>
-          )}
-          <button 
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onChatClick(lead); }}
-            className="p-1 text-[#888] hover:text-green-400 hover:bg-green-400/10 rounded transition-colors ml-1"
-            title="WhatsApp Chat"
-          >
-            <MessageCircle size={14} />
-          </button>
-          <button 
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onViewClick(lead.id); }}
-            className="p-1 text-[#888] hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors ml-1"
-            title="View 360 File"
-          >
-            <Eye size={14} />
-          </button>
+          ) : <div />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChatClick(lead); }}
+              className="p-1 text-[#888] hover:text-green-400 hover:bg-green-400/10 rounded transition-colors"
+              title="WhatsApp Chat"
+            >
+              <MessageCircle size={14} />
+            </button>
+            <button 
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onViewClick(lead.id); }}
+              className="p-1 text-[#888] hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors"
+              title="View 360 File"
+            >
+              <Eye size={14} />
+            </button>
+          </div>
         </div>
       </div>
       {lead.phone && <div className="lead-card-detail"><Phone size={13} /><span>{lead.phone}</span></div>}
