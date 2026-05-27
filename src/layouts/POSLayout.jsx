@@ -34,6 +34,7 @@ export default function POSLayout({ onSignOut, profile }) {
     { to: '/pos/showroom',  icon: ImageIcon,        label: t('nav.showroom'),      end: false },
     { to: '/pos/catalog',   icon: Package,          label: t('nav.clientCatalog'), end: false },
     { to: '/pos/pricing',   icon: Tag,              label: t('nav.pricing'),        end: false },
+    { to: '/pos/settings',  icon: Settings,         label: t('nav.settings'),      end: false },
   ];
 
   return (

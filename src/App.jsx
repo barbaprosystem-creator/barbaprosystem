@@ -148,7 +148,7 @@ export default function App() {
           <Route path="profit-tracker" element={<ProfitTracker />} />
           <Route path="payroll" element={<PayrollPage />} />
           <Route path="bills" element={<BillsPage />} />
-          <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings" element={<SettingsPage role={role} />} />
           <Route path="showroom" element={<ShowroomAdminPage />} />
           <Route path="ai-training" element={<AITrainingChat />} />
         </Route>
@@ -174,6 +174,7 @@ export default function App() {
           <Route path="catalog" element={<PublicCatalogPage />} />
           <Route path="pricing" element={<PricingSettings />} />
           <Route path="pdf-preview" element={<PDFPreview />} />
+          <Route path="settings" element={<SettingsPage role={role} />} />
         </Route>
 
         {/* CATCH-ALL */}

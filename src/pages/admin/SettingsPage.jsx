@@ -10,7 +10,7 @@ const ROLE_MAP = {
   supervisor: { label: 'Supervisor', color: '#f59e0b' },
 };
 
-export default function SettingsPage() {
+export default function SettingsPage({ role = 'admin' }) {
   const { t } = useLanguage();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +28,11 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    if (role === 'admin' || role === 'office') {
+      fetchUsers();
+    }
+  }, [role]);
 
   async function fetchUsers() {
     setLoading(true);
@@ -153,158 +157,162 @@ export default function SettingsPage() {
         <div className="crm-toolbar-left"><h1>{t('settings.title')}</h1></div>
       </div>
 
-      {/* User Management */}
-      <div className="settings-section">
-        <div className="settings-section-header">
-          <div>
-            <h2><Users size={20}/> User Management</h2>
-            <p>Manage users and their roles in the system</p>
-          </div>
-        </div>
+      {(role === 'admin' || role === 'office') && (
+        <>
+          {/* User Management */}
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <div>
+                <h2><Users size={20}/> User Management</h2>
+                <p>Manage users and their roles in the system</p>
+              </div>
+            </div>
 
-        <div className="crm-list">
-          <table>
-            <thead>
-              <tr>
-                <th>{t('common.name')}</th>
-                <th>Role</th>
-                <th>{t('common.date')}</th>
-                <th>{t('common.actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(user => (
-                <tr key={user.id} className="crm-list-row">
-                  <td className="lead-name-cell">
-                    <div className="user-info">
-                      <div className="user-avatar">{user.full_name?.[0] || '?'}</div>
-                      <span>{user.full_name}</span>
-                    </div>
-                  </td>
-                  <td>
-                    <select
-                       className="role-select"
-                       value={user.role}
-                       onChange={e => updateRole(user.id, e.target.value)}
-                       style={{ borderColor: ROLE_MAP[user.role]?.color }}
+            <div className="crm-list">
+              <table>
+                <thead>
+                  <tr>
+                    <th>{t('common.name')}</th>
+                    <th>Role</th>
+                    <th>{t('common.date')}</th>
+                    <th>{t('common.actions')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user.id} className="crm-list-row">
+                      <td className="lead-name-cell">
+                        <div className="user-info">
+                          <div className="user-avatar">{user.full_name?.[0] || '?'}</div>
+                          <span>{user.full_name}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <select
+                           className="role-select"
+                           value={user.role}
+                           onChange={e => updateRole(user.id, e.target.value)}
+                           style={{ borderColor: ROLE_MAP[user.role]?.color }}
+                         >
+                           {Object.entries(ROLE_MAP).map(([k, v]) => (
+                             <option key={k} value={k}>{v.label}</option>
+                           ))}
+                         </select>
+                      </td>
+                      <td>{new Date(user.created_at).toLocaleDateString('en-US')}</td>
+                      <td>
+                        <span className="stage-badge" style={{ background: ROLE_MAP[user.role]?.color }}>
+                          {ROLE_MAP[user.role]?.label}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="settings-note">
+              <Shield size={16}/>
+              <p>To create new users, use the Supabase Auth panel or the <code>scripts/create-users.js</code> script</p>
+            </div>
+          </div>
+
+          {/* System Config */}
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <h2><ShieldCheck size={20}/> System Configuration</h2>
+            </div>
+            <div className="settings-grid">
+              <div className="setting-item">
+                <label>Company Name</label>
+                <input value="Barba Construction" disabled/>
+              </div>
+              <div className="setting-item">
+                <label>Currency</label>
+                <input value="USD ($)" disabled/>
+              </div>
+              <div className="setting-item">
+                <label>Time Zone</label>
+                <input value="America/New_York (EST)" disabled/>
+              </div>
+              <div className="setting-item">
+                <label>Financing</label>
+                <a href="https://www.servifinancial.com" target="_blank" rel="noopener" className="btn-secondary" style={{display:'inline-flex',alignItems:'center',gap:8}}>
+                  Servi Financial &rarr;
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* PIN Security Section */}
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <h2><Lock size={20}/> Security & Restricted Access</h2>
+              <p>Change the PIN for accessing Payroll, Profit Tracker, and Reports. (Requires email authorization).</p>
+            </div>
+            <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] max-w-lg mt-4">
+              {pinStep === 0 && (
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">New PIN</label>
+                    <input 
+                      type="text" 
+                      value={newPin} 
+                      onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white text-lg tracking-widest"
+                      placeholder="e.g., 2026"
+                      maxLength={10}
+                    />
+                  </div>
+                  <button 
+                    className="btn-primary w-full" 
+                    onClick={requestPinChange}
+                    disabled={newPin.length < 4}
+                  >
+                    Request Change
+                  </button>
+                </div>
+              )}
+
+              {pinStep === 1 && (
+                <div className="flex flex-col gap-4">
+                  <div className="text-[#10b981] bg-[#10b981]/10 p-3 rounded-lg text-sm mb-2 text-center border border-[#10b981]/20">
+                    {pinMessage}
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-400 block mb-1">6-digit Authorization Code</label>
+                    <input 
+                      type="text" 
+                      value={otpCode} 
+                      onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white text-center text-xl tracking-[0.5em] font-bold"
+                      placeholder="------"
+                      maxLength={6}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="btn-secondary flex-1" onClick={() => setPinStep(0)}>Cancel</button>
+                    <button 
+                      className="btn-primary flex-1" 
+                      onClick={verifyOtpAndChangePin}
+                      disabled={otpCode.length !== 6}
                     >
-                      {Object.entries(ROLE_MAP).map(([k, v]) => (
-                        <option key={k} value={k}>{v.label}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>{new Date(user.created_at).toLocaleDateString('en-US')}</td>
-                  <td>
-                    <span className="stage-badge" style={{ background: ROLE_MAP[user.role]?.color }}>
-                      {ROLE_MAP[user.role]?.label}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                      Verify Code
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        <div className="settings-note">
-          <Shield size={16}/>
-          <p>To create new users, use the Supabase Auth panel or the <code>scripts/create-users.js</code> script</p>
-        </div>
-      </div>
-
-      {/* System Config */}
-      <div className="settings-section">
-        <div className="settings-section-header">
-          <h2><ShieldCheck size={20}/> System Configuration</h2>
-        </div>
-        <div className="settings-grid">
-          <div className="setting-item">
-            <label>Company Name</label>
-            <input value="Barba Construction" disabled/>
-          </div>
-          <div className="setting-item">
-            <label>Currency</label>
-            <input value="USD ($)" disabled/>
-          </div>
-          <div className="setting-item">
-            <label>Time Zone</label>
-            <input value="America/New_York (EST)" disabled/>
-          </div>
-          <div className="setting-item">
-            <label>Financing</label>
-            <a href="https://www.servifinancial.com" target="_blank" rel="noopener" className="btn-secondary" style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              Servi Financial &rarr;
-            </a>
-          </div>
-        </div>
-      </div>
-
-      {/* PIN Security Section */}
-      <div className="settings-section">
-        <div className="settings-section-header">
-          <h2><Lock size={20}/> Security & Restricted Access</h2>
-          <p>Change the PIN for accessing Payroll, Profit Tracker, and Reports. (Requires email authorization).</p>
-        </div>
-        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-[#333] max-w-lg mt-4">
-          {pinStep === 0 && (
-            <div className="flex flex-col gap-4">
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">New PIN</label>
-                <input 
-                  type="text" 
-                  value={newPin} 
-                  onChange={e => setNewPin(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white text-lg tracking-widest"
-                  placeholder="e.g., 2026"
-                  maxLength={10}
-                />
-              </div>
-              <button 
-                className="btn-primary w-full" 
-                onClick={requestPinChange}
-                disabled={newPin.length < 4}
-              >
-                Request Change
-              </button>
+              {pinStep === 2 && (
+                <div className="flex flex-col items-center py-6">
+                  <Loader2 className="animate-spin text-[#FACB00]" size={32}/>
+                  <p className="mt-2 text-gray-400">Processing...</p>
+                </div>
+              )}
             </div>
-          )}
-
-          {pinStep === 1 && (
-            <div className="flex flex-col gap-4">
-              <div className="text-[#10b981] bg-[#10b981]/10 p-3 rounded-lg text-sm mb-2 text-center border border-[#10b981]/20">
-                {pinMessage}
-              </div>
-              <div>
-                <label className="text-sm text-gray-400 block mb-1">6-digit Authorization Code</label>
-                <input 
-                  type="text" 
-                  value={otpCode} 
-                  onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-[#111] border border-[#333] rounded-lg px-4 py-2 text-white text-center text-xl tracking-[0.5em] font-bold"
-                  placeholder="------"
-                  maxLength={6}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button className="btn-secondary flex-1" onClick={() => setPinStep(0)}>Cancel</button>
-                <button 
-                  className="btn-primary flex-1" 
-                  onClick={verifyOtpAndChangePin}
-                  disabled={otpCode.length !== 6}
-                >
-                  Verify Code
-                </button>
-              </div>
-            </div>
-          )}
-
-          {pinStep === 2 && (
-            <div className="flex flex-col items-center py-6">
-              <Loader2 className="animate-spin text-[#FACB00]" size={32}/>
-              <p className="mt-2 text-gray-400">Processing...</p>
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Change Password Section */}
       <div className="settings-section">
