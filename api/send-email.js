@@ -55,7 +55,7 @@ export default async function handler(req, res) {
                 <strong style="color: #111; font-size: 15px; margin: 0; display: block; padding-bottom: 2px;">Barba Construction</strong>
                 <span style="color: #888; font-size: 12px; display: block; padding-bottom: 8px;">Building Excellence, Restoring Trust.</span>
                 <span style="color: #444; display: block; padding-bottom: 3px;">📍 5910 Preston Hwy, Louisville, KY 40219</span>
-                <span style="color: #444; display: block; padding-bottom: 3px;">📞 <a href="tel:+15023058421" style="color: #1155cc; text-decoration: none;">(502) 305-8421</a> &nbsp;|&nbsp; ✉️ <a href="mailto:barbaconstruct@gmail.com" style="color: #1155cc; text-decoration: none;">barbaconstruct@gmail.com</a></span>
+                <span style="color: #444; display: block; padding-bottom: 3px;">📞 <a href="tel:+15023058421" style="color: #1155cc; text-decoration: none;">(502) 305-8421</a> &nbsp;|&nbsp; ✉️ <a href="mailto:info@barbaprosystem.com" style="color: #1155cc; text-decoration: none;">info@barbaprosystem.com</a></span>
                 <span style="color: #444; display: block;">🌐 <a href="https://barbaprosystem.com" style="color: #1155cc; text-decoration: none;">barbaprosystem.com</a></span>
               </td>
             </tr>
