@@ -22,7 +22,7 @@ export default function ProjectMaterialsTab({ projectId }) {
   const [services, setServices] = useState([]);
   
   const [selectedService, setSelectedService] = useState('');
-  const [variableInput, setVariableInput] = useState(''); // Ej. 30 Squares
+  const [variableInput, setVariableInput] = useState(''); // e.g. 30 Squares
 
   useEffect(() => {
     fetchOrder();
@@ -35,8 +35,8 @@ export default function ProjectMaterialsTab({ projectId }) {
     if (projectId === 'mock-proj-1' || projectId === 'mock-proj-2') {
       const isMock1 = projectId === 'mock-proj-1';
       setProjectData({
-        title: isMock1 ? 'Residencia Familia Pérez' : 'Renovación Siding María',
-        contact: { first_name: isMock1 ? 'Juan' : 'María', last_name: isMock1 ? 'Pérez' : 'Gómez', address: isMock1 ? '123 Main St, Springfield' : '456 Oak Ave, Springfield' }
+        title: isMock1 ? 'Perez Family Residence' : 'Maria Siding Renovation',
+        contact: { first_name: isMock1 ? 'Juan' : 'Maria', last_name: isMock1 ? 'Perez' : 'Gomez', address: isMock1 ? '123 Main St, Springfield' : '456 Oak Ave, Springfield' }
       });
       setOrder({ id: `order-${projectId}`, project_id: projectId, status: 'draft', total_estimated_cost: isMock1 ? 4500 : 2300, created_at: new Date().toISOString() });
       setItems([
@@ -75,7 +75,7 @@ export default function ProjectMaterialsTab({ projectId }) {
   }
 
   async function fetchAvailableServices() {
-    // Buscar los tipos de servicios únicos que tienen fórmulas
+    // Find unique service types that have formulas
     const { data } = await supabase
       .from('service_material_recipes')
       .select('service_type, calculation_variable');
@@ -103,14 +103,14 @@ export default function ProjectMaterialsTab({ projectId }) {
     setIsGenerating(true);
 
     try {
-      // 1. Obtener las recetas para este servicio
+      // 1. Get recipes for this service
       const { data: serviceRecipes } = await supabase
         .from('service_material_recipes')
         .select('*, material:materials_catalog(*)')
         .eq('service_type', selectedService);
 
       if (!serviceRecipes || serviceRecipes.length === 0) {
-        alert('No hay fórmulas configuradas para este servicio.');
+        alert('No formulas configured for this service.');
         setIsGenerating(false);
         return;
       }
@@ -118,7 +118,7 @@ export default function ProjectMaterialsTab({ projectId }) {
       const inputVal = parseFloat(variableInput);
       let totalEstimatedCost = 0;
 
-      // 2. Crear la orden de compra
+      // 2. Create material order
       const { data: newOrder, error: orderError } = await supabase
         .from('material_orders')
         .insert([{
@@ -131,12 +131,12 @@ export default function ProjectMaterialsTab({ projectId }) {
 
       if (orderError) throw orderError;
 
-      // 3. Generar los items basados en la matemática
+      // 3. Generate items based on math
       const orderItems = serviceRecipes.map(recipe => {
-        // Matemática Base: variable / cobertura
+        // Base Math: variable / coverage
         let calcQty = inputVal / recipe.coverage_per_unit;
         
-        // Añadir Desperdicio
+        // Add Waste Factor
         if (recipe.waste_factor_percent > 0) {
           calcQty = calcQty * (1 + (recipe.waste_factor_percent / 100));
         }
@@ -150,7 +150,7 @@ export default function ProjectMaterialsTab({ projectId }) {
           material_id: recipe.material_id,
           calculated_quantity: calcQty,
           manual_adjustment: 0,
-          final_quantity: Math.ceil(calcQty), // Por defecto redondeamos hacia arriba para tiendas
+          final_quantity: Math.ceil(calcQty), // Round up for hardware store orders
           unit_price: price,
           total_price: Math.ceil(calcQty) * price
         };
@@ -163,7 +163,7 @@ export default function ProjectMaterialsTab({ projectId }) {
       fetchOrder();
     } catch (err) {
       console.error(err);
-      alert('Error generando la orden de materiales.');
+      alert('Error generating material order.');
       setIsGenerating(false);
     }
   }
@@ -186,7 +186,7 @@ export default function ProjectMaterialsTab({ projectId }) {
       })
       .eq('id', itemId);
 
-    // Recalcular Total Order
+    // Recalculate Total Order Cost
     const { data: updatedItems } = await supabase.from('material_order_items').select('total_price').eq('order_id', order.id);
     if (updatedItems) {
       const newGrandTotal = updatedItems.reduce((acc, curr) => acc + curr.total_price, 0);
@@ -207,25 +207,25 @@ export default function ProjectMaterialsTab({ projectId }) {
     
     doc.setFontSize(14);
     doc.setTextColor(100, 100, 100);
-    doc.text('Orden de Materiales (BOM)', 14, 30);
+    doc.text('Material Order (BOM)', 14, 30);
     
-    // Info del Proyecto
+    // Project Info
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
     if (projectData) {
-      doc.text(`Proyecto: ${projectData.title}`, 14, 45);
-      doc.text(`Cliente: ${projectData.contact?.first_name || ''} ${projectData.contact?.last_name || ''}`, 14, 51);
-      doc.text(`Direccion: ${projectData.contact?.address || projectData.address || ''}`, 14, 57);
+      doc.text(`Project: ${projectData.title}`, 14, 45);
+      doc.text(`Client: ${projectData.contact?.first_name || ''} ${projectData.contact?.last_name || ''}`, 14, 51);
+      doc.text(`Address: ${projectData.contact?.address || projectData.address || ''}`, 14, 57);
     }
     
-    // Info de la Orden
+    // Order Info
     const orderNumber = order.id.split('-')[0].toUpperCase();
-    doc.text(`Num de Orden: #${orderNumber}`, 140, 45);
-    doc.text(`Fecha: ${new Date(order.created_at).toLocaleDateString()}`, 140, 51);
+    doc.text(`Order Num: #${orderNumber}`, 140, 45);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 140, 51);
     
-    // Tabla de Items
+    // Items Table
     const tableData = items.map(item => [
-      item.material?.name || 'Material Desconocido',
+      item.material?.name || 'Unknown Material',
       `${item.final_quantity} ${item.material?.unit_of_measure}`,
       formatCurrency(item.unit_price),
       formatCurrency(item.total_price)
@@ -233,7 +233,7 @@ export default function ProjectMaterialsTab({ projectId }) {
     
     doc.autoTable({
       startY: 65,
-      head: [['Material', 'Cantidad a Pedir', 'Precio Unit.', 'Costo Total']],
+      head: [['Material', 'Quantity to Order', 'Unit Price', 'Total Cost']],
       body: tableData,
       theme: 'grid',
       headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
@@ -249,13 +249,13 @@ export default function ProjectMaterialsTab({ projectId }) {
     const finalY = doc.lastAutoTable.finalY || 65;
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Costo Estimado Total: ${formatCurrency(order.total_estimated_cost)}`, 140, finalY + 15);
+    doc.text(`Total Estimated Cost: ${formatCurrency(order.total_estimated_cost)}`, 140, finalY + 15);
     
     doc.save(`BOM_${orderNumber}.pdf`);
   }
 
   async function deleteOrder() {
-    if(!confirm('¿Seguro que deseas eliminar esta orden de materiales?')) return;
+    if(!confirm('Are you sure you want to delete this material order?')) return;
     await supabase.from('material_orders').delete().eq('id', order.id);
     setOrder(null);
     setItems([]);
@@ -264,7 +264,7 @@ export default function ProjectMaterialsTab({ projectId }) {
   if (loading) return (
     <div className="flex items-center justify-center py-12 text-[#555555]">
       <Loader2 size={24} className="animate-spin mr-3" />
-      <span>Cargando materiales...</span>
+      <span>Loading materials...</span>
     </div>
   );
 
@@ -275,16 +275,16 @@ export default function ProjectMaterialsTab({ projectId }) {
           <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
             <ShoppingCart size={28} className="text-blue-400" />
           </div>
-          <h3 className="text-lg font-bold text-[#f0f0f0]">Generador de Órdenes de Compra</h3>
+          <h3 className="text-lg font-bold text-[#f0f0f0]">Purchase Order Generator</h3>
           <p className="text-sm text-[#888888] mt-2 mb-6 max-w-sm mx-auto">
-            Automatiza la lista de materiales exacta que necesitas comprar basada en las medidas del proyecto.
+            Automates the exact list of materials you need to buy based on project measurements.
           </p>
           <button 
             onClick={() => setIsGenerating(true)}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors"
           >
             <Settings2 size={18} />
-            Crear Orden de Compra (BOM)
+            Create Purchase Order (BOM)
           </button>
         </div>
       )}
@@ -296,11 +296,11 @@ export default function ProjectMaterialsTab({ projectId }) {
         >
           <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <Calculator size={20} className="text-[#E2FF00]" /> 
-            Configurar Matemáticas
+            Configure Math
           </h3>
           <form onSubmit={generateOrder} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold text-[#888] uppercase tracking-wider mb-2">Servicio a Realizar</label>
+              <label className="block text-xs font-bold text-[#888] uppercase tracking-wider mb-2">Service to Perform</label>
               <select 
                 className="w-full bg-[#2a2a2a] border border-[#333] rounded-xl px-4 py-3 text-white focus:border-[#E2FF00] focus:ring-1 focus:ring-[#E2FF00] transition-colors"
                 value={selectedService}
@@ -316,17 +316,17 @@ export default function ProjectMaterialsTab({ projectId }) {
             {selectedService && (
               <div>
                 <label className="block text-xs font-bold text-[#888] uppercase tracking-wider mb-2">
-                  Medida (En {services.find(s => s.type === selectedService)?.variable})
+                  Measurement (In {services.find(s => s.type === selectedService)?.variable})
                 </label>
                 <input 
                   type="number" step="0.1" required
-                  placeholder="Ej. 30"
+                  placeholder="e.g. 30"
                   className="w-full bg-[#2a2a2a] border border-[#333] rounded-xl px-4 py-3 text-white font-mono text-lg focus:border-[#E2FF00] transition-colors"
                   value={variableInput}
                   onChange={e => setVariableInput(e.target.value)}
                 />
                 <p className="text-xs text-[#666] mt-2">
-                  El sistema cruzará esta medida con la "Receta" del administrador para generar la lista de compras.
+                  The system will cross-reference this measurement with the administrator's "Recipe" to generate the shopping list.
                 </p>
               </div>
             )}
@@ -337,13 +337,13 @@ export default function ProjectMaterialsTab({ projectId }) {
                 onClick={() => setIsGenerating(false)}
                 className="flex-1 py-3 text-[#888] hover:text-white transition-colors"
               >
-                Cancelar
+                Cancel
               </button>
               <button 
                 type="submit"
                 className="flex-1 py-3 bg-[#E2FF00] text-black font-bold rounded-xl hover:bg-[#d4f000] transition-colors flex justify-center items-center gap-2"
               >
-                Calcular Presupuesto <CheckCircle2 size={18} />
+                Calculate Materials <CheckCircle2 size={18} />
               </button>
             </div>
           </form>
@@ -356,7 +356,7 @@ export default function ProjectMaterialsTab({ projectId }) {
             <div>
               <div className="flex items-center gap-3 mb-1">
                 <span className="px-3 py-1 bg-blue-500/20 text-blue-400 font-bold text-xs rounded-full uppercase tracking-widest">
-                  Orden #{order.id.split('-')[0]}
+                  Order #{order.id.split('-')[0]}
                 </span>
                 <span className="text-xs text-[#666]">
                   {new Date(order.created_at).toLocaleDateString()}
@@ -366,7 +366,7 @@ export default function ProjectMaterialsTab({ projectId }) {
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right mr-4">
-                <p className="text-xs text-[#888] uppercase tracking-wider font-bold">Costo Estimado</p>
+                <p className="text-xs text-[#888] uppercase tracking-wider font-bold">Estimated Cost</p>
                 <p className="text-xl font-black text-[#E2FF00]">{formatCurrency(order.total_estimated_cost)}</p>
               </div>
               <button onClick={exportToPDF} className="p-3 bg-[#2a2a2a] hover:bg-[#333] text-white rounded-xl transition-colors">
@@ -384,10 +384,10 @@ export default function ProjectMaterialsTab({ projectId }) {
                 <thead>
                   <tr className="bg-[#1a1a1a] border-b border-[#2a2a2a]">
                     <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider">Material</th>
-                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-center">Cálculo Base</th>
-                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-center">Ajuste Manual</th>
-                    <th className="p-4 text-xs font-bold text-[#E2FF00] uppercase tracking-wider text-center">Pedir (Final)</th>
-                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-right">Costo Total</th>
+                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-center">Base Calculation</th>
+                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-center">Manual Adjustment</th>
+                    <th className="p-4 text-xs font-bold text-[#E2FF00] uppercase tracking-wider text-center">Order (Final)</th>
+                    <th className="p-4 text-xs font-bold text-[#888] uppercase tracking-wider text-right">Total Cost</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#2a2a2a]/50">
@@ -430,7 +430,7 @@ export default function ProjectMaterialsTab({ projectId }) {
             </div>
             <div className="p-4 bg-[#1a1a1a]/50 border-t border-[#2a2a2a] text-center">
               <p className="text-xs text-[#666]">
-                Los ajustes manuales se guardan automáticamente. Si la fórmula calculó 12.3, el sistema pide 13.
+                Manual adjustments are automatically saved. If the formula calculated 12.3, the system requests 13.
               </p>
             </div>
           </div>

@@ -44,10 +44,10 @@ export default function Showroom() {
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-3">
               <ImageIcon className="text-indigo-400" size={28} />
-              Showroom de Trabajos
+              Work Showroom
             </h1>
             <p className="text-slate-400 mt-1">
-              Galería de proyectos completados para mostrar a los clientes
+              Gallery of completed projects to showcase to clients
             </p>
           </div>
           {!selectedCategory && (
@@ -55,7 +55,7 @@ export default function Showroom() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
               <input
                 type="text"
-                placeholder="Buscar servicio..."
+                placeholder="Search service..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2 text-white focus:outline-none focus:border-indigo-500 transition-colors"
@@ -70,7 +70,7 @@ export default function Showroom() {
         {loading ? (
           <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
             <Loader2 className="animate-spin text-indigo-500" size={48} />
-            <p>Cargando fotos del showroom...</p>
+            <p>Loading showroom photos...</p>
           </div>
         ) : (
           <AnimatePresence mode="wait">
@@ -83,7 +83,7 @@ export default function Showroom() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               >
                 {filteredCategories.length === 0 ? (
-                  <div className="col-span-full text-center text-gray-500 py-10">No se encontraron categorías.</div>
+                  <div className="col-span-full text-center text-gray-500 py-10">No categories found.</div>
                 ) : (
                   filteredCategories.map((category) => (
                     <div
@@ -108,7 +108,7 @@ export default function Showroom() {
                         </div>
                         <p className="text-slate-400 text-sm line-clamp-2">{category.description}</p>
                         <p className="text-xs text-indigo-400 mt-2 font-medium">
-                          {category.images.length} trabajos
+                          {category.images.length} projects
                         </p>
                       </div>
                     </div>
@@ -129,7 +129,7 @@ export default function Showroom() {
                     className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
                   >
                     <ChevronLeft size={20} />
-                    <span>Volver a Carpetas</span>
+                    <span>Back to Folders</span>
                   </button>
                   <div className="flex items-center gap-2 text-lg font-semibold text-white">
                     <Folder size={20} className="text-indigo-400" />
@@ -139,7 +139,7 @@ export default function Showroom() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {selectedCategory.images.length === 0 ? (
-                    <div className="col-span-full text-center text-gray-500 py-10">No hay fotos en esta categoría aún.</div>
+                    <div className="col-span-full text-center text-gray-500 py-10">No photos in this category yet.</div>
                   ) : (
                     selectedCategory.images.map((image, idx) => (
                       <div

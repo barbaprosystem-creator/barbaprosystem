@@ -103,7 +103,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
       await twilioService.sendStandardMessage(conversacionId, clienteTelefono, nuevoMensaje, 'whatsapp', clienteId, profile?.id);
       setNuevoMensaje('');
     } catch (error) {
-      alert("Error al enviar mensaje");
+      alert("Error sending message");
     } finally {
       setEnviando(false);
     }
@@ -118,9 +118,9 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
         "1": "Cliente",
         "2": "#EST-1024"
       }, clienteId, profile?.id);
-      alert("Plantilla enviada exitosamente. Se ha reabierto la sesión de 24h.");
+      alert("Template sent successfully. The 24h session has been reopened.");
     } catch (error) {
-      alert("Error al enviar la plantilla");
+      alert("Error sending the template");
     } finally {
       setEnviando(false);
     }
@@ -141,7 +141,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
             >
               <p className="text-sm">{msg.contenido}</p>
               {msg.direccion === 'outbound' && msg.profiles?.full_name && (
-                <p className="text-[10px] text-black/50 font-bold mt-0.5">Por: {msg.profiles.full_name}</p>
+                <p className="text-[10px] text-black/50 font-bold mt-0.5">By: {msg.profiles.full_name}</p>
               )}
               <span className={`text-[10px] mt-1 block text-right ${msg.direccion === 'outbound' ? 'text-black/60' : 'text-gray-400'}`}>
                 {new Date(msg.creado_en).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -157,15 +157,15 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
         {!windowOpen ? (
           <div className="flex flex-col items-center justify-center p-3 gap-3 bg-red-500/10 rounded-lg border border-red-500/20 w-full">
             <p className="text-xs text-red-400 text-center leading-relaxed">
-              La ventana de 24 horas de WhatsApp ha expirado o no ha sido iniciada. 
-              Para continuar la conversación, debes enviar una plantilla preaprobada.
+              The 24-hour WhatsApp window has expired or has not been initiated. 
+              To continue the conversation, you must send a pre-approved template.
             </p>
             <button 
               onClick={handleSendTemplate}
               disabled={enviando}
               className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center shadow-sm disabled:opacity-50"
             >
-              {enviando ? "Enviando..." : 'Enviar Plantilla "Cotización Lista"'}
+              {enviando ? "Sending..." : 'Send "Quote Ready" Template'}
             </button>
           </div>
         ) : (
@@ -174,7 +174,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
               type="text"
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
-              placeholder="Escribe un mensaje..."
+              placeholder="Type a message..."
               className="flex-1 px-4 py-3 bg-[#1a1a1a] border border-[#333] text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:border-transparent text-sm transition-all placeholder:text-[#555]"
               disabled={enviando}
             />
@@ -182,7 +182,7 @@ export default function OmnichannelChat({ clienteId, clienteTelefono }) {
               type="submit"
               disabled={!nuevoMensaje.trim() || enviando}
               className="p-3 bg-[var(--accent)] hover:bg-orange-400 text-black font-medium rounded-full disabled:opacity-50 transition-colors shadow-[0_0_15px_rgba(249,115,22,0.2)] flex items-center justify-center"
-              aria-label="Enviar"
+              aria-label="Send"
             >
               {/* Ícono de enviar básico en SVG */}
               <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

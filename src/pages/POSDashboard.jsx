@@ -85,54 +85,54 @@ export default function POSDashboard() {
   }, [user, summaryPeriod]);
 
   const kpis = [
-    { label: 'Leads Totales', value: stats.leads, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
-    { label: 'Aprobados', value: stats.approvedCount, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { label: 'Monto Aprobado', value: `$${stats.approvedRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: DollarSign, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/10' },
-    { label: 'Mi Comisión (5%)', value: `$${stats.commission.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: Wallet, color: 'text-[#facb00]', bg: 'bg-[#facb00]/10', glow: true },
+    { label: 'Total Leads', value: stats.leads, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { label: 'Approved', value: stats.approvedCount, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { label: 'Approved Amount', value: `$${stats.approvedRevenue.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: DollarSign, color: 'text-[var(--accent)]', bg: 'bg-[var(--accent)]/10' },
+    { label: 'My Commission (5%)', value: `$${stats.commission.toLocaleString('en-US', {minimumFractionDigits: 2})}`, icon: Wallet, color: 'text-[#facb00]', bg: 'bg-[#facb00]/10', glow: true },
   ];
 
   const statusMap = {
-    nuevo: { label: 'Nuevo', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-    contactado: { label: 'Contactado', cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
-    cita: { label: 'Cita', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-    estimado_enviado: { label: 'Estimado', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
-    ganado: { label: 'Ganado', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-    perdido: { label: 'Perdido', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    nuevo: { label: 'New', cls: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+    contactado: { label: 'Contacted', cls: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+    cita: { label: 'Appointment', cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
+    estimado_enviado: { label: 'Estimate Sent', cls: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' },
+    ganado: { label: 'Won', cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+    perdido: { label: 'Lost', cls: 'bg-red-500/10 text-red-400 border-red-500/20' },
   };
 
   return (
     <div className="admin-page p-6 lg:p-10 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Resumen de Ventas</h1>
-          <p className="text-[#888888]">Desempeño y comisiones generadas</p>
+          <h1 className="text-3xl font-bold tracking-tight">Sales Summary</h1>
+          <p className="text-[#888888]">Performance and generated commissions</p>
         </div>
         
-        {/* Filtros de Tiempo */}
+        {/* Time Filters */}
         <div className="flex bg-[#1a1a1a] border border-[#333] rounded-lg p-1">
           <button 
             onClick={() => setSummaryPeriod('week')}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'week' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            Esta Semana
+            This Week
           </button>
           <button 
             onClick={() => setSummaryPeriod('month')}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'month' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            Este Mes
+            This Month
           </button>
           <button 
             onClick={() => setSummaryPeriod('year')}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'year' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            Este Año
+            This Year
           </button>
           <button 
             onClick={() => setSummaryPeriod('all')}
             className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${summaryPeriod === 'all' ? 'bg-[#333] text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            Histórico (Todo)
+            All Time
           </button>
         </div>
       </div>
@@ -165,10 +165,10 @@ export default function POSDashboard() {
             <div className="p-2 bg-[var(--accent)]/10 rounded-lg text-[var(--accent)]">
               <Activity size={20} />
             </div>
-            <h2 className="text-lg font-bold">Leads Recientes</h2>
+            <h2 className="text-lg font-bold">Recent Leads</h2>
           </div>
           <Link to="/pos/pipeline" className="text-sm text-[var(--accent)] hover:underline flex items-center gap-1 font-medium">
-            Ir al CRM Pipeline <ArrowRight size={16} />
+            Go to CRM Pipeline <ArrowRight size={16} />
           </Link>
         </div>
         
@@ -176,22 +176,22 @@ export default function POSDashboard() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Clock size={40} className="animate-spin text-slate-700" />
-              <p className="text-sm font-medium uppercase tracking-widest">Cargando datos...</p>
+              <p className="text-sm font-medium uppercase tracking-widest">Loading data...</p>
             </div>
           ) : recentLeads.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-[#555555] gap-4">
               <Users size={48} className="text-slate-700" />
-              <p className="text-sm font-medium">No tienes leads asignados todavía.</p>
+              <p className="text-sm font-medium">You have no leads assigned yet.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-[#1a1a1a]/50 bg-[#0d0d0d]/50">
-                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Cliente</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Estado</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Fuente</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider text-right">Fecha</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Client</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Status</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider">Source</th>
+                    <th className="py-4 px-6 text-xs font-bold text-[#888888] uppercase tracking-wider text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/50">
@@ -211,7 +211,7 @@ export default function POSDashboard() {
                           {lead.source || `-`}
                         </td>
                         <td className="py-4 px-6 text-sm text-[#888888] text-right font-medium">
-                          {new Date(lead.created_at).toLocaleDateString('es', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(lead.created_at).toLocaleDateString('en', { month: 'short', day: 'numeric', year: 'numeric' })}
                         </td>
                       </tr>
                     );

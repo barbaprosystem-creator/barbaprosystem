@@ -103,7 +103,7 @@ export default function ReceiptSidebar() {
         }))
       );
 
-      // Si el estado es 'sent', enviar el correo al cliente
+      // If status is 'sent', send the email to the client
       if (status === 'sent') {
         const client = clients.find(c => c.id === selectedContactId);
         if (client && client.email) {
@@ -113,24 +113,24 @@ export default function ReceiptSidebar() {
               <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
                 <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
                   <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
-                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excelencia en Roofing, Siding & Gutters</p>
+                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
                 </div>
                 
                 <div style="padding: 40px 30px;">
-                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hola ${client.first_name},</h2>
-                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Adjunto encontrarás la propuesta detallada para tu proyecto. Queremos agradecerte por darnos la oportunidad de transformar tu hogar.</p>
+                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${client.first_name},</h2>
+                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
                   
                   <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Encuentra los detalles de los servicios a continuación.'}
+                    ${aiProposalText ? aiProposalText.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
                   </div>
                   
-                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Resumen de Inversión</h3>
+                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
                   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     ${receiptItems.map(item => `
                       <tr>
                         <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
                           <strong style="color: #111111;">${item.name}</strong><br/>
-                          <span style="font-size: 13px; color: #888888;">Cantidad: ${item.quantity}</span>
+                          <span style="font-size: 13px; color: #888888;">Quantity: ${item.quantity}</span>
                         </td>
                         <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
                           ${fmt(item.total)}
@@ -141,27 +141,27 @@ export default function ReceiptSidebar() {
                   
                   <div style="text-align: right; padding-top: 10px;">
                     <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${fmt(subtotal)}</p>
-                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Total Estimado: <span style="color: #e65100;">${fmt(total)}</span></p>
+                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Estimated Total: <span style="color: #e65100;">${fmt(total)}</span></p>
                   </div>
 
                   <div style="text-align: center; margin: 40px 0;">
                     <a href="${proposalLink}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
-                      Ver Estimado, Firmar y Autorizar
+                      View Estimate, Sign and Authorize
                     </a>
-                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Haz clic en el botón para ver el PDF oficial, firmarlo y aprobar el proyecto.</p>
+                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Click the button to view the official PDF, sign it, and approve the project.</p>
                   </div>
 
                   <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
                   
-                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">Quedo a tu entera disposición para cualquier consulta o aclaración que puedas necesitar sobre esta propuesta.</p>
+                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">I remain at your entire disposal for any questions or clarifications you may need regarding this proposal.</p>
                   <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
-                    Atentamente,<br/>
-                    <strong>${profile?.full_name || 'Equipo de Ventas'}</strong><br/>
+                    Sincerely,<br/>
+                    <strong>${profile?.full_name || 'Sales Team'}</strong><br/>
                     <span style="color: #666666;">Barba Construction</span>
                   </p>
                 </div>
                 <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
-                  © ${new Date().getFullYear()} Barba Construction. Todos los derechos reservados.
+                  © ${new Date().getFullYear()} Barba Construction. All rights reserved.
                 </div>
               </div>
             `;
@@ -171,26 +171,26 @@ export default function ReceiptSidebar() {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 to: client.email,
-                subject: `Tu Propuesta de Proyecto - Barba Construction`,
+                subject: `Your Project Proposal - Barba Construction`,
                 html: htmlEmail
               })
             });
 
             const result = await response.json();
             if (!response.ok) {
-              throw new Error(result.error || 'Error desconocido al enviar el correo');
+              throw new Error(result.error || 'Unknown error sending email');
             }
 
-            alert('Estimado guardado y enviado por correo.');
+            alert('Estimate saved and sent by email.');
           } catch (err) {
-            console.error('Error al enviar el correo:', err);
-            alert(`Error de Resend: ${err.message}\n\nNota: Si estás en modo prueba de Resend, solo puedes enviar correos a tu propia dirección verificada.`);
+            console.error('Error sending email:', err);
+            alert(`Resend Error: ${err.message}\n\nNote: If you are in Resend test mode, you can only send emails to your own verified address.`);
           }
         } else {
-          alert('Estimado guardado, pero el cliente no tiene un correo electrónico registrado.');
+          alert('Estimate saved, but the client does not have a registered email address.');
         }
       } else {
-        alert('Estimado guardado como borrador.');
+        alert('Estimate saved as a draft.');
       }
       
       clearReceipt();
@@ -198,7 +198,7 @@ export default function ReceiptSidebar() {
       setSelectedContactId('');
     } else {
       console.error(error);
-      alert('Error al guardar el estimado.');
+      alert('Error saving the estimate.');
     }
     setSaving(false);
   };
@@ -287,7 +287,7 @@ export default function ReceiptSidebar() {
       <div className="p-5 pt-0 flex flex-col gap-3">
         <button
           onClick={() => setIsAiModalOpen(true)}
-          disabled={saving || !selectedClient || receiptItems.length === 0}
+          disabled={saving || !selectedContactId || receiptItems.length === 0}
           className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-purple-600/20 to-blue-600/20 hover:from-purple-600/30 hover:to-blue-600/30 border border-purple-500/30 text-purple-300 text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_15px_rgba(168,85,247,0.15)]"
         >
           <Sparkles size={16} />
@@ -297,7 +297,7 @@ export default function ReceiptSidebar() {
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => handleSave('draft')}
-            disabled={saving || !selectedClient || receiptItems.length === 0}
+            disabled={saving || !selectedContactId || receiptItems.length === 0}
             className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a]/50 text-[#c0c0c0] text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save size={16} />
@@ -305,7 +305,7 @@ export default function ReceiptSidebar() {
           </button>
           <button
             onClick={() => handleSave('sent')}
-            disabled={saving || !selectedClient || receiptItems.length === 0}
+            disabled={saving || !selectedContactId || receiptItems.length === 0}
             className="flex items-center justify-center gap-2 py-3 rounded-xl bg-orange-500 hover:bg-orange-400 text-white text-sm font-bold transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
           >
             <Send size={16} />

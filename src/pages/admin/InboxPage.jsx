@@ -8,7 +8,7 @@ export default function InboxPage() {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('Todos');
+  const [filter, setFilter] = useState('All');
   const [search, setSearch] = useState('');
 
   // New Conversation Modal State
@@ -70,7 +70,7 @@ export default function InboxPage() {
       handleSelectConversation(newConv.id);
     } catch (err) {
       console.error('Error creating conversation:', err);
-      alert('Error al crear la conversación');
+      alert('Error creating conversation');
     }
   };
 
@@ -190,7 +190,7 @@ export default function InboxPage() {
 
   const filteredConversations = conversations.filter(c => {
     // Channel filter
-    if (filter === 'No leídos' && c.unreadCount <= 0) return false;
+    if (filter === 'Unread' && c.unreadCount <= 0) return false;
     if (filter === 'WhatsApp' && c.canal !== 'whatsapp') return false;
     if (filter === 'SMS' && c.canal !== 'sms') return false;
     if (filter === 'Email' && c.canal !== 'email') return false;
@@ -212,15 +212,15 @@ export default function InboxPage() {
       {showNewModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
           <div className="bg-[#1e1f2e] border border-[#34384c] rounded-2xl w-full max-w-md p-6 shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">Iniciar Conversación</h3>
+            <h3 className="text-xl font-bold text-white mb-4">Start Conversation</h3>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Buscar Cliente</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Search Client</label>
                 <input 
                   type="text"
                   list="contacts-list"
-                  placeholder="Escribe el nombre o teléfono del cliente..."
+                  placeholder="Type client name or phone..."
                   className="w-full bg-[#12131c] border border-[#34384c] text-white rounded-lg px-4 py-2.5 focus:border-[var(--gold)] outline-none"
                   value={newConvData.searchText || ''}
                   onChange={(e) => {
@@ -237,7 +237,7 @@ export default function InboxPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Canal de Comunicación</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Communication Channel</label>
                 <div className="grid grid-cols-3 gap-2">
                   {['email', 'whatsapp', 'sms'].map(c => (
                     <button
@@ -260,14 +260,14 @@ export default function InboxPage() {
                   onClick={() => setShowNewModal(false)}
                   className="px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-colors"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button 
                   onClick={handleCreateConversation}
                   disabled={!newConvData.contactId || !newConvData.canal}
                   className="px-4 py-2 bg-[var(--gold)] text-black font-bold rounded-lg hover:bg-[#ffdf4d] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  Crear Chat
+                  Create Chat
                 </button>
               </div>
             </div>
@@ -279,11 +279,11 @@ export default function InboxPage() {
       <div className="w-[320px] lg:w-1/3 max-w-[400px] bg-[var(--bg-secondary)] border-r border-[var(--border)] flex flex-col z-10">
         <div className="p-5 border-b border-[var(--border)]">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-[Oswald] uppercase tracking-wider text-white font-bold">Bandeja de Entrada</h2>
+            <h2 className="text-xl font-[Oswald] uppercase tracking-wider text-white font-bold">Inbox</h2>
             <button 
               onClick={openNewConversationModal}
               className="w-8 h-8 rounded-full bg-[var(--gold)] text-black flex items-center justify-center hover:bg-[#ffdf4d] hover:scale-105 transition-all shadow-lg"
-              title="Nueva Conversación"
+              title="New Conversation"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
             </button>
@@ -291,14 +291,14 @@ export default function InboxPage() {
           <div>
             <input 
               type="text" 
-              placeholder="Buscar cliente o número..." 
+              placeholder="Search client or number..." 
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full px-4 py-2.5 bg-[#0b0b0b] border border-[#242424] rounded-lg focus:border-[var(--gold)] focus:ring-1 focus:ring-[var(--gold)] text-sm text-[var(--text-primary)] placeholder-gray-500 transition-colors"
             />
           </div>
           <div className="flex gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">
-            {['Todos', 'No leídos', 'WhatsApp', 'SMS', 'Email'].map(f => (
+            {['All', 'Unread', 'WhatsApp', 'SMS', 'Email'].map(f => (
               <button 
                 key={f}
                 onClick={() => setFilter(f)}
@@ -318,7 +318,7 @@ export default function InboxPage() {
           {loading ? (
             <div className="p-8 text-center text-[var(--text-secondary)] flex flex-col items-center">
               <div className="w-8 h-8 border-2 border-[var(--border)] border-t-[var(--gold)] rounded-full animate-spin mb-4"></div>
-              Cargando mensajes...
+              Loading messages...
             </div>
           ) : (
             <ConversationList 
@@ -344,8 +344,8 @@ export default function InboxPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
               </svg>
             </div>
-            <p className="text-lg font-medium tracking-wide">Selecciona una conversación</p>
-            <p className="text-sm mt-2 opacity-70">Los mensajes se sincronizan automáticamente.</p>
+            <p className="text-lg font-medium tracking-wide">Select a conversation</p>
+            <p className="text-sm mt-2 opacity-70">Messages sync automatically.</p>
           </div>
         )}
       </div>

@@ -354,9 +354,17 @@ export default function LandingPage() {
                       placeholder="(502) 123-4567"
                     />
                     
-                    {/* TWILIO COMPLIANCE TEXT - MANDATORY */}
-                    <div className="bg-[#1a1a1a] border border-[#222] rounded-xl p-4 text-xs text-gray-400 leading-relaxed">
-                      By providing your phone number, you agree to receive text messages from Barba Construction regarding your estimate, project updates, and appointments. Message and data rates may apply. Message frequency varies. Reply STOP to opt-out or HELP for help. View our <Link to="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
+                    {/* TWILIO COMPLIANCE TEXT - MANDATORY CHECKBOX */}
+                    <div className="flex items-start gap-3 mt-2 bg-[#1a1a1a] p-4 rounded-xl border border-[#222]">
+                      <input 
+                        required
+                        type="checkbox" 
+                        id="smsOptIn"
+                        className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FACB00] focus:ring-[#FACB00] bg-[#111]"
+                      />
+                      <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-normal">
+                        I agree to receive SMS text messages from Barba Construction regarding my estimates, project updates, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. View our <Link to="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
+                      </label>
                     </div>
                   </div>
 

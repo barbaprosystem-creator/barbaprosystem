@@ -11,7 +11,7 @@ export default function CatalogAdminPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'Plomería',
+    category: 'Plumbing',
     description: '',
     price: 0,
     image_url: '',
@@ -19,13 +19,13 @@ export default function CatalogAdminPage() {
   });
 
   const categories = [
-    'Plomería',
-    'Gabinetes',
-    'Pisos',
-    'Techos',
+    'Plumbing',
+    'Cabinets',
+    'Flooring',
+    'Roofing',
     'Siding',
-    'Accesorios',
-    'Otros'
+    'Accessories',
+    'Others'
   ];
 
   useEffect(() => {
@@ -78,7 +78,7 @@ export default function CatalogAdminPage() {
       setFormData(prev => ({ ...prev, image_url: data.publicUrl }));
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      alert('Error uploading image');
     } finally {
       setUploading(false);
     }
@@ -122,12 +122,12 @@ export default function CatalogAdminPage() {
       fetchItems();
     } catch (error) {
       console.error('Error saving item:', error);
-      alert('Error al guardar el producto');
+      alert('Error saving product');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este producto del catálogo?')) return;
+    if (!window.confirm('Are you sure you want to delete this product from the catalog?')) return;
     try {
       const { error } = await supabase
         .from('catalog_items')
@@ -156,7 +156,7 @@ export default function CatalogAdminPage() {
       setEditingItem(null);
       setFormData({
         name: '',
-        category: 'Plomería',
+        category: 'Plumbing',
         description: '',
         price: 0,
         image_url: '',
@@ -169,15 +169,15 @@ export default function CatalogAdminPage() {
   const copyPublicLink = () => {
     const url = `${window.location.origin}/catalog`;
     navigator.clipboard.writeText(url);
-    alert('Enlace del catálogo copiado al portapapeles: ' + url);
+    alert('Catalog link copied to clipboard: ' + url);
   };
 
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-2">Catálogo Interactivo</h1>
-          <p className="text-gray-400">Administra los productos y acabados para enviar a los clientes</p>
+          <h1 className="text-2xl font-bold text-white mb-2">Interactive Catalog</h1>
+          <p className="text-gray-400">Manage products and finishes to send to clients</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -185,20 +185,20 @@ export default function CatalogAdminPage() {
             className="flex items-center gap-2 bg-[#2a2d3d] hover:bg-[#34384c] text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Share2 size={20} />
-            Copiar Enlace para Cliente
+            Copy Catalog Link for Client
           </button>
           <button
             onClick={() => openModal()}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
           >
             <Plus size={20} />
-            Nuevo Producto
+            New Product
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center py-10 text-gray-400">Cargando catálogo...</div>
+        <div className="text-center py-10 text-gray-400">Loading catalog...</div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {items.map((item) => (
@@ -209,7 +209,7 @@ export default function CatalogAdminPage() {
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center text-gray-500">
                     <ImageIcon size={40} className="mb-2" />
-                    <span>Sin imagen</span>
+                    <span>No image</span>
                   </div>
                 )}
                 <div className="absolute top-2 right-2 bg-black/60 px-2 py-1 rounded text-xs text-white backdrop-blur-sm">
@@ -232,7 +232,7 @@ export default function CatalogAdminPage() {
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
                     >
-                      <LinkIcon size={14} /> Enlace de compra (Amazon, etc)
+                      <LinkIcon size={14} /> Purchase link (Amazon, Home Depot, etc.)
                     </a>
                   )}
                   
@@ -241,7 +241,7 @@ export default function CatalogAdminPage() {
                       onClick={() => openModal(item)}
                       className="flex-1 bg-[#1e1f2e] hover:bg-[#34384c] text-white py-2 rounded transition-colors text-sm"
                     >
-                      Editar
+                      Edit
                     </button>
                     <button 
                       onClick={() => handleDelete(item.id)}
@@ -258,14 +258,14 @@ export default function CatalogAdminPage() {
           {items.length === 0 && (
             <div className="col-span-full bg-[#2a2d3d] rounded-xl p-10 text-center border border-dashed border-[#34384c]">
               <ImageIcon size={48} className="mx-auto text-gray-500 mb-4" />
-              <h3 className="text-xl text-white font-medium mb-2">Catálogo Vacío</h3>
-              <p className="text-gray-400 mb-6">No has agregado ningún producto al catálogo todavía.</p>
+              <h3 className="text-xl text-white font-medium mb-2">Empty Catalog</h3>
+              <p className="text-gray-400 mb-6">You haven't added any products to the catalog yet.</p>
               <button
                 onClick={() => openModal()}
                 className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors"
               >
                 <Plus size={20} />
-                Agregar mi primer producto
+                Add my first product
               </button>
             </div>
           )}
@@ -278,7 +278,7 @@ export default function CatalogAdminPage() {
           <div className="bg-[#1e1f2e] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-[#34384c]">
             <div className="p-6 border-b border-[#34384c] flex justify-between items-center sticky top-0 bg-[#1e1f2e] z-10">
               <h2 className="text-xl font-bold text-white">
-                {editingItem ? 'Editar Producto' : 'Nuevo Producto'}
+                {editingItem ? 'Edit Product' : 'New Product'}
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -291,7 +291,7 @@ export default function CatalogAdminPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Imagen */}
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Imagen del Producto</label>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Product Image</label>
                 <div className="flex items-center gap-4">
                   {formData.image_url ? (
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-[#34384c]">
@@ -304,7 +304,7 @@ export default function CatalogAdminPage() {
                   )}
                   <label className="cursor-pointer bg-[#2a2d3d] hover:bg-[#34384c] text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
                     <Upload size={18} />
-                    {uploading ? 'Subiendo...' : 'Subir Foto'}
+                    {uploading ? 'Uploading...' : 'Upload Photo'}
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -318,7 +318,7 @@ export default function CatalogAdminPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Nombre</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Name</label>
                   <input
                     type="text"
                     name="name"
@@ -326,12 +326,12 @@ export default function CatalogAdminPage() {
                     value={formData.name}
                     onChange={handleInputChange}
                     className="w-full bg-[#2a2d3d] border border-[#34384c] text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                    placeholder="Ej. Llave Moen Negra"
+                    placeholder="e.g. Matte Black Moen Faucet"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Categoría</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
                   <select
                     name="category"
                     required
@@ -345,20 +345,20 @@ export default function CatalogAdminPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Descripción corta</label>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Short description</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   rows="2"
                   className="w-full bg-[#2a2d3d] border border-[#34384c] text-white rounded-lg px-4 py-2 focus:outline-none focus:border-blue-500"
-                  placeholder="Detalles del material, tamaño, acabado..."
+                  placeholder="Details about materials, dimensions, finish..."
                 ></textarea>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Precio Unitario ($)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Unit Price ($)</label>
                   <input
                     type="number"
                     name="price"
@@ -372,7 +372,7 @@ export default function CatalogAdminPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-1">Enlace de Compra (Amazon, Home Depot)</label>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Purchase Link (Amazon, Home Depot)</label>
                   <input
                     type="url"
                     name="purchase_url"
@@ -390,14 +390,14 @@ export default function CatalogAdminPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="px-6 py-2 bg-transparent text-gray-300 hover:text-white transition-colors"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploading}
                   className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg transition-colors font-medium"
                 >
-                  {editingItem ? 'Guardar Cambios' : 'Crear Producto'}
+                  {editingItem ? 'Save Changes' : 'Create Product'}
                 </button>
               </div>
             </form>

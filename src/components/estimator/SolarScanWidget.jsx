@@ -60,14 +60,14 @@ export default function SolarScanWidget() {
 
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-      if (!apiKey) throw new Error('API Key no configurada en .env');
+      if (!apiKey) throw new Error('API Key not configured in .env');
 
       // 1. Geocoding
       const geoRes = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`);
       const geoData = await geoRes.json();
       
       if (geoData.status !== 'OK' || !geoData.results.length) {
-        throw new Error(geoData.error_message || `Error de Geocoding: ${geoData.status}. Revisa que la API 'Geocoding API' esté activa.`);
+        throw new Error(geoData.error_message || `Geocoding error: ${geoData.status}. Make sure the 'Geocoding API' is enabled.`);
       }
 
       const { lat, lng } = geoData.results[0].geometry.location;
@@ -76,17 +76,17 @@ export default function SolarScanWidget() {
       const solarRes = await fetch(`https://solar.googleapis.com/v1/buildingInsights:findClosest?location.latitude=${lat}&location.longitude=${lng}&requiredQuality=HIGH&key=${apiKey}`);
       
       if (solarRes.status === 404) {
-        throw new Error('No hay cobertura satelital de Google Solar para esta ubicación exacta.');
+        throw new Error('No Google Solar satellite coverage for this exact location.');
       }
       
       const solarData = await solarRes.json();
 
       if (solarData.error) {
-         throw new Error(solarData.error.message || 'No hay datos satelitales para esta ubicación');
+         throw new Error(solarData.error.message || 'No satellite data for this location');
       }
 
       if (!solarData.solarPotential) {
-         throw new Error('No se pudo identificar el techo en esta ubicación');
+         throw new Error('Could not identify the roof at this location');
       }
 
       const areaMeters = solarData.solarPotential.wholeRoofStats?.areaMeters2 || 0;
@@ -110,7 +110,7 @@ export default function SolarScanWidget() {
         areaSqFt,
         squares: squares.replace('.0', ''),
         pitch: pitchStr,
-        confidence: 'Alta',
+        confidence: 'High',
         mapImageUrl
       };
       
@@ -119,7 +119,7 @@ export default function SolarScanWidget() {
       
     } catch (err) {
       console.error(err);
-      setError(err.message || 'Error al conectar con el satélite');
+      setError(err.message || 'Error connecting to satellite');
     } finally {
       setScanning(false);
     }
@@ -137,7 +137,7 @@ export default function SolarScanWidget() {
           </div>
           <div>
             <h3 className="text-lg font-bold text-[#f0f0f0] m-0">Google Solar Scan</h3>
-            <p className="text-xs text-[#888888] m-0">Estima medidas de techo via satélite</p>
+            <p className="text-xs text-[#888888] m-0">Estimate roof dimensions via satellite</p>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ export default function SolarScanWidget() {
             <input 
               ref={inputRef}
               type="text" 
-              placeholder="Ej: 123 Main St, Louisville, KY" 
+              placeholder="e.g. 123 Main St, Louisville, KY" 
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleScan()}
@@ -161,11 +161,11 @@ export default function SolarScanWidget() {
           >
             {scanning ? (
               <span className="flex items-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> Escaneando...
+                <Loader2 size={16} className="animate-spin" /> Scanning...
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <Search size={16} /> Buscar
+                <Search size={16} /> Search
               </span>
             )}
           </button>
@@ -182,14 +182,14 @@ export default function SolarScanWidget() {
                 <Satellite size={28} className="text-amber-400 animate-pulse" />
               </div>
             </div>
-            <p className="text-sm font-semibold text-amber-400 animate-pulse">Obteniendo geometría del techo...</p>
+            <p className="text-sm font-semibold text-amber-400 animate-pulse">Getting roof geometry...</p>
           </div>
         )}
 
         {error && !scanning && (
           <div className="mt-6 border-t border-[#2a2a2a]/40 pt-5">
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-center">
-              <p className="text-red-400 font-bold text-sm mb-1">Error de Satélite</p>
+              <p className="text-red-400 font-bold text-sm mb-1">Satellite Error</p>
               <p className="text-[#888888] text-xs">{error}</p>
             </div>
           </div>
@@ -200,12 +200,12 @@ export default function SolarScanWidget() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="flex items-center gap-2 text-sm font-bold text-emerald-400 mb-1">
-                  <CheckCircle2 size={16} /> Análisis Satelital Completo
+                  <CheckCircle2 size={16} /> Satellite Analysis Complete
                 </p>
-                <p className="text-xs text-[#888888]">Los "Squares" se han auto-rellenado en el cotizador.</p>
+                <p className="text-xs text-[#888888]">Squares have been auto-filled in the estimator.</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-[#888888] uppercase tracking-wider mb-1">Confianza (IA)</p>
+                <p className="text-xs text-[#888888] uppercase tracking-wider mb-1">Confidence (AI)</p>
                 <p className="text-sm font-bold text-[#f0f0f0]">{result.confidence}</p>
               </div>
             </div>
@@ -214,7 +214,7 @@ export default function SolarScanWidget() {
               {/* Left Column: Stats */}
               <div className="grid grid-cols-1 gap-4">
                 <div className="bg-[#0d0d0d] p-4 rounded-xl border border-[#2a2a2a] flex justify-between items-center">
-                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Área Total</p>
+                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Total Area</p>
                   <p className="text-lg font-bold text-[#f0f0f0]">{result.areaSqFt} <span className="text-xs text-[#888]">sq ft</span></p>
                 </div>
                 <div className="bg-amber-500/10 p-4 rounded-xl border border-amber-500/30 flex justify-between items-center">
@@ -222,7 +222,7 @@ export default function SolarScanWidget() {
                   <p className="text-2xl font-black text-amber-400">{result.squares}</p>
                 </div>
                 <div className="bg-[#0d0d0d] p-4 rounded-xl border border-[#2a2a2a] flex justify-between items-center">
-                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Inclinación (Pitch)</p>
+                  <p className="text-xs text-[#555] uppercase tracking-wider mb-1">Pitch</p>
                   <p className="text-lg font-bold text-[#f0f0f0]">{result.pitch}</p>
                 </div>
               </div>
@@ -232,14 +232,14 @@ export default function SolarScanWidget() {
                 {result.mapImageUrl && (
                   <img 
                     src={result.mapImageUrl} 
-                    alt="Vista Satelital del Techo" 
+                    alt="Satellite Roof View" 
                     className="absolute inset-0 w-full h-full object-cover"
                   />
                 )}
                 <div className="absolute inset-0 ring-1 ring-inset ring-white/10 rounded-xl pointer-events-none" />
                 <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md">
                   <p className="text-[10px] text-white/70 font-mono flex items-center gap-1">
-                    <Satellite size={10} /> SATÉLITE
+                    <Satellite size={10} /> SATELLITE
                   </p>
                 </div>
               </div>

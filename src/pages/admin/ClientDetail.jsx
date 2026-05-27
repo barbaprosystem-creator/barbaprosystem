@@ -80,7 +80,7 @@ export default function ClientDetail({ clientId, onBack }) {
     return (
       <div className="flex flex-col items-center justify-center h-[60vh] text-[#888888]">
         <Loader2 size={40} className="animate-spin mb-4" />
-        <p>Cargando expediente del cliente...</p>
+        <p>Loading client file...</p>
       </div>
     );
   }
@@ -88,8 +88,8 @@ export default function ClientDetail({ clientId, onBack }) {
   if (!client) {
     return (
       <div className="p-6">
-        <button onClick={onBack} className="btn-secondary mb-4"><ArrowLeft size={16}/> Volver</button>
-        <p>No se encontró el cliente.</p>
+        <button onClick={onBack} className="btn-secondary mb-4"><ArrowLeft size={16}/> Back</button>
+        <p>Client not found.</p>
       </div>
     );
   }
@@ -102,7 +102,7 @@ export default function ClientDetail({ clientId, onBack }) {
           onClick={onBack} 
           className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium mb-4 transition-colors"
         >
-          <ArrowLeft size={16} /> Volver a Clientes
+          <ArrowLeft size={16} /> Back to Clients
         </button>
         
         <div className="flex justify-between items-end">
@@ -126,7 +126,7 @@ export default function ClientDetail({ clientId, onBack }) {
               {client.pipeline_status?.replace('_', ' ')}
             </span>
             <p className="text-xs text-[#666666] mt-2">
-              Cliente desde {formatDate(client.created_at)}
+              Client since {formatDate(client.created_at)}
             </p>
           </div>
         </div>
@@ -138,31 +138,31 @@ export default function ClientDetail({ clientId, onBack }) {
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'info' ? 'border-blue-500 text-blue-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('info')}
         >
-          <User size={16}/> Resumen
+          <User size={16}/> Summary
         </button>
         <button 
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'projects' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('projects')}
         >
-          <FolderKanban size={16}/> Proyectos ({projects.length})
+          <FolderKanban size={16}/> Projects ({projects.length})
         </button>
         <button 
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'estimates' ? 'border-purple-500 text-purple-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('estimates')}
         >
-          <FileText size={16}/> Estimados ({estimates.length})
+          <FileText size={16}/> Estimates ({estimates.length})
         </button>
         <button 
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'payments' ? 'border-amber-500 text-amber-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('payments')}
         >
-          <DollarSign size={16}/> Pagos ({payments.length})
+          <DollarSign size={16}/> Payments ({payments.length})
         </button>
         <button 
           className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'catalog' ? 'border-pink-500 text-pink-400' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('catalog')}
         >
-          <ShoppingCart size={16}/> Catálogo ({selections.length})
+          <ShoppingCart size={16}/> Catalog ({selections.length})
         </button>
       </div>
 
@@ -173,41 +173,41 @@ export default function ClientDetail({ clientId, onBack }) {
         {activeTab === 'info' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-[#1e1f2e] p-6 rounded-2xl border border-[#34384c]">
-              <h3 className="text-lg font-bold text-white mb-4 border-b border-[#34384c] pb-2">Información de Contacto</h3>
+              <h3 className="text-lg font-bold text-white mb-4 border-b border-[#34384c] pb-2">Contact Information</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Dirección Principal</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Main Address</label>
                   <p className="text-white mt-1 flex items-start gap-2">
                     <MapPin size={16} className="text-gray-400 mt-0.5" />
-                    {client.address ? `${client.address}, ${client.city || ''} ${client.state || ''} ${client.zip || ''}` : 'No registrada'}
+                    {client.address ? `${client.address}, ${client.city || ''} ${client.state || ''} ${client.zip || ''}` : 'Not registered'}
                   </p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Teléfono</label>
-                  <p className="text-white mt-1">{client.phone || 'No registrado'}</p>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
+                  <p className="text-white mt-1">{client.phone || 'Not registered'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Correo Electrónico</label>
-                  <p className="text-white mt-1">{client.email || 'No registrado'}</p>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email Address</label>
+                  <p className="text-white mt-1">{client.email || 'Not registered'}</p>
                 </div>
               </div>
             </div>
 
             <div className="bg-[#1e1f2e] p-6 rounded-2xl border border-[#34384c]">
-              <h3 className="text-lg font-bold text-white mb-4 border-b border-[#34384c] pb-2">Detalles Adicionales</h3>
+              <h3 className="text-lg font-bold text-white mb-4 border-b border-[#34384c] pb-2">Additional Details</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Fuente (Origen)</label>
-                  <p className="text-white mt-1 capitalize">{client.source || 'Desconocido'}</p>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Source (Origin)</label>
+                  <p className="text-white mt-1 capitalize">{client.source || 'Unknown'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nivel de Interés</label>
-                  <p className="text-white mt-1 capitalize">{client.lead_quality || 'No definido'}</p>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Interest Level</label>
+                  <p className="text-white mt-1 capitalize">{client.lead_quality || 'Not defined'}</p>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Notas del Cliente</label>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Client Notes</label>
                   <p className="text-gray-300 mt-1 text-sm bg-[#12131c] p-3 rounded-xl border border-[#2a2d3d] min-h-[80px]">
-                    {client.notes || 'Sin notas.'}
+                    {client.notes || 'No notes.'}
                   </p>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export default function ClientDetail({ clientId, onBack }) {
         {activeTab === 'projects' && (
           <div className="space-y-4">
             {projects.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay proyectos asociados a este cliente.</p>
+              <p className="text-gray-500 text-center py-8">No projects associated with this client.</p>
             ) : (
               projects.map(p => (
                 <div key={p.id} className="bg-[#1e1f2e] p-5 rounded-2xl border border-[#34384c] flex justify-between items-center">
@@ -227,7 +227,7 @@ export default function ClientDetail({ clientId, onBack }) {
                     <h4 className="font-bold text-lg text-white mb-1">{p.title}</h4>
                     <p className="text-sm text-gray-400 flex items-center gap-4">
                       <span>PRJ-{String(p.project_number).padStart(4,'0')}</span>
-                      <span className="flex items-center gap-1"><Calendar size={14}/> Inicio: {p.start_date ? formatDate(p.start_date) : 'TBD'}</span>
+                      <span className="flex items-center gap-1"><Calendar size={14}/> Start: {p.start_date ? formatDate(p.start_date) : 'TBD'}</span>
                     </p>
                   </div>
                   <div className="text-right">
@@ -246,14 +246,14 @@ export default function ClientDetail({ clientId, onBack }) {
         {activeTab === 'estimates' && (
           <div className="space-y-4">
             {estimates.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay estimados creados para este cliente.</p>
+              <p className="text-gray-500 text-center py-8">No estimates created for this client.</p>
             ) : (
               estimates.map(e => (
                 <div key={e.id} className="bg-[#1e1f2e] p-5 rounded-2xl border border-[#34384c] flex justify-between items-center">
                   <div>
-                    <h4 className="font-bold text-lg text-white mb-1">Estimado EST-{String(e.estimate_number).padStart(4,'0')}</h4>
+                    <h4 className="font-bold text-lg text-white mb-1">Estimate EST-{String(e.estimate_number).padStart(4,'0')}</h4>
                     <p className="text-sm text-gray-400 flex items-center gap-4">
-                      <span>Tipo: {e.work_type || 'General'}</span>
+                      <span>Type: {e.work_type || 'General'}</span>
                       <span className="flex items-center gap-1"><Calendar size={14}/> {formatDate(e.created_at)}</span>
                     </p>
                   </div>
@@ -273,13 +273,13 @@ export default function ClientDetail({ clientId, onBack }) {
         {activeTab === 'payments' && (
           <div className="space-y-4">
             {payments.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay pagos registrados.</p>
+              <p className="text-gray-500 text-center py-8">No payments recorded.</p>
             ) : (
               payments.map(pay => (
                 <div key={pay.id} className="bg-[#1e1f2e] p-5 rounded-2xl border border-[#34384c] flex justify-between items-center">
                   <div>
                     <h4 className="font-bold text-white mb-1 flex items-center gap-2">
-                      Pago de {formatCurrency(pay.amount)}
+                      Payment of {formatCurrency(pay.amount)}
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border bg-[#12131c] text-gray-400 border-[#34384c]">{pay.payment_type}</span>
                     </h4>
                     <p className="text-sm text-gray-400">{pay.project?.title}</p>
@@ -288,7 +288,7 @@ export default function ClientDetail({ clientId, onBack }) {
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-2 border ${pay.status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : pay.status === 'overdue' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
                       {pay.status}
                     </span>
-                    <p className="text-xs text-gray-500">Vence: {pay.due_date ? formatDate(pay.due_date) : 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Due: {pay.due_date ? formatDate(pay.due_date) : 'N/A'}</p>
                   </div>
                 </div>
               ))
@@ -300,7 +300,7 @@ export default function ClientDetail({ clientId, onBack }) {
         {activeTab === 'catalog' && (
           <div className="space-y-6">
             {selections.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">El cliente no ha realizado selecciones en el catálogo.</p>
+              <p className="text-gray-500 text-center py-8">The client has not made any catalog selections.</p>
             ) : (
               selections.map(sel => (
                 <div key={sel.id} className="bg-[#1e1f2e] p-6 rounded-2xl border border-[#34384c]">
@@ -308,7 +308,7 @@ export default function ClientDetail({ clientId, onBack }) {
                     <div>
                       <h4 className="font-bold text-white flex items-center gap-2">
                         <ShoppingCart size={18} className="text-pink-400"/>
-                        Selección del {formatDate(sel.created_at)}
+                        Selection from {formatDate(sel.created_at)}
                       </h4>
                       {sel.notes && <p className="text-sm text-gray-400 mt-1">{sel.notes}</p>}
                     </div>

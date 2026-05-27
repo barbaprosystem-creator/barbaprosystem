@@ -28,7 +28,7 @@ export default function ProjectDocumentsTab({ projectId }) {
     if (!error) {
       setDocuments(data || []);
     } else {
-      console.warn('Posiblemente no exista la tabla project_documents', error);
+      console.warn('The project_documents table might not exist', error);
     }
     setLoading(false);
   }
@@ -66,7 +66,7 @@ export default function ProjectDocumentsTab({ projectId }) {
       fetchDocuments();
     } catch (err) {
       console.error(err);
-      alert('Error subiendo documento. Asegúrate de tener el storage "project-documents" y la tabla creados.');
+      alert('Error uploading document. Make sure the "project-documents" storage and table exist.');
     } finally {
       setUploading(false);
       e.target.value = null;
@@ -74,7 +74,7 @@ export default function ProjectDocumentsTab({ projectId }) {
   };
 
   const deleteDocument = async (id, path) => {
-    if (!confirm('¿Seguro que deseas eliminar este documento?')) return;
+    if (!confirm('Are you sure you want to delete this document?')) return;
     
     await supabase.storage.from('project-documents').remove([path]);
     await supabase.from('project_documents').delete().eq('id', id);
@@ -84,7 +84,7 @@ export default function ProjectDocumentsTab({ projectId }) {
   const downloadDocument = async (path, name) => {
     const { data, error } = await supabase.storage.from('project-documents').download(path);
     if (error) {
-      alert('Error descargando documento');
+      alert('Error downloading document');
       return;
     }
     const url = window.URL.createObjectURL(data);
@@ -103,9 +103,9 @@ export default function ProjectDocumentsTab({ projectId }) {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
-            <FileText className="text-[#FACB00]" /> Documentos del Proyecto
+            <FileText className="text-[#FACB00]" /> Project Documents
           </h3>
-          <p className="text-sm text-gray-400">Planos, permisos, inspecciones y contratos.</p>
+          <p className="text-sm text-gray-400">Blueprints, permits, inspections, and contracts.</p>
         </div>
         <input type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         <button 
@@ -114,15 +114,15 @@ export default function ProjectDocumentsTab({ projectId }) {
           className="bg-[#111] hover:bg-[#222] border border-[#333] text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 transition-colors"
         >
           {uploading ? <Loader2 size={18} className="animate-spin" /> : <Upload size={18} />}
-          {uploading ? 'Subiendo...' : 'Subir Documento'}
+          {uploading ? 'Uploading...' : 'Upload Document'}
         </button>
       </div>
 
       {documents.length === 0 ? (
         <div className="bg-[#111] border border-dashed border-[#333] rounded-xl p-12 text-center flex flex-col items-center">
           <File size={40} className="text-gray-600 mb-3" />
-          <p className="text-gray-400 font-medium">No hay documentos guardados</p>
-          <p className="text-sm text-gray-500 mt-1">Sube archivos PDF, Word o Excel aquí.</p>
+          <p className="text-gray-400 font-medium">No documents saved</p>
+          <p className="text-sm text-gray-500 mt-1">Upload PDF, Word, or Excel files here.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -141,14 +141,14 @@ export default function ProjectDocumentsTab({ projectId }) {
                 <button 
                   onClick={() => downloadDocument(doc.storage_path, doc.name)}
                   className="p-1.5 text-gray-400 hover:text-[#FACB00] transition-colors"
-                  title="Descargar"
+                  title="Download"
                 >
                   <Download size={18} />
                 </button>
                 <button 
                   onClick={() => deleteDocument(doc.id, doc.storage_path)}
                   className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Eliminar"
+                  title="Delete"
                 >
                   <Trash2 size={18} />
                 </button>

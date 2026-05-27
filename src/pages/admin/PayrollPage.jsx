@@ -14,9 +14,9 @@ import PinLock from '../../components/PinLock';
 // ---------------------------------------------------------------------------
 // Constants & Helpers
 // ---------------------------------------------------------------------------
-const DAY_LABELS = ['SAB', 'DOM', 'LUN', 'MAR', 'MIE', 'JUE', 'VIE'];
-const MONTH_NAMES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const PRESET_GROUPS = ['OFICINA', 'GRUPO REGULAR', 'FENCE', 'FRAMEROS', 'SAIREROS', 'PINTORES'];
+const DAY_LABELS = ['SAT', 'SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI'];
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const PRESET_GROUPS = ['OFFICE', 'REGULAR CREW', 'FENCE', 'FRAMERS', 'SIDERERS', 'PAINTERS'];
 
 const ACCENT = '#FACB00';
 const GREEN  = '#10b981';
@@ -187,7 +187,7 @@ function Modal({ title, onClose, children, width = 480 }) {
         borderRadius: 16, padding: 28, width: '100%', maxWidth: width,
         maxHeight: '90vh', overflowY: 'auto',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ display: 'flex', justifySpace: 'between', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#fff' }}>{title}</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', color: TEXT_MUTED, cursor: 'pointer', fontSize: 20, padding: '0 4px' }}>✕</button>
         </div>
@@ -240,12 +240,12 @@ function Select({ label, value, onChange, children, style = {} }) {
 // Group badge
 function GroupBadge({ name }) {
   const colors = {
-    'OFICINA': '#6366f1',
-    'GRUPO REGULAR': '#f59e0b',
+    'OFFICE': '#6366f1',
+    'REGULAR CREW': '#f59e0b',
     'FENCE': '#3b82f6',
-    'FRAMEROS': '#8b5cf6',
-    'SAIREROS': '#ec4899',
-    'PINTORES': '#14b8a6',
+    'FRAMERS': '#8b5cf6',
+    'SIDERERS': '#ec4899',
+    'PAINTERS': '#14b8a6',
   };
   const bg = colors[name] || '#555';
   return (
@@ -284,7 +284,7 @@ function Btn({ onClick, children, variant = 'primary', small, disabled, style: s
 function WorkerModal({ worker, groups, onSave, onClose }) {
   const [form, setForm] = useState({
     name: worker?.name || '',
-    group_name: worker?.group_name || 'GRUPO REGULAR',
+    group_name: worker?.group_name || 'REGULAR CREW',
     payment_type: worker?.payment_type || 'daily',
     daily_rate: worker?.daily_rate || '',
     daily_rate_2: worker?.daily_rate_2 || '',
@@ -326,44 +326,44 @@ function WorkerModal({ worker, groups, onSave, onClose }) {
   }
 
   return (
-    <Modal title={worker?.id ? 'Editar Trabajador' : 'Agregar Trabajador'} onClose={onClose}>
-      <Input label="Nombre completo" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej. Juan García" />
+    <Modal title={worker?.id ? 'Edit Worker' : 'Add Worker'} onClose={onClose}>
+      <Input label="Full name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. John Smith" />
 
       {!useNewGroup ? (
-        <Select label="Grupo" value={form.group_name} onChange={e => setForm(f => ({ ...f, group_name: e.target.value }))}>
+        <Select label="Group" value={form.group_name} onChange={e => setForm(f => ({ ...f, group_name: e.target.value }))}>
           {allGroups.map(g => <option key={g} value={g}>{g}</option>)}
         </Select>
       ) : (
-        <Input label="Nuevo grupo" value={form.newGroup} onChange={e => setForm(f => ({ ...f, newGroup: e.target.value }))} placeholder="Nombre del grupo" />
+        <Input label="New group" value={form.newGroup} onChange={e => setForm(f => ({ ...f, newGroup: e.target.value }))} placeholder="Group name" />
       )}
       <button onClick={() => setUseNewGroup(v => !v)} style={{ background: 'none', border: 'none', color: ACCENT, cursor: 'pointer', fontSize: 12, marginTop: -8, marginBottom: 10, padding: 0 }}>
-        {useNewGroup ? '← Usar grupo existente' : '+ Crear nuevo grupo'}
+        {useNewGroup ? '← Use existing group' : '+ Create new group'}
       </button>
 
-      <Select label="Tipo de Pago" value={form.payment_type} onChange={e => setForm(f => ({ ...f, payment_type: e.target.value }))}>
-        <option value="daily">Pago Diario</option>
-        <option value="hourly">Pago por Horas</option>
+      <Select label="Payment Type" value={form.payment_type} onChange={e => setForm(f => ({ ...f, payment_type: e.target.value }))}>
+        <option value="daily">Daily Payment</option>
+        <option value="hourly">Hourly Payment</option>
       </Select>
 
       {form.payment_type === 'daily' ? (
         <>
-          <Input label="Pago diario ($)" type="number" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} placeholder="0.00" />
-          <Input label="Pago diario 2 (opcional)" type="number" value={form.daily_rate_2} onChange={e => setForm(f => ({ ...f, daily_rate_2: e.target.value }))} placeholder="0.00" />
+          <Input label="Daily payment ($)" type="number" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} placeholder="0.00" />
+          <Input label="Daily payment 2 (optional)" type="number" value={form.daily_rate_2} onChange={e => setForm(f => ({ ...f, daily_rate_2: e.target.value }))} placeholder="0.00" />
         </>
       ) : (
-        <Input label="Pago por hora ($)" type="number" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} placeholder="0.00" />
+        <Input label="Hourly payment ($)" type="number" value={form.hourly_rate} onChange={e => setForm(f => ({ ...f, hourly_rate: e.target.value }))} placeholder="0.00" />
       )}
-      <Input label="Notas" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Observaciones..." />
+      <Input label="Notes" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Observations..." />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
         <input type="checkbox" id="wk-active" checked={form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} />
-        <label htmlFor="wk-active" style={{ color: '#ccc', fontSize: 13, cursor: 'pointer' }}>Activo</label>
+        <label htmlFor="wk-active" style={{ color: '#ccc', fontSize: 13, cursor: 'pointer' }}>Active</label>
       </div>
 
       <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-        <Btn variant="ghost" onClick={onClose}>Cancelar</Btn>
+        <Btn variant="ghost" onClick={onClose}>Cancel</Btn>
         <Btn onClick={handleSave} disabled={saving || !form.name.trim() || (form.payment_type === 'daily' && !form.daily_rate) || (form.payment_type === 'hourly' && !form.hourly_rate)}>
-          {saving ? 'Guardando…' : (worker?.id ? 'Actualizar' : 'Agregar')}
+          {saving ? 'Saving...' : (worker?.id ? 'Update' : 'Add')}
         </Btn>
       </div>
     </Modal>
@@ -403,7 +403,7 @@ function AdjustmentRow({ workerId, weekStart, adjustments, onChange }) {
         <input
           type="number"
           defaultValue={bonus?.amount || ''}
-          onBlur={e => upsertAdj('bonus', e.target.value, 'Bono')}
+          onBlur={e => upsertAdj('bonus', e.target.value, 'Bonus')}
           placeholder="0"
           style={fieldStyle}
         />
@@ -413,7 +413,7 @@ function AdjustmentRow({ workerId, weekStart, adjustments, onChange }) {
         <input
           type="number"
           defaultValue={discount?.amount || ''}
-          onBlur={e => upsertAdj('discount', e.target.value, 'Descuento')}
+          onBlur={e => upsertAdj('discount', e.target.value, 'Discount')}
           placeholder="0"
           style={fieldStyle}
         />
@@ -423,7 +423,7 @@ function AdjustmentRow({ workerId, weekStart, adjustments, onChange }) {
         <input
           type="number"
           defaultValue={reimb?.amount || ''}
-          onBlur={e => upsertAdj('reimbursement', e.target.value, 'Reembolso')}
+          onBlur={e => upsertAdj('reimbursement', e.target.value, 'Reimbursement')}
           placeholder="0"
           style={fieldStyle}
         />
@@ -433,9 +433,8 @@ function AdjustmentRow({ workerId, weekStart, adjustments, onChange }) {
 }
 
 // ---------------------------------------------------------------------------
-// Worker Row in Semana Tab
-// ---------------------------------------------------------------------------
 // Hourly Attendance Input Sub-component
+// ---------------------------------------------------------------------------
 function HourlyAttendanceInput({ label, date, workerId, attendanceRecord, onSaveHours, saving }) {
   const [val, setVal] = useState(
     attendanceRecord?.hours !== null && attendanceRecord?.hours !== undefined 
@@ -473,7 +472,7 @@ function HourlyAttendanceInput({ label, date, workerId, attendanceRecord, onSave
         onBlur={handleBlur}
         disabled={saving}
         placeholder={label}
-        title={`${label} - Ingrese horas`}
+        title={`${label} - Enter hours`}
         style={{
           width: 40,
           height: 40,
@@ -534,7 +533,7 @@ function WorkerRow({ worker, weekDates, attendance, adjustments, onAttendanceTog
           <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{worker.name}</span>
           <GroupBadge name={worker.group_name} />
           <span style={{ fontSize: 11, color: TEXT_MUTED }}>
-            {isHourly ? `${formatCurrency(worker.hourly_rate)}/hora` : `${formatCurrency(worker.daily_rate)}/día`}
+            {isHourly ? `${formatCurrency(worker.hourly_rate)}/hour` : `${formatCurrency(worker.daily_rate)}/day`}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -601,8 +600,8 @@ function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceTo
     return (
       <div style={{ textAlign: 'center', padding: 60, color: TEXT_MUTED }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>👷</div>
-        <div style={{ fontSize: 15 }}>No hay trabajadores activos.</div>
-        <div style={{ fontSize: 13, marginTop: 6 }}>Ve a la pestaña "Trabajadores" para agregar.</div>
+        <div style={{ fontSize: 15 }}>No active workers.</div>
+        <div style={{ fontSize: 13, marginTop: 6 }}>Go to the "Workers" tab to add them.</div>
       </div>
     );
   }
@@ -613,7 +612,7 @@ function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceTo
         <div key={group} style={{ marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
             <GroupBadge name={group} />
-            <span style={{ color: TEXT_MUTED, fontSize: 12 }}>{grouped[group].length} trabajador(es)</span>
+            <span style={{ color: TEXT_MUTED, fontSize: 12 }}>{grouped[group].length} worker(s)</span>
             <div style={{ flex: 1, height: 1, background: BORDER }} />
           </div>
           {grouped[group].map(worker => (
@@ -622,7 +621,7 @@ function SemanaTab({ workers, weekDates, attendance, adjustments, onAttendanceTo
               worker={worker}
               weekDates={weekDates}
               attendance={attendance}
-              adjustments={adjustments.filter(a => a.worker_id === worker.id)}
+              adjustments={adjustments}
               onAttendanceToggle={onAttendanceToggle}
               onAttendanceHoursSave={onAttendanceHoursSave}
               onAdjustmentChange={onAdjustmentChange}
@@ -694,17 +693,17 @@ function MesTab({ workers }) {
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <label style={{ color: TEXT_MUTED, fontSize: 13 }}>Mes:</label>
+        <label style={{ color: TEXT_MUTED, fontSize: 13 }}>Month:</label>
         <input type="month" value={month} onChange={e => setMonth(e.target.value)}
           style={{ background: '#111', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '7px 12px', color: '#fff', fontSize: 13, outline: 'none' }} />
-        {loading && <span style={{ color: TEXT_MUTED, fontSize: 12 }}>Cargando…</span>}
+        {loading && <span style={{ color: TEXT_MUTED, fontSize: 12 }}>Loading...</span>}
       </div>
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {['Trabajador', 'Grupo', 'Días / Horas', 'Subtotal', 'Bonos', 'Desc.', 'Reimb.', 'Total'].map(h => (
+              {['Worker', 'Group', 'Days / Hours', 'Subtotal', 'Bonuses', 'Disc.', 'Reimb.', 'Total'].map(h => (
                 <th key={h} style={{ padding: '8px 12px', color: TEXT_MUTED, textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -714,7 +713,7 @@ function MesTab({ workers }) {
               <tr key={r.id} style={{ borderBottom: `1px solid ${BORDER}11`, background: i % 2 === 0 ? '#ffffff04' : 'transparent' }}>
                 <td style={{ padding: '10px 12px', color: '#fff', fontWeight: 600 }}>{r.name}</td>
                 <td style={{ padding: '10px 12px' }}><GroupBadge name={r.group_name} /></td>
-                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.isHourly ? `${r.qty} hrs` : `${r.qty} d`}</td>
+                <td style={{ padding: '10px 12px', color: TEXT_MUTED }}>{r.isHourly ? `${r.qty} hrs` : `${r.qty} days`}</td>
                 <td style={{ padding: '10px 12px', color: '#ccc' }}>{formatCurrency(r.subtotal)}</td>
                 <td style={{ padding: '10px 12px', color: GREEN }}>{r.bonus > 0 ? `+${formatCurrency(r.bonus)}` : '—'}</td>
                 <td style={{ padding: '10px 12px', color: '#ef4444' }}>{r.disc > 0 ? `-${formatCurrency(r.disc)}` : '—'}</td>
@@ -732,8 +731,8 @@ function MesTab({ workers }) {
             </tr>
           </tfoot>
         </table>
-        {!loading && rows.every(r => r.days === 0) && (
-          <div style={{ textAlign: 'center', padding: 30, color: TEXT_MUTED }}>No hay asistencia registrada para este mes.</div>
+        {!loading && rows.every(r => r.qty === 0) && (
+          <div style={{ textAlign: 'center', padding: 30, color: TEXT_MUTED }}>No attendance registered for this month.</div>
         )}
       </div>
     </div>
@@ -824,14 +823,14 @@ function AnoTab({ workers }) {
         <Btn small variant="ghost" onClick={() => setYear(y => y - 1)}>◀</Btn>
         <span style={{ color: '#fff', fontWeight: 700, fontSize: 16, minWidth: 50, textAlign: 'center' }}>{year}</span>
         <Btn small variant="ghost" onClick={() => setYear(y => y + 1)}>▶</Btn>
-        {loading && <span style={{ color: TEXT_MUTED, fontSize: 12 }}>Cargando…</span>}
+        {loading && <span style={{ color: TEXT_MUTED, fontSize: 12 }}>Loading...</span>}
         <div style={{ flex: 1 }} />
-        <span style={{ color: ACCENT, fontWeight: 700, fontSize: 16 }}>Total año: {formatCurrency(grandTotal)}</span>
+        <span style={{ color: ACCENT, fontWeight: 700, fontSize: 16 }}>Annual total: {formatCurrency(grandTotal)}</span>
       </div>
 
       {/* Bar Chart */}
       <div style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 20, marginBottom: 24 }}>
-        <div style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Nómina Mensual {year}</div>
+        <div style={{ color: TEXT_MUTED, fontSize: 12, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 }}>Monthly Payroll {year}</div>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={monthlyData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#222" />
@@ -840,7 +839,7 @@ function AnoTab({ workers }) {
             <Tooltip
               contentStyle={{ background: '#141414', border: `1px solid ${BORDER}`, borderRadius: 8 }}
               labelStyle={{ color: '#fff', fontWeight: 700 }}
-              formatter={v => [formatCurrency(v), 'Nómina']}
+              formatter={v => [formatCurrency(v), 'Payroll']}
             />
             <Bar dataKey="total" radius={[6, 6, 0, 0]}>
               {monthlyData.map((_, i) => (
@@ -856,7 +855,7 @@ function AnoTab({ workers }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: `1px solid ${BORDER}` }}>
-              {['Trabajador', 'Grupo', 'Asistencia/Horas', 'Total Pagado', 'Sem. Aprox.', 'Prom./Semana'].map(h => (
+              {['Worker', 'Group', 'Attendance/Hours', 'Total Paid', 'Approx. Wks', 'Avg/Week'].map(h => (
                 <th key={h} style={{ padding: '8px 12px', color: TEXT_MUTED, textAlign: 'left', fontWeight: 600, whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
@@ -874,8 +873,8 @@ function AnoTab({ workers }) {
             ))}
           </tbody>
         </table>
-        {!loading && workerData.every(r => r.days === 0) && (
-          <div style={{ textAlign: 'center', padding: 30, color: TEXT_MUTED }}>No hay datos para {year}.</div>
+        {!loading && workerData.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 30, color: TEXT_MUTED }}>No data for {year}.</div>
         )}
       </div>
     </div>
@@ -899,7 +898,7 @@ function TrabajadoresTab({ workers, onRefresh }) {
   );
 
   async function handleDelete(worker) {
-    if (!window.confirm(`¿Eliminar a ${worker.name}? Esta acción no se puede deshacer.`)) return;
+    if (!window.confirm(`Delete ${worker.name}? This action cannot be undone.`)) return;
     setDeleting(worker.id);
     await supabase.from('payroll_workers').delete().eq('id', worker.id);
     setDeleting(null);
@@ -918,46 +917,46 @@ function TrabajadoresTab({ workers, onRefresh }) {
         <input
           value={filter}
           onChange={e => setFilter(e.target.value)}
-          placeholder="Buscar trabajador..."
+          placeholder="Search worker..."
           style={{ flex: 1, minWidth: 160, background: '#111', border: `1px solid ${BORDER}`, borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none' }}
         />
-        <Btn onClick={() => { setEditWorker(null); setShowModal(true); }}>+ Agregar Trabajador</Btn>
+        <Btn onClick={() => { setEditWorker(null); setShowModal(true); }}>+ Add Worker</Btn>
       </div>
 
       <div style={{ display: 'grid', gap: 10 }}>
         {filtered.map(w => (
           <div key={w.id} style={{ background: BG_CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <div style={{ width: 38, height: 38, borderRadius: '50%', background: w.active ? GREEN + '22' : '#ffffff11', border: `1px solid ${w.active ? GREEN + '44' : '#333'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: w.active ? GREEN : TEXT_MUTED, fontWeight: 700 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: w.active ? GREEN + '22' : '#ffffff11', border: `1px solid ${w.active ? GREEN + '44' : '#333'}`, display: 'flex', alignItems: 'center', justify: 'center', justifyContent: 'center', fontSize: 14, color: w.active ? GREEN : TEXT_MUTED, fontWeight: 700 }}>
                 {w.name.charAt(0).toUpperCase()}
               </div>
               <div>
                 <div style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{w.name}</div>
                 <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 2 }}>
                   {w.payment_type === 'hourly' ? (
-                    `${formatCurrency(w.hourly_rate)}/hora`
+                    `${formatCurrency(w.hourly_rate)}/hour`
                   ) : (
                     <>
-                      {formatCurrency(w.daily_rate)}/día
-                      {w.daily_rate_2 ? ` · ${formatCurrency(w.daily_rate_2)}/día (2)` : ''}
+                      {formatCurrency(w.daily_rate)}/day
+                      {w.daily_rate_2 ? ` · ${formatCurrency(w.daily_rate_2)}/day (2)` : ''}
                     </>
                   )}
                 </div>
               </div>
               <GroupBadge name={w.group_name} />
               <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: w.active ? GREEN + '22' : '#ffffff11', color: w.active ? GREEN : TEXT_MUTED, fontWeight: 600 }}>
-                {w.active ? 'Activo' : 'Inactivo'}
+                {w.active ? 'Active' : 'Inactive'}
               </span>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <Btn small variant="ghost" onClick={() => { setEditWorker(w); setShowModal(true); }}>✏️ Editar</Btn>
+              <Btn small variant="ghost" onClick={() => { setEditWorker(w); setShowModal(true); }}>✏️ Edit</Btn>
               <Btn small variant="danger" onClick={() => handleDelete(w)} disabled={deleting === w.id}>🗑️</Btn>
             </div>
           </div>
         ))}
         {!filtered.length && (
           <div style={{ textAlign: 'center', padding: 40, color: TEXT_MUTED }}>
-            {filter ? 'Sin resultados.' : 'No hay trabajadores. Agrega uno para comenzar.'}
+            {filter ? 'No results.' : 'No workers. Add one to begin.'}
           </div>
         )}
       </div>
@@ -991,18 +990,18 @@ function SetupPrompt({ onRetry }) {
     <div style={{ maxWidth: 700, margin: '60px auto', padding: '0 20px' }}>
       <div style={{ background: BG_CARD, border: `1px solid #f59e0b44`, borderRadius: 16, padding: 32 }}>
         <div style={{ fontSize: 36, marginBottom: 12 }}>⚠️</div>
-        <h2 style={{ color: '#fff', margin: '0 0 8px', fontSize: 20 }}>Tablas de Nómina no encontradas</h2>
+        <h2 style={{ color: '#fff', margin: '0 0 8px', fontSize: 20 }}>Payroll Tables Not Found</h2>
         <p style={{ color: TEXT_MUTED, fontSize: 14, margin: '0 0 20px' }}>
-          Las tablas de Supabase necesarias no existen. Ejecuta el siguiente SQL en el editor de Supabase para crearlas:
+          The required Supabase tables do not exist. Run the following SQL in your Supabase editor to create them:
         </p>
         <pre style={{ background: '#0d0d0d', border: `1px solid ${BORDER}`, borderRadius: 10, padding: 16, overflowX: 'auto', fontSize: 11, color: '#a3e635', margin: '0 0 16px', whiteSpace: 'pre', lineHeight: 1.6 }}>
           {SETUP_SQL}
         </pre>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           <Btn onClick={copySQL} variant={copied ? 'success' : 'primary'}>
-            {copied ? '✓ Copiado!' : '📋 Copiar SQL'}
+            {copied ? '✓ Copied!' : '📋 Copy SQL'}
           </Btn>
-          <Btn onClick={onRetry} variant="ghost">🔄 Reintentar</Btn>
+          <Btn onClick={onRetry} variant="ghost">🔄 Retry</Btn>
         </div>
       </div>
     </div>
@@ -1192,34 +1191,34 @@ export default function PayrollPage() {
   // ── Render ────────────────────────────────────────────────────────────────
   if (!tablesExist) {
     return (
-      <PinLock pin="2012" title="Payroll — Restringido">
+      <PinLock pin="2012" title="Payroll — Restricted">
         <SetupPrompt onRetry={() => { setTablesExist(true); loadData(weekStart); }} />
       </PinLock>
     );
   }
 
   const TABS = [
-    { id: 'semana', label: '📅 Semana' },
-    { id: 'mes',    label: '📆 Mes' },
-    { id: 'ano',    label: '📊 Año' },
-    { id: 'trabajadores', label: '👷 Trabajadores' },
+    { id: 'semana', label: '📅 Week' },
+    { id: 'mes',    label: '📆 Month' },
+    { id: 'ano',    label: '📊 Year' },
+    { id: 'trabajadores', label: '👷 Workers' },
   ];
 
   return (
-    <PinLock pin="2012" title="Payroll — Restringido">
+    <PinLock pin="2012" title="Payroll — Restricted">
       <div style={{ minHeight: '100vh', background: '#0d0d0d', padding: '20px 16px', fontFamily: 'Inter, system-ui, sans-serif', color: '#fff' }}>
         {/* ── Header ─────────────────────────────────────────────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
           <div>
             <h1 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: '#fff' }}>
-              💰 Nómina
+              💰 Payroll
             </h1>
-            <div style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 2 }}>Barba Construction — Control de Pagos</div>
+            <div style={{ fontSize: 13, color: TEXT_MUTED, marginTop: 2 }}>Barba Construction — Payment Control</div>
           </div>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Btn variant="ghost" small onClick={handlePrint}>🖨️ Imprimir</Btn>
+            <Btn variant="ghost" small onClick={handlePrint}>🖨️ Print</Btn>
             <Btn variant="ghost" small onClick={() => loadData(weekStart)} disabled={loading}>
-              {loading ? '⏳' : '🔄'} Actualizar
+              {loading ? '⏳' : '🔄'} Refresh
             </Btn>
           </div>
         </div>
@@ -1245,17 +1244,17 @@ export default function PayrollPage() {
               </div>
             </div>
             <Btn small variant="ghost" onClick={() => setWeekStart(d => addWeeks(d, 1))}>▶</Btn>
-            <Btn small variant="ghost" onClick={() => setWeekStart(getWeekStart())}>Hoy</Btn>
+            <Btn small variant="ghost" onClick={() => setWeekStart(getWeekStart())}>Today</Btn>
           </div>
         )}
 
         {/* ── KPI Cards ──────────────────────────────────────────────────── */}
         {tab === 'semana' && (
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
-            <KpiCard label="Total Nómina" value={formatCurrency(totalPayroll)} color={ACCENT} sub="Esta semana" />
-            <KpiCard label="Trabajadores" value={activeWorkers.length} sub="Activos" />
-            <KpiCard label="Días Trabajados" value={totalDaysWorked} sub="Total semana" />
-            <KpiCard label="Bonos / Extras" value={formatCurrency(totalBonuses)} color={GREEN} sub="Esta semana" />
+            <KpiCard label="Total Payroll" value={formatCurrency(totalPayroll)} color={ACCENT} sub="This week" />
+            <KpiCard label="Workers" value={activeWorkers.length} sub="Active" />
+            <KpiCard label="Days Worked" value={totalDaysWorked} sub="Weekly total" />
+            <KpiCard label="Bonuses / Extras" value={formatCurrency(totalBonuses)} color={GREEN} sub="This week" />
           </div>
         )}
 
@@ -1281,7 +1280,7 @@ export default function PayrollPage() {
           {loading && tab === 'semana' ? (
             <div style={{ textAlign: 'center', padding: 60, color: TEXT_MUTED }}>
               <div style={{ fontSize: 30, marginBottom: 12 }}>⏳</div>
-              Cargando nómina…
+              Loading payroll...
             </div>
           ) : (
             <>

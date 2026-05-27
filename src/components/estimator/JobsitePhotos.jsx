@@ -27,11 +27,11 @@ export default function JobsitePhotos({ photos, setPhotos }) {
     <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-6 mt-6">
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
         <Camera size={18} color="#f97316" />
-        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Fotos de Inspección (Obligatorias)</h2>
+        <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Inspection Photos (Required)</h2>
       </div>
       
       <p style={{ fontSize: '13px', color: '#9ca3af', marginBottom: '16px' }}>
-        Es obligatorio tomar múltiples fotos desde diferentes ángulos y medir las áreas para la aprobación del estimado.
+        Multiple photos from different angles are required to measure areas for estimate approval.
       </p>
 
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '20px' }}>
@@ -46,7 +46,7 @@ export default function JobsitePhotos({ photos, setPhotos }) {
           onMouseEnter={e => e.currentTarget.style.background = '#ea580c'}
           onMouseLeave={e => e.currentTarget.style.background = '#f97316'}
         >
-          <Camera size={18} /> Tomar Foto
+          <Camera size={18} /> Take Photo
         </button>
         
         <button
@@ -60,7 +60,7 @@ export default function JobsitePhotos({ photos, setPhotos }) {
           onMouseEnter={e => e.currentTarget.style.background = '#4b5563'}
           onMouseLeave={e => e.currentTarget.style.background = '#374151'}
         >
-          <ImageIcon size={18} /> Subir de Galería
+          <ImageIcon size={18} /> Upload from Gallery
         </button>
 
         <input

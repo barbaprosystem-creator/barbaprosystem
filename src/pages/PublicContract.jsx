@@ -119,7 +119,7 @@ export default function PublicContract() {
 
   const handleSign = async () => {
     if (!signature) {
-      alert("Por favor firma en el cuadro antes de aceptar.");
+      alert("Please sign in the box before accepting.");
       return;
     }
 
@@ -151,12 +151,12 @@ export default function PublicContract() {
 
         if (!projectId) {
           const { data: newProject, error: projErr } = await supabase.from('projects').insert([{
-            title: `Proyecto de ${estimate.contact?.first_name || 'Cliente'} - EST-${String(estimate.estimate_number).padStart(4,'0')}`,
+            title: `Project for ${estimate.contact?.first_name || 'Client'} - EST-${String(estimate.estimate_number).padStart(4,'0')}`,
             contact_id: estimate.contact_id,
             estimate_id: id,
             status: 'pending',
             sold_price: estimate.total || estimate.grand_total,
-            address: estimate.contact?.address || 'Por confirmar'
+            address: estimate.contact?.address || 'To be confirmed'
           }]).select('id').single();
           
           if (!projErr && newProject) {
@@ -215,18 +215,18 @@ export default function PublicContract() {
         console.error("Error generating/uploading PDF: ", pdfErr);
       }
 
-      alert("¡Contrato firmado y aceptado exitosamente!");
+      alert("Contract signed and accepted successfully!");
       
     } catch (err) {
       console.error(err);
-      alert("Error al guardar la firma: " + (err.message || err.details || JSON.stringify(err)));
+      alert("Error saving signature: " + (err.message || err.details || JSON.stringify(err)));
     } finally {
       setSigning(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-800"><Loader className="animate-spin inline-block mr-2"/> Cargando contrato...</div>;
-  if (!estimate) return <div className="p-8 text-center text-red-500">Contrato no encontrado.</div>;
+  if (loading) return <div className="p-8 text-center text-gray-800"><Loader className="animate-spin inline-block mr-2"/> Loading contract...</div>;
+  if (!estimate) return <div className="p-8 text-center text-red-500">Contract not found.</div>;
 
   const total = estimate.total || estimate.grand_total || 0;
   const paymentTerms = estimate.contract_payment_terms || '';
@@ -242,7 +242,7 @@ export default function PublicContract() {
         <div className="flex justify-between items-center mb-6 print:hidden">
           <img src="https://barbaprosystem.com/landing/logo.png" alt="Barba Construction" className="h-12" />
           <button onClick={() => window.print()} className="flex items-center gap-2 bg-white text-gray-700 px-4 py-2 rounded shadow hover:bg-gray-50">
-            <Printer size={18} /> Imprimir PDF
+            <Printer size={18} /> Print PDF
           </button>
         </div>
 
@@ -366,11 +366,11 @@ export default function PublicContract() {
                       <button 
                         onClick={clearSignature}
                         className="absolute top-2 right-2 text-gray-400 hover:text-red-500 print:hidden"
-                        title="Borrar Firma"
+                        title="Clear Signature"
                       >
                         <Eraser size={18} />
                       </button>
-                      {!signature && <p className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none print:hidden">Firmar aquí</p>}
+                      {!signature && <p className="absolute inset-0 flex items-center justify-center text-gray-400 pointer-events-none print:hidden">Sign here</p>}
                     </>
                   )}
                 </div>
@@ -401,7 +401,7 @@ export default function PublicContract() {
                 className="flex items-center gap-2 bg-[#F5C518] hover:bg-[#d4a810] text-black font-bold text-lg px-8 py-3 rounded-xl transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {signing ? <Loader className="animate-spin" /> : <FileSignature />}
-                Aceptar y Firmar Contrato
+                Accept and Sign Contract
               </button>
             </div>
           )}
@@ -409,7 +409,7 @@ export default function PublicContract() {
           {isSigned && (
             <div className="mt-8 text-center print:hidden">
               <div className="inline-block bg-green-100 text-green-800 px-6 py-3 rounded-lg font-bold border border-green-200">
-                ✓ Este contrato ha sido firmado y aceptado el {new Date(estimate.contract_signed_at).toLocaleString()}.
+                ✓ This contract was signed and accepted on {new Date(estimate.contract_signed_at).toLocaleString()}.
               </div>
             </div>
           )}

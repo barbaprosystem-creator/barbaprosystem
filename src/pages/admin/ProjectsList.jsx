@@ -75,7 +75,7 @@ export default function ProjectsList() {
       setNewProject(EMPTY_FORM);
       fetchProjects();
     } catch (err) {
-      alert('Error creando proyecto: ' + err.message);
+      alert('Error creating project: ' + err.message);
     } finally {
       setSaving(false);
     }
@@ -113,7 +113,7 @@ export default function ProjectsList() {
       setEditProject(null);
       fetchProjects();
     } catch (err) {
-      alert('Error actualizando proyecto: ' + err.message);
+      alert('Error updating project: ' + err.message);
     } finally {
       setEditSaving(false);
     }
@@ -134,7 +134,7 @@ export default function ProjectsList() {
       setDeleteTarget(null);
       fetchProjects();
     } catch (err) {
-      alert('Error eliminando proyecto: ' + err.message);
+      alert('Error deleting project: ' + err.message);
     } finally {
       setDeleteLoading(false);
     }
@@ -198,7 +198,7 @@ export default function ProjectsList() {
             className="project-card"
             onClick={() => setSelectedProjectId(project.id)}
             style={{ cursor: 'pointer' }}
-            title="Ver pipeline del proyecto"
+            title="View project pipeline"
           >
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
@@ -210,7 +210,7 @@ export default function ProjectsList() {
                 <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
                   <button
                     onClick={e => openEdit(e, project)}
-                    title="Editar proyecto"
+                    title="Edit project"
                     style={{
                       width: '26px', height: '26px', borderRadius: '6px', border: 'none',
                       background: 'rgba(59,130,246,0.15)', color: '#3b82f6',
@@ -224,7 +224,7 @@ export default function ProjectsList() {
                   </button>
                   <button
                     onClick={e => openDelete(e, project)}
-                    title="Eliminar proyecto"
+                    title="Delete project"
                     style={{
                       width: '26px', height: '26px', borderRadius: '6px', border: 'none',
                       background: 'rgba(239,68,68,0.15)', color: '#ef4444',
@@ -281,7 +281,7 @@ export default function ProjectsList() {
         {filtered.length === 0 && (
           <div className="projects-empty">
             <TrendingUp size={48} />
-            <p>{t('projects.noProjects')}{filterStatus !== 'all' ? ` con estado "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
+            <p>{t('projects.noProjects')}{filterStatus !== 'all' ? ` with status "${STATUS_MAP[filterStatus]?.label}"` : ''}</p>
             <p className="text-sm">{t('projects.createdAutomatically')}</p>
           </div>
         )}
@@ -299,7 +299,7 @@ export default function ProjectsList() {
               <div className="crm-form-grid">
                 <div className="form-group full-width">
                   <label>{t('projects.title_field')} *</label>
-                  <input required value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})} placeholder="Ej. Cambio de techo Familia Smith" />
+                  <input required value={newProject.title} onChange={e => setNewProject({...newProject, title: e.target.value})} placeholder="e.g., Smith Family Roof Replacement" />
                 </div>
                 <div className="form-group full-width">
                   <label>{t('projects.address')}</label>

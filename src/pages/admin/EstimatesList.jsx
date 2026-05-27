@@ -15,7 +15,10 @@ const STATUS_COLORS = {
 // Parser helper to extract photo URLs from scope_of_work
 function extractPhotosFromScope(scope) {
   if (!scope) return [];
-  const parts = scope.split('[FOTOS DE INSPECCIÓN]');
+  let parts = scope.split('[INSPECTION PHOTOS]');
+  if (parts.length < 2) {
+    parts = scope.split('[FOTOS DE INSPECCIÓN]');
+  }
   if (parts.length < 2) return [];
   return parts[1]
     .split('\n')
@@ -73,29 +76,29 @@ export default function EstimatesList() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: est.contact.email,
-            subject: `Propuesta de Proyecto EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
+            subject: `Project Proposal EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
                 <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
                   <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
-                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excelencia en Roofing, Siding & Gutters</p>
+                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
                 </div>
                 
                 <div style="padding: 40px 30px;">
-                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hola ${est.contact.first_name},</h2>
-                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Adjunto encontrarás la propuesta detallada para tu proyecto. Queremos agradecerte por darnos la oportunidad de transformar tu hogar.</p>
+                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${est.contact.first_name},</h2>
+                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
                   
                   <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                    ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Encuentra los detalles de los servicios a continuación.'}
+                    ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
                   </div>
                   
-                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Resumen de Inversión</h3>
+                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
                   <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                     ${(items || []).map(item => `
                       <tr>
                         <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
                           <strong style="color: #111111;">${item.description}</strong><br/>
-                          <span style="font-size: 13px; color: #888888;">Cantidad: ${item.quantity}</span>
+                          <span style="font-size: 13px; color: #888888;">Quantity: ${item.quantity}</span>
                         </td>
                         <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
                           ${formatMoney(item.total)}
@@ -106,27 +109,27 @@ export default function EstimatesList() {
                   
                   <div style="text-align: right; padding-top: 10px;">
                     <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${formatMoney(est.subtotal || 0)}</p>
-                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Total Estimado: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
+                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Estimated Total: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
                   </div>
 
                   <div style="text-align: center; margin: 40px 0;">
                     <a href="https://barbaprosystem.com/p/${est.id}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
-                      Ver Estimado, Firmar y Autorizar
+                      View Estimate, Sign and Authorize
                     </a>
-                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Haz clic en el botón para ver el PDF oficial, firmarlo y aprobar el proyecto.</p>
+                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Click the button to view the official PDF, sign it, and approve the project.</p>
                   </div>
 
                   <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
                   
-                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">Quedo a tu entera disposición para cualquier consulta o aclaración que puedas necesitar sobre esta propuesta.</p>
+                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">I remain at your entire disposal for any questions or clarifications you may need regarding this proposal.</p>
                   <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
-                    Atentamente,<br/>
-                    <strong>Equipo de Ventas</strong><br/>
+                    Sincerely,<br/>
+                    <strong>Sales Team</strong><br/>
                     <span style="color: #666666;">Barba Construction</span>
                   </p>
                 </div>
                 <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
-                  © ${new Date().getFullYear()} Barba Construction. Todos los derechos reservados.
+                  © ${new Date().getFullYear()} Barba Construction. All rights reserved.
                 </div>
               </div>
             `
@@ -138,24 +141,24 @@ export default function EstimatesList() {
           throw new Error(result.error || 'Error desconocido al enviar el correo');
         }
         
-        alert('Estimado enviado por correo correctamente.');
+        alert('Estimate sent by email successfully.');
       } catch (err) {
-        console.error('Error al enviar el correo:', err);
-        alert(`Error de Resend: ${err.message}\n\nNota: Si estás en modo prueba de Resend, solo puedes enviar correos a tu propia dirección verificada.`);
+        console.error('Error sending email:', err);
+        alert(`Resend Error: ${err.message}\n\nNote: If you are in Resend test mode, you can only send emails to your own verified address.`);
       }
     } else if (status === 'sent') {
-      alert('Estimado marcado como enviado. (El cliente no tiene correo registrado para notificarle)');
+      alert('Estimate marked as sent. (The client does not have a registered email to notify)');
     }
 
-    // Automatizacion: Crear proyecto si se aprueba el estimado
+    // Automation: Create project if estimate is approved
     if (status === 'approved') {
       await supabase.from('projects').insert([{
-        title: `Proyecto de ${est.contact?.first_name || 'Cliente'} - EST-${String(est.estimate_number).padStart(4,'0')}`,
+        title: `Project for ${est.contact?.first_name || 'Client'} - EST-${String(est.estimate_number).padStart(4,'0')}`,
         contact_id: est.contact_id,
         estimate_id: est.id,
         status: 'pending',
         sold_price: est.total || est.grand_total,
-        address: est.contact?.address || 'Por confirmar'
+        address: est.contact?.address || 'To be confirmed'
       }]);
     }
     
@@ -163,7 +166,7 @@ export default function EstimatesList() {
   }
 
   async function deleteEstimate(id) {
-    if(!confirm('?Eliminar este estimado?')) return;
+    if(!confirm('Delete this estimate?')) return;
     await supabase.from('estimate_items').delete().eq('estimate_id',id);
     await supabase.from('estimates').delete().eq('id',id);
     fetchEstimates();
@@ -179,7 +182,7 @@ export default function EstimatesList() {
       >
         <img 
           src={urls[0]} 
-          alt="Inspección" 
+          alt="Inspection" 
           className="w-full h-full object-cover"
         />
         {urls.length > 1 && (
@@ -221,7 +224,7 @@ export default function EstimatesList() {
       </div>
       <div className="crm-list">
         <table>
-          <thead><tr><th>#</th><th>{t('estimates.client')}</th><th>{t('common.address')}</th><th>Fotos</th><th>{t('estimates.total')}</th><th>{t('estimates.status')}</th><th>Creado por</th><th>{t('estimates.date')}</th><th>{t('estimates.actions')}</th></tr></thead>
+          <thead><tr><th>#</th><th>{t('estimates.client')}</th><th>{t('common.address')}</th><th>Photos</th><th>{t('estimates.total')}</th><th>{t('estimates.status')}</th><th>Created by</th><th>{t('estimates.date')}</th><th>{t('estimates.actions')}</th></tr></thead>
           <tbody>
             {filtered.map(est => (
               <tr key={est.id} className="crm-list-row">
@@ -235,20 +238,20 @@ export default function EstimatesList() {
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
                   {(est.status==='draft' || est.status==='sent') && (
-                    <button className="icon-btn" title="Enviar por correo" onClick={() => updateStatus(est.id,'sent')}>
+                    <button className="icon-btn" title="Send by email" onClick={() => updateStatus(est.id,'sent')}>
                       <Send size={15}/>
                     </button>
                   )}
                   {est.status==='sent' && <>
-                    <button className="icon-btn success" title="Aprobar" onClick={() => updateStatus(est.id,'approved')}><CheckCircle size={15}/></button>
-                    <button className="icon-btn danger" title="Rechazar" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
+                    <button className="icon-btn success" title="Approve" onClick={() => updateStatus(est.id,'approved')}><CheckCircle size={15}/></button>
+                    <button className="icon-btn danger" title="Reject" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
                   </>}
                   {est.status==='approved' && (
-                    <button className="icon-btn" title="Generar Contrato" onClick={() => navigate(`/admin/contract/${est.id}`)}>
+                    <button className="icon-btn" title="Generate Contract" onClick={() => navigate(`/admin/contract/${est.id}`)}>
                       <FileSignature size={15}/>
                     </button>
                   )}
-                  <button className="icon-btn danger" title="Eliminar" onClick={() => deleteEstimate(est.id)}><Trash2 size={15}/></button>
+                  <button className="icon-btn danger" title="Delete" onClick={() => deleteEstimate(est.id)}><Trash2 size={15}/></button>
                 </td>
               </tr>
             ))}
@@ -264,9 +267,9 @@ export default function EstimatesList() {
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <BarChart2 className="text-[#FACB00]" /> Resumen de Ventas y Comisiones
+                  <BarChart2 className="text-[#FACB00]" /> Sales Summary and Commissions
                 </h3>
-                <p className="text-sm text-gray-400">Total de estimados y cálculo de comisiones (5% sobre aprobados).</p>
+                <p className="text-sm text-gray-400">Total estimates and commissions calculation (5% on approved).</p>
               </div>
               <button onClick={() => setShowSummaryModal(false)}><X className="text-gray-400 hover:text-white" /></button>
             </div>
@@ -274,10 +277,10 @@ export default function EstimatesList() {
             {/* TABS DE PERIODO */}
             <div className="flex gap-2 mb-4">
               {[
-                { id: 'week', label: 'Esta Semana' },
-                { id: 'month', label: 'Este Mes' },
-                { id: 'year', label: 'Este Año' },
-                { id: 'all', label: 'Histórico (Todo)' }
+                { id: 'week', label: 'This Week' },
+                { id: 'month', label: 'This Month' },
+                { id: 'year', label: 'This Year' },
+                { id: 'all', label: 'All-Time History' }
               ].map(p => (
                 <button 
                   key={p.id}
@@ -293,12 +296,12 @@ export default function EstimatesList() {
               <table className="w-full text-left text-sm text-gray-300">
                 <thead className="bg-[#222] text-gray-400 font-bold uppercase text-xs">
                   <tr>
-                    <th className="px-4 py-3">Vendedor</th>
-                    <th className="px-4 py-3 text-center">Enviados (Cant.)</th>
-                    <th className="px-4 py-3 text-right">Monto Enviado</th>
-                    <th className="px-4 py-3 text-center">Aprobados (Cant.)</th>
-                    <th className="px-4 py-3 text-right">Monto Aprobado</th>
-                    <th className="px-4 py-3 text-right text-[#FACB00]">Comisión (5%)</th>
+                    <th className="px-4 py-3">Salesperson</th>
+                    <th className="px-4 py-3 text-center">Sent (Qty)</th>
+                    <th className="px-4 py-3 text-right">Sent Amount</th>
+                    <th className="px-4 py-3 text-center">Approved (Qty)</th>
+                    <th className="px-4 py-3 text-right">Approved Amount</th>
+                    <th className="px-4 py-3 text-right text-[#FACB00]">Commission (5%)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#333]">
@@ -320,7 +323,7 @@ export default function EstimatesList() {
                         if (dateToUse < startOfWeek) return acc;
                       }
 
-                      const name = est.creator?.full_name || 'Sin Vendedor';
+                      const name = est.creator?.full_name || 'No Salesperson';
                       if (!acc[name]) acc[name] = { sentCount: 0, sentAmount: 0, appCount: 0, appAmount: 0 };
                       if (est.status === 'sent') {
                         acc[name].sentCount++;
@@ -358,7 +361,7 @@ export default function EstimatesList() {
                       acc[1]=1; return acc;
                     }, {})
                   ).length === 0 && (
-                    <tr><td colSpan="6" className="px-4 py-6 text-center text-gray-500">No hay datos de ventas en este periodo.</td></tr>
+                    <tr><td colSpan="6" className="px-4 py-6 text-center text-gray-500">No sales data for this period.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -376,7 +379,7 @@ export default function EstimatesList() {
           <button 
             onClick={() => setActiveGalleryPhotos(null)}
             className="absolute top-6 right-6 text-white/70 hover:text-white bg-[#111]/80 hover:bg-[#222] p-3 rounded-full transition-all z-[110] border border-white/10"
-            title="Cerrar"
+            title="Close"
           >
             <X size={20} />
           </button>
@@ -389,7 +392,7 @@ export default function EstimatesList() {
             <div className="relative w-full aspect-[4/3] max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-[#222] flex items-center justify-center shadow-2xl">
               <img 
                 src={activeGalleryPhotos[activePhotoIndex]} 
-                alt={`Foto de Inspección ${activePhotoIndex + 1}`}
+                alt={`Inspection Photo ${activePhotoIndex + 1}`}
                 className="max-w-full max-h-full object-contain select-none"
               />
               
@@ -433,12 +436,11 @@ export default function EstimatesList() {
             )}
             
             <p className="text-white/60 text-xs font-semibold tracking-widest uppercase">
-              Foto {activePhotoIndex + 1} de {activeGalleryPhotos.length}
+              Photo {activePhotoIndex + 1} of {activeGalleryPhotos.length}
             </p>
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -18,10 +18,10 @@ export default function ChatArea({ conversation }) {
   const handleSendMessage = async (text, subject = '') => {
     try {
       const contentToSave = conversation.canal === 'email' && subject 
-        ? `**Asunto: ${subject}**\n\n${text}` 
+        ? `**Subject: ${subject}**\n\n${text}` 
         : text;
 
-      // 1. Guardar localmente en Supabase como "enviado"
+      // 1. Save locally in Supabase as "sent"
       const { data: insertedData, error } = await supabase
         .from('mensajes')
         .insert([{
@@ -39,7 +39,7 @@ export default function ChatArea({ conversation }) {
       const contactPhone = conversation.contacts?.phone;
       const contactEmail = conversation.contacts?.email;
 
-      // 2a. Enviar el mensaje por Twilio si es SMS o WhatsApp
+      // 2a. Send message via Twilio if it's SMS or WhatsApp
       if (contactPhone && (conversation.canal === 'sms' || conversation.canal === 'whatsapp')) {
         try {
           const twilioRes = await fetch('/api/send-message', {
@@ -54,15 +54,15 @@ export default function ChatArea({ conversation }) {
           
           if (!twilioRes.ok) {
             const errorText = await twilioRes.text();
-            console.error("Error desde API de Twilio:", errorText);
-            alert(`Error de conexión con Twilio: Asegúrate de haber configurado las variables en Vercel. Error: ${twilioRes.status}`);
+            console.error("Error from Twilio API:", errorText);
+            alert(`Twilio connection error: Make sure you configured variables in Vercel. Error: ${twilioRes.status}`);
           }
         } catch (fetchErr) {
-          console.error("Error en la petición a Vercel:", fetchErr);
-          alert("Error de red intentando contactar al servidor. Si estás probando en 'Local' (npm run dev), recuerda que el envío solo funciona en la versión subida a Vercel.");
+          console.error("Error in Vercel request:", fetchErr);
+          alert("Network error trying to contact server. If testing on 'Local' (npm run dev), remember sending only works on Vercel.");
         }
       } 
-      // 2b. Enviar el mensaje por Resend si es Email
+      // 2b. Send message via Resend if it's Email
       else if (contactEmail && conversation.canal === 'email') {
         try {
           const emailRes = await fetch('/api/send-email', {
@@ -70,35 +70,35 @@ export default function ChatArea({ conversation }) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               to: contactEmail,
-              subject: subject || "Actualización de Barba Construction",
+              subject: subject || "Update from Barba Construction",
               text: text
             })
           });
           
           if (!emailRes.ok) {
             const errorText = await emailRes.text();
-            console.error("Error desde API de Email:", errorText);
-            alert(`Error enviando correo: Asegúrate de configurar RESEND_API_KEY en Vercel. Error: ${emailRes.status}`);
+            console.error("Error from Email API:", errorText);
+            alert(`Error sending email: Make sure to configure RESEND_API_KEY in Vercel. Error: ${emailRes.status}`);
           }
         } catch (fetchErr) {
-          console.error("Error en la petición a Vercel (Email):", fetchErr);
-          alert("Error de red intentando contactar al servidor de correos.");
+          console.error("Error in Vercel request (Email):", fetchErr);
+          alert("Network error trying to contact the mail server.");
         }
       }
     } catch (err) {
-      console.error("Error general:", err);
-      alert("Hubo un error al guardar o enviar el mensaje.");
+      console.error("General error:", err);
+      alert("There was an error saving or sending the message.");
     }
   };
 
-  const contactName = conversation.contacts ? `${conversation.contacts.first_name} ${conversation.contacts.last_name}` : 'Cliente';
+  const contactName = conversation.contacts ? `${conversation.contacts.first_name} ${conversation.contacts.last_name}` : 'Client';
   
-  // Mensajes vienen ordenados desc, los invertimos para mostrarlos cronológicamente
+  // Messages come sorted desc, we reverse them to show chronologically
   const chronologicalMessages = [...(conversation.mensajes || [])].reverse();
 
   return (
     <div className="flex flex-col h-full bg-[#0b0b0b] relative">
-      {/* Pattern de fondo sutil */}
+      {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--gold) 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
       
       {/* Header */}
@@ -109,7 +109,7 @@ export default function ChatArea({ conversation }) {
         <div>
           <h2 className="font-semibold text-white tracking-wide">{contactName}</h2>
           <p className="text-xs text-[var(--text-muted)] tracking-wider">
-            {conversation.canal.toUpperCase()} • {conversation.contacts?.phone || 'Sin número'}
+            {conversation.canal.toUpperCase()} • {conversation.contacts?.phone || 'No number'}
           </p>
         </div>
         <div className="ml-auto flex gap-2">
@@ -126,7 +126,7 @@ export default function ChatArea({ conversation }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 z-10 relative">
         {chronologicalMessages.length === 0 && (
           <div className="text-center text-[var(--text-muted)] my-8 bg-[#1a1a1a] border border-[var(--border)] py-3 px-6 rounded-lg max-w-sm mx-auto shadow-lg">
-            Aún no hay mensajes en esta conversación.
+            No messages in this conversation yet.
           </div>
         )}
         
@@ -144,7 +144,7 @@ export default function ChatArea({ conversation }) {
               >
                 <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{msg.contenido}</p>
                 {isOutbound && msg.profiles?.full_name && (
-                  <p className="text-[10px] text-gray-500 font-semibold mt-1">Por: {msg.profiles.full_name}</p>
+                  <p className="text-[10px] text-gray-500 font-semibold mt-1">By: {msg.profiles.full_name}</p>
                 )}
                 <div className={`text-[10px] mt-1.5 flex justify-end items-center gap-1.5 ${isOutbound ? 'text-gray-500' : 'text-[var(--gold)] opacity-80'}`}>
                   {new Date(msg.creado_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

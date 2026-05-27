@@ -73,15 +73,15 @@ export default function ReportsPage() {
                totalContacts: contacts.length, totalEstimates: estimates.length });
 
     setStatusChart([
-      { name: 'Completados', value: completedCount, color: '#10b981' },
-      { name: 'En Ejecución', value: inProgCount,    color: '#f59e0b' },
-      { name: 'Cancelados',   value: cancelledCount, color: '#ef4444' },
+      { name: 'Completed', value: completedCount, color: '#10b981' },
+      { name: 'In Progress', value: inProgCount,    color: '#f59e0b' },
+      { name: 'Cancelled',   value: cancelledCount, color: '#ef4444' },
     ].filter(d => d.value > 0));
 
     const typeMap = {};
     projects.forEach(p => {
       const m = (p.notes || '').match(/Tipo:\s*([^\n\]]+)/);
-      const type = m ? m[1].trim() : 'Otros';
+      const type = m ? m[1].trim() : 'Others';
       if (!typeMap[type]) typeMap[type] = { revenue: 0, count: 0 };
       typeMap[type].revenue += p.sold_price || 0;
       typeMap[type].count++;
@@ -94,9 +94,9 @@ export default function ReportsPage() {
     );
 
     setRevenueChart([
-      { name: 'Ingresos',  value: totalRevenue, fill: '#10b981' },
-      { name: 'Gastos',    value: totalCosts,   fill: '#ef4444' },
-      { name: 'Ganancia',  value: totalProfit,  fill: '#3b82f6' },
+      { name: 'Revenue',  value: totalRevenue, fill: '#10b981' },
+      { name: 'Expenses', value: totalCosts,   fill: '#ef4444' },
+      { name: 'Profit',   value: totalProfit,  fill: '#3b82f6' },
     ]);
 
     setTopProjects(
@@ -126,31 +126,31 @@ export default function ReportsPage() {
   );
 
   const kpis = [
-    { label: 'Proyectos',      value: stats.totalProjects,                icon: FolderKanban, color: '#3b82f6' },
-    { label: 'Ingresos 2026',  value: formatCurrency(stats.totalRevenue), icon: DollarSign,   color: '#10b981' },
-    { label: 'Ganancia Bruta', value: formatCurrency(stats.totalProfit),  icon: TrendingUp,   color: '#06b6d4' },
-    { label: 'Margen',         value: `${stats.margin}%`,                 icon: BarChart3,    color: '#8b5cf6' },
-    { label: 'Ticket Prom.',   value: formatCurrency(stats.avgTicket),    icon: FileText,     color: '#f59e0b' },
-    { label: 'Contactos',      value: stats.totalContacts,                icon: Users,        color: '#ec4899' },
+    { label: 'Projects',       value: stats.totalProjects,                icon: FolderKanban, color: '#3b82f6' },
+    { label: 'Revenue 2026',   value: formatCurrency(stats.totalRevenue), icon: DollarSign,   color: '#10b981' },
+    { label: 'Gross Profit',   value: formatCurrency(stats.totalProfit),  icon: TrendingUp,   color: '#06b6d4' },
+    { label: 'Margin',         value: `${stats.margin}%`,                 icon: BarChart3,    color: '#8b5cf6' },
+    { label: 'Avg. Ticket',    value: formatCurrency(stats.avgTicket),    icon: FileText,     color: '#f59e0b' },
+    { label: 'Contacts',       value: stats.totalContacts,                icon: Users,        color: '#ec4899' },
   ];
 
   const statusRows = [
-    { label: '✅ Completados',  count: stats.completedCount, color: '#10b981', pct: Math.round((stats.completedCount / stats.totalProjects) * 100) },
-    { label: '🔄 En Ejecución', count: stats.inProgCount,    color: '#f59e0b', pct: Math.round((stats.inProgCount    / stats.totalProjects) * 100) },
-    { label: '❌ Cancelados',   count: stats.cancelledCount, color: '#ef4444', pct: Math.round((stats.cancelledCount / stats.totalProjects) * 100) },
+    { label: '✅ Completed',   count: stats.completedCount, color: '#10b981', pct: Math.round((stats.completedCount / stats.totalProjects) * 100) },
+    { label: '🔄 In Progress', count: stats.inProgCount,    color: '#f59e0b', pct: Math.round((stats.inProgCount    / stats.totalProjects) * 100) },
+    { label: '❌ Cancelled',   count: stats.cancelledCount, color: '#ef4444', pct: Math.round((stats.cancelledCount / stats.totalProjects) * 100) },
   ];
 
   const statusColors = { completed: '#10b981', in_progress: '#f59e0b', cancelled: '#ef4444' };
-  const statusLabels = { completed: 'Completado', in_progress: 'En Ejecución', cancelled: 'Cancelado' };
+  const statusLabels = { completed: 'Completed', in_progress: 'In Progress', cancelled: 'Cancelled' };
 
   return (
-    <PinLock pin="2012" title="Reportes & Analytics — Restringido">
+    <PinLock pin="2012" title="Reports & Analytics — Restricted">
     <div className="reports-page">
       {/* Header */}
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
           <h1>{t('reports.title')} & Analytics</h1>
-          <span className="rpt-subtitle">2026 · Tiempo real</span>
+          <span className="rpt-subtitle">2026 · Real Time</span>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function ReportsPage() {
             <div className="rpt-progress-track">
               <div className="rpt-progress-fill" style={{ background: s.color, width: `${s.pct || 0}%` }} />
             </div>
-            <span className="rpt-progress-pct">{s.pct || 0}% del total</span>
+            <span className="rpt-progress-pct">{s.pct || 0}% of total</span>
           </div>
         ))}
       </div>
@@ -189,7 +189,7 @@ export default function ReportsPage() {
       <div className="rpt-charts-row">
         {/* Bar chart */}
         <div className="rpt-chart-card rpt-chart-main">
-          <h2 className="rpt-chart-title">💰 Ingresos vs Gastos vs Ganancia</h2>
+          <h2 className="rpt-chart-title">💰 Revenue vs Expenses vs Profit</h2>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={revenueChart} margin={{ top: 0, right: 0, bottom: 0, left: 10 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#222" />
@@ -197,7 +197,7 @@ export default function ReportsPage() {
               <YAxis tick={{ fill: '#888', fontSize: 11 }} axisLine={false} tickLine={false}
                 tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
               <Tooltip content={<CurrencyTooltip />} />
-              <Bar dataKey="value" name="Monto" radius={[6, 6, 0, 0]}>
+              <Bar dataKey="value" name="Amount" radius={[6, 6, 0, 0]}>
                 {revenueChart.map((e, i) => <Cell key={i} fill={e.fill} />)}
               </Bar>
             </BarChart>
@@ -206,22 +206,22 @@ export default function ReportsPage() {
           <div className="rpt-mini-stats">
             <div className="rpt-mini-stat">
               <p style={{ color: '#8b5cf6' }}>{formatCurrency(stats.laborTotal)}</p>
-              <span>Mano de Obra</span>
+              <span>Labor</span>
             </div>
             <div className="rpt-mini-stat">
               <p style={{ color: '#f59e0b' }}>{formatCurrency(stats.matTotal)}</p>
-              <span>Materiales</span>
+              <span>Materials</span>
             </div>
             <div className="rpt-mini-stat">
               <p style={{ color: '#10b981' }}>{stats.margin}%</p>
-              <span>Margen Neto</span>
+              <span>Net Margin</span>
             </div>
           </div>
         </div>
 
         {/* Pie chart */}
         <div className="rpt-chart-card rpt-chart-pie">
-          <h2 className="rpt-chart-title">📊 Estado de Proyectos</h2>
+          <h2 className="rpt-chart-title">📊 Project Status</h2>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
               <Pie data={statusChart} cx="50%" cy="50%" innerRadius={50} outerRadius={75}
@@ -246,7 +246,7 @@ export default function ReportsPage() {
       {/* Types bar (horizontal) */}
       <div className="rpt-section-pad">
         <div className="rpt-chart-card">
-          <h2 className="rpt-chart-title">🔨 Ingresos por Tipo de Trabajo (Top 8)</h2>
+          <h2 className="rpt-chart-title">🔨 Revenue by Work Type (Top 8)</h2>
           <div className="rpt-horizontal-chart-wrap">
             <ResponsiveContainer width="100%" height={Math.max(220, typeChart.length * 36)}>
               <BarChart data={typeChart} layout="vertical"
@@ -257,7 +257,7 @@ export default function ReportsPage() {
                 <YAxis type="category" dataKey="name" tick={{ fill: '#ccc', fontSize: 11 }}
                   axisLine={false} tickLine={false} width={110} />
                 <Tooltip content={<CurrencyTooltip />} />
-                <Bar dataKey="revenue" name="Ingresos" radius={[0, 6, 6, 0]}>
+                <Bar dataKey="revenue" name="Revenue" radius={[0, 6, 6, 0]}>
                   {typeChart.map((_, i) => <Cell key={i} fill={PIE_PALETTE[i % PIE_PALETTE.length]} />)}
                 </Bar>
               </BarChart>
@@ -269,7 +269,7 @@ export default function ReportsPage() {
       {/* Top 10 Projects */}
       <div className="rpt-section-pad">
         <div className="rpt-chart-card">
-          <h2 className="rpt-chart-title">🏆 Top 10 Proyectos por Ingreso</h2>
+          <h2 className="rpt-chart-title">🏆 Top 10 Projects by Revenue</h2>
           {/* Mobile cards view */}
           <div className="rpt-top-cards">
             {topProjects.map((p, i) => (

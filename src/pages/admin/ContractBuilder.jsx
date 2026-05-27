@@ -58,8 +58,8 @@ export default function ContractBuilder() {
         }
 
       } catch (err) {
-        console.error("Error cargando estimado:", err);
-        alert("Error cargando datos para el contrato.");
+        console.error("Error loading estimate:", err);
+        alert("Error loading contract data.");
       } finally {
         setLoading(false);
       }
@@ -149,19 +149,19 @@ export default function ContractBuilder() {
 
   const handleSend = async () => {
     if (!contact?.email) {
-      alert("El cliente no tiene un correo electrónico registrado.");
+      alert("The client does not have a registered email address.");
       return;
     }
     
     if (!paymentTerms.trim()) {
-      alert("Por favor define los términos de pago antes de enviar el contrato.");
+      alert("Please define the payment terms before sending the contract.");
       return;
     }
 
     setSending(true);
     try {
       if (!companySig) {
-        alert("Por favor firma el contrato como compañía antes de enviarlo.");
+        alert("Please sign the contract as company representative before sending.");
         setSending(false);
         return;
       }
@@ -180,7 +180,7 @@ export default function ContractBuilder() {
 
       if (updateErr) {
         if (updateErr.message.includes('column') || updateErr.code === 'PGRST204') {
-          throw new Error('Las columnas del contrato no existen en la base de datos. Debes correr el código SQL que te di para actualizar la tabla "estimates".');
+          throw new Error('Contract columns do not exist in the database. You must run the SQL migration.');
         }
         throw updateErr;
       }
@@ -209,7 +209,7 @@ export default function ContractBuilder() {
           html: htmlContent
         });
       } catch (e) {
-        throw new Error('Error al generar el documento. Verifica los datos.');
+        throw new Error('Error generating document. Verify data.');
       }
 
       const response = await fetch('/api/send-email', {
@@ -223,24 +223,24 @@ export default function ContractBuilder() {
       try {
         result = JSON.parse(textRes);
       } catch (e) {
-        throw new Error('El servidor devolvió una respuesta inválida. ' + textRes.substring(0, 50));
+        throw new Error('Invalid response from server. ' + textRes.substring(0, 50));
       }
 
-      if (!response.ok) throw new Error(result.error || 'Error al enviar email');
+      if (!response.ok) throw new Error(result.error || 'Error sending email');
 
-      alert('Contrato enviado correctamente al cliente.');
+      alert('Contract successfully sent to the client.');
       navigate('/admin/estimates');
 
     } catch (err) {
       console.error(err);
-      alert('Error al enviar contrato: ' + err.message);
+      alert('Error sending contract: ' + err.message);
     } finally {
       setSending(false);
     }
   };
 
-  if (loading) return <div className="p-8 text-center text-white"><Loader className="animate-spin inline-block mr-2"/> Cargando contrato...</div>;
-  if (!estimate) return <div className="p-8 text-center text-red-500">Estimado no encontrado.</div>;
+  if (loading) return <div className="p-8 text-center text-white"><Loader className="animate-spin inline-block mr-2"/> Loading contract...</div>;
+  if (!estimate) return <div className="p-8 text-center text-red-500">Estimate not found.</div>;
 
   const total = estimate.total || estimate.grand_total || 0;
   const requiresManualPayment = total >= 20000;
@@ -250,11 +250,11 @@ export default function ContractBuilder() {
       {/* Header Actions (hidden in print) */}
       <div className="flex items-center justify-between mb-6 print:hidden">
         <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-white flex items-center gap-2">
-          <ArrowLeft size={20} /> Volver a Estimados
+          <ArrowLeft size={20} /> Back to Estimates
         </button>
         <div className="flex items-center gap-3">
           <button onClick={handlePrint} className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-            <Printer size={18} /> Imprimir PDF
+            <Printer size={18} /> Print PDF
           </button>
           <button 
             onClick={handleSend} 
@@ -262,25 +262,25 @@ export default function ContractBuilder() {
             className="flex items-center gap-2 bg-[#F5C518] hover:bg-[#d4a810] text-black font-bold px-5 py-2 rounded-lg transition-colors"
           >
             {sending ? <Loader className="animate-spin w-5 h-5" /> : <Send size={18} />}
-            Enviar al Cliente
+            Send to Client
           </button>
         </div>
       </div>
 
       <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-6 mb-8 print:hidden">
         <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
-          <FileText className="text-[#F5C518]" /> Configuración del Contrato
+          <FileText className="text-[#F5C518]" /> Contract Settings
         </h2>
-        <p className="text-gray-400 mb-6 text-sm">El monto total es <strong>{formatCurrency(total)}</strong>. 
+        <p className="text-gray-400 mb-6 text-sm">The total amount is <strong>{formatCurrency(total)}</strong>. 
           {requiresManualPayment 
-            ? " Al ser mayor a $20,000, debes definir los términos de pago manualmente." 
-            : " Se ha aplicado automáticamente el formato de 50% anticipo / 50% al finalizar."}
+            ? " Since it is over $20,000, you must define the payment terms manually." 
+            : " Standard 50% deposit / 50% upon completion terms have been automatically applied."}
         </p>
 
         <div className="space-y-4">
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-1">Fecha del Contrato</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Contract Date</label>
               <input 
                 type="date" 
                 value={contractDate}
@@ -289,7 +289,7 @@ export default function ContractBuilder() {
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-300 mb-1">Fecha Límite de Cancelación</label>
+              <label className="block text-sm font-medium text-gray-300 mb-1">Cancellation Deadline</label>
               <input 
                 type="date" 
                 value={cancellationDate}
@@ -299,11 +299,11 @@ export default function ContractBuilder() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">Términos de Pago (Editable)</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1">Payment Terms (Editable)</label>
             <textarea 
               value={paymentTerms}
               onChange={(e) => setPaymentTerms(e.target.value)}
-              placeholder="Ej: Deposit of $X upon signing, 30% upon material delivery, remainder upon completion..."
+              placeholder="e.g., Deposit of $X upon signing, 30% upon material delivery, remainder upon completion..."
               className="w-full h-32 bg-[#111] border border-[#333] rounded-lg px-4 py-3 text-white focus:border-[#F5C518] outline-none transition-colors"
             />
           </div>
@@ -356,7 +356,7 @@ export default function ContractBuilder() {
             <h3 className="font-bold text-lg mb-2 border-b border-gray-200 pb-1">2. Payment Terms</h3>
             <p className="mb-2">The total cost for the work described in this Agreement is <strong>{formatCurrency(total)}</strong>.</p>
             <div className="bg-gray-50 p-4 border-l-4 border-[#F5C518] whitespace-pre-line my-3 italic">
-              {paymentTerms || <span className="text-gray-400">Términos de pago pendientes...</span>}
+              {paymentTerms || <span className="text-gray-400">Payment terms pending...</span>}
             </div>
             <p className="text-sm text-gray-600">Payments may be made by credit card, cash, or check. A processing fee of 2.9% applies to in-person credit card transactions, and a 3.9% processing fee applies to credit card transactions conducted over the phone.</p>
           </section>
@@ -420,7 +420,7 @@ export default function ContractBuilder() {
           <div className="flex flex-col md:flex-row justify-between gap-10">
             <div className="w-full md:w-1/2">
               <div className="border-b-2 border-dashed border-gray-300 bg-gray-50 rounded-t-lg mb-2 h-[150px] flex items-center justify-center">
-                <span className="text-gray-400 italic">Firma del cliente (vía enlace web)</span>
+                <span className="text-gray-400 italic">Customer signature (via web link)</span>
               </div>
               <p className="mt-2 text-sm font-bold uppercase">Customer Signature</p>
               <p className="mt-1 text-sm text-gray-600">Date: {contractDate}</p>
@@ -437,11 +437,11 @@ export default function ContractBuilder() {
                 <button 
                   onClick={() => clearSignature(companyCanvasRef, setCompanySig)}
                   className="absolute top-2 right-2 text-gray-400 hover:text-red-500 print:hidden"
-                  title="Borrar Firma"
+                  title="Clear Signature"
                 >
                   <Eraser size={18} />
                 </button>
-                {!companySig && <p className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none print:hidden">Firmar aquí</p>}
+                {!companySig && <p className="absolute inset-0 flex items-center justify-center text-gray-300 pointer-events-none print:hidden">Sign here</p>}
               </div>
               <p className="mt-2 text-sm font-bold uppercase">Barba Construction Representative</p>
               <p className="mt-1 text-sm text-gray-600">Date: {contractDate}</p>

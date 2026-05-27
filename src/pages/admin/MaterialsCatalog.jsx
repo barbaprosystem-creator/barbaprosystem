@@ -86,13 +86,13 @@ export default function MaterialsCatalog() {
   };
 
   const deleteMaterial = async (id) => {
-    if(!window.confirm("¿Estás seguro de eliminar este material?")) return;
+    if(!window.confirm("Are you sure you want to delete this material?")) return;
     await supabase.from('materials_catalog').delete().eq('id', id);
     fetchData();
   };
 
   const deleteRecipe = async (id) => {
-    if(!window.confirm("¿Estás seguro de eliminar esta receta?")) return;
+    if(!window.confirm("Are you sure you want to delete this formula?")) return;
     await supabase.from('service_material_recipes').delete().eq('id', id);
     fetchData();
   };
@@ -103,8 +103,8 @@ export default function MaterialsCatalog() {
     <div className="admin-page-container">
       <div className="admin-page-header">
         <div className="header-content">
-          <h1>Gestión de Materiales y Fórmulas</h1>
-          <p>Configura el Catálogo de Ferretería y las Fórmulas Automáticas de Materiales.</p>
+          <h1>Material & Formula Management</h1>
+          <p>Configure the Hardware Catalog and Automatic Material Formulas.</p>
         </div>
         <div className="header-actions">
           <button 
@@ -112,7 +112,7 @@ export default function MaterialsCatalog() {
             onClick={() => activeTab === 'catalog' ? setIsAddingMaterial(true) : setIsAddingRecipe(true)}
           >
             <Plus size={18} />
-            {activeTab === 'catalog' ? 'Añadir Material' : 'Añadir Fórmula'}
+            {activeTab === 'catalog' ? 'Add Material' : 'Add Formula'}
           </button>
         </div>
       </div>
@@ -120,21 +120,21 @@ export default function MaterialsCatalog() {
       {/* TABS */}
       <div className="flex gap-4 border-b border-white/10 mb-6">
         <button 
-          className={`px-4 py-3 font-medium transition-colors border-b-2 ${activeTab === 'catalog' ? 'border-[#E2FF00] text-[#E2FF00]' : 'border-transparent text-gray-400 hover:text-white'}`}
+          className={`px-4 py-3 font-medium transition-colors border-b-2 ${activeTab === 'catalog' ? 'border-b-2 border-[#E2FF00] text-[#E2FF00]' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('catalog')}
         >
           <div className="flex items-center gap-2">
             <PackageSearch size={18} />
-            Catálogo de Materiales
+            Material Catalog
           </div>
         </button>
         <button 
-          className={`px-4 py-3 font-medium transition-colors border-b-2 ${activeTab === 'recipes' ? 'border-[#E2FF00] text-[#E2FF00]' : 'border-transparent text-gray-400 hover:text-white'}`}
+          className={`px-4 py-3 font-medium transition-colors border-b-2 ${activeTab === 'recipes' ? 'border-b-2 border-[#E2FF00] text-[#E2FF00]' : 'border-transparent text-gray-400 hover:text-white'}`}
           onClick={() => setActiveTab('recipes')}
         >
           <div className="flex items-center gap-2">
             <Settings2 size={18} />
-            Fórmulas (Recetas) por Servicio
+            Formulas (Recipes) by Service
           </div>
         </button>
       </div>
@@ -143,7 +143,7 @@ export default function MaterialsCatalog() {
       {loading ? (
         <div className="flex items-center justify-center p-12 text-gray-400">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E2FF00] mr-3"></div>
-          Cargando datos...
+          Loading data...
         </div>
       ) : activeTab === 'catalog' ? (
         <div className="bg-[#18181A] rounded-xl border border-white/5 overflow-hidden">
@@ -152,25 +152,25 @@ export default function MaterialsCatalog() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Buscar material..." 
+                placeholder="Search material..." 
                 className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white focus:outline-none focus:border-[#E2FF00]"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
-            <span className="text-sm text-gray-400">{filteredMaterials.length} materiales</span>
+            <span className="text-sm text-gray-400">{filteredMaterials.length} materials</span>
           </div>
           
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/5">
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Nombre del Material</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Categoría</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Unidad</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Precio Est.</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">Enlace</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Material Name</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Category</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Unit</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Est. Price</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-center">Link</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -204,7 +204,7 @@ export default function MaterialsCatalog() {
                 {filteredMaterials.length === 0 && (
                   <tr>
                     <td colSpan="6" className="p-8 text-center text-gray-500">
-                      No hay materiales en el catálogo. Usa el botón "Añadir Material" para empezar.
+                      No materials in the catalog. Use the "Add Material" button to start.
                     </td>
                   </tr>
                 )}
@@ -217,8 +217,8 @@ export default function MaterialsCatalog() {
           <div className="p-4 border-b border-white/5 bg-white/[0.02] flex items-start gap-3">
             <Calculator className="text-[#E2FF00] mt-1 flex-shrink-0" size={20} />
             <div>
-              <h3 className="font-medium text-white">¿Cómo funcionan las fórmulas?</h3>
-              <p className="text-sm text-gray-400 mt-1">El sistema tomará la "Variable" (ej. Squares), la dividirá por la "Cobertura" y le sumará el "Desperdicio" para generar la Orden de Compra.</p>
+              <h3 className="font-medium text-white">How do formulas work?</h3>
+              <p className="text-sm text-gray-400 mt-1">The system will take the "Variable" (e.g. Squares), divide it by the "Coverage" and add the "Waste Factor" to generate the Purchase Order.</p>
             </div>
           </div>
           
@@ -226,12 +226,12 @@ export default function MaterialsCatalog() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-white/[0.02] border-b border-white/5">
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Servicio</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Material Requerido</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Service</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Required Material</th>
                   <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Variable</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Cobertura (X Und)</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Desperdicio</th>
-                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Acciones</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Coverage (Per Unit)</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider">Waste Factor</th>
+                  <th className="p-4 text-xs font-medium text-gray-400 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -242,10 +242,10 @@ export default function MaterialsCatalog() {
                         {recipe.service_type}
                       </span>
                     </td>
-                    <td className="p-4 font-medium text-white">{recipe.material?.name || 'Material Eliminado'}</td>
+                    <td className="p-4 font-medium text-white">{recipe.material?.name || 'Material Deleted'}</td>
                     <td className="p-4 text-gray-400 font-mono text-sm">{recipe.calculation_variable}</td>
                     <td className="p-4 text-white">
-                      1 {recipe.material?.unit_of_measure} <span className="text-gray-500">=</span> <span className="text-blue-400 font-mono">{recipe.coverage_per_unit}</span> {recipe.calculation_variable}
+                      1 {recipe.material?.unit_of_measure} covers <span className="text-blue-400 font-mono">{recipe.coverage_per_unit}</span> {recipe.calculation_variable}
                     </td>
                     <td className="p-4 text-red-400 font-mono text-sm">+{recipe.waste_factor_percent}%</td>
                     <td className="p-4 flex justify-end gap-2">
@@ -261,7 +261,7 @@ export default function MaterialsCatalog() {
                 {recipes.length === 0 && (
                   <tr>
                     <td colSpan="6" className="p-8 text-center text-gray-500">
-                      No hay fórmulas configuradas. Añade una fórmula para automatizar los cálculos.
+                      No formulas configured. Add a formula to automate calculations.
                     </td>
                   </tr>
                 )}
@@ -282,17 +282,17 @@ export default function MaterialsCatalog() {
               className="bg-[#18181A] rounded-xl border border-white/10 w-full max-w-md overflow-hidden shadow-2xl"
             >
               <div className="p-5 border-b border-white/10">
-                <h3 className="text-lg font-medium text-white">Añadir Nuevo Material</h3>
+                <h3 className="text-lg font-medium text-white">Add New Material</h3>
               </div>
               <form onSubmit={handleAddMaterial} className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Nombre</label>
+                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Name</label>
                   <input required type="text" className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white" 
-                    value={newMaterial.name} onChange={e => setNewMaterial({...newMaterial, name: e.target.value})} placeholder="Ej. Quikrete 80lb" />
+                    value={newMaterial.name} onChange={e => setNewMaterial({...newMaterial, name: e.target.value})} placeholder="e.g. Quikrete 80lb" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Categoría</label>
+                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Category</label>
                     <select className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white"
                       value={newMaterial.category} onChange={e => setNewMaterial({...newMaterial, category: e.target.value})}>
                       <option value="Roofing">Roofing</option>
@@ -303,33 +303,33 @@ export default function MaterialsCatalog() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Unidad</label>
+                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Unit</label>
                     <select className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white"
                       value={newMaterial.unit_of_measure} onChange={e => setNewMaterial({...newMaterial, unit_of_measure: e.target.value})}>
                       <option value="Bundle">Bundle</option>
-                      <option value="Piece">Piece (Pieza)</option>
-                      <option value="Box">Box (Caja)</option>
-                      <option value="Roll">Roll (Rollo)</option>
-                      <option value="Bag">Bag (Bolsa)</option>
-                      <option value="Bucket">Bucket (Cubeta)</option>
+                      <option value="Piece">Piece</option>
+                      <option value="Box">Box</option>
+                      <option value="Roll">Roll</option>
+                      <option value="Bag">Bag</option>
+                      <option value="Bucket">Bucket</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Precio Estimado ($)</label>
+                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Estimated Price ($)</label>
                   <input type="number" step="0.01" className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white font-mono" 
                     value={newMaterial.estimated_price} onChange={e => setNewMaterial({...newMaterial, estimated_price: e.target.value})} placeholder="34.50" />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Enlace a Tienda (Menards/Home Depot)</label>
+                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Store Link (Menards/Home Depot)</label>
                   <input type="url" className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white" 
                     value={newMaterial.store_url} onChange={e => setNewMaterial({...newMaterial, store_url: e.target.value})} placeholder="https://..." />
                 </div>
                 
                 <div className="flex gap-3 pt-4 border-t border-white/10">
-                  <button type="button" onClick={() => setIsAddingMaterial(false)} className="flex-1 py-2 text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                  <button type="button" onClick={() => setIsAddingMaterial(false)} className="flex-1 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
                   <button type="submit" className="flex-1 py-2 bg-[#E2FF00] text-black font-semibold rounded-lg hover:bg-[#d4f000] transition-colors flex justify-center items-center gap-2">
-                    <Save size={18} /> Guardar
+                    <Save size={18} /> Save
                   </button>
                 </div>
               </form>
@@ -349,11 +349,11 @@ export default function MaterialsCatalog() {
               className="bg-[#18181A] rounded-xl border border-white/10 w-full max-w-md overflow-hidden shadow-2xl"
             >
               <div className="p-5 border-b border-white/10">
-                <h3 className="text-lg font-medium text-white">Configurar Fórmula de Cálculo</h3>
+                <h3 className="text-lg font-medium text-white">Configure Calculation Formula</h3>
               </div>
               <form onSubmit={handleAddRecipe} className="p-5 space-y-4">
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Servicio</label>
+                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Service</label>
                   <select required className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white"
                     value={newRecipe.service_type} onChange={e => setNewRecipe({...newRecipe, service_type: e.target.value})}>
                     <option value="roofing">Roofing (General)</option>
@@ -363,10 +363,10 @@ export default function MaterialsCatalog() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Material a Calcular</label>
+                  <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Material to Calculate</label>
                   <select required className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white"
                     value={newRecipe.material_id} onChange={e => setNewRecipe({...newRecipe, material_id: e.target.value})}>
-                    <option value="">-- Selecciona un Material --</option>
+                    <option value="">-- Select a Material --</option>
                     {materials.map(m => (
                       <option key={m.id} value={m.id}>{m.name}</option>
                     ))}
@@ -374,37 +374,37 @@ export default function MaterialsCatalog() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Se basa en (Variable)</label>
+                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Based on (Variable)</label>
                     <select required className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white"
                       value={newRecipe.calculation_variable} onChange={e => setNewRecipe({...newRecipe, calculation_variable: e.target.value})}>
                       <option value="squares">Squares</option>
                       <option value="linear_feet">Linear Feet</option>
-                      <option value="posts_count">Posts (Cantidad)</option>
-                      <option value="fixed_amount">Fixed (Fijo)</option>
+                      <option value="posts_count">Posts (Count)</option>
+                      <option value="fixed_amount">Fixed (Amount)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Desperdicio (%)</label>
+                    <label className="block text-xs text-gray-400 uppercase tracking-wider mb-1">Waste Factor (%)</label>
                     <input required type="number" step="1" className="w-full bg-[#2A2A2E] border border-white/10 rounded-lg px-3 py-2 text-white font-mono" 
                       value={newRecipe.waste_factor_percent} onChange={e => setNewRecipe({...newRecipe, waste_factor_percent: e.target.value})} placeholder="10" />
                   </div>
                 </div>
                 
                 <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
-                  <label className="block text-xs text-blue-400 uppercase tracking-wider mb-2">Regla de Cobertura (La Matemática)</label>
+                  <label className="block text-xs text-blue-400 uppercase tracking-wider mb-2">Coverage Rule (The Math)</label>
                   <div className="flex items-center gap-2 text-sm text-gray-300">
-                    <span>1 Unidad cubre</span>
+                    <span>1 Unit covers</span>
                     <input required type="number" step="0.01" className="w-20 bg-[#2A2A2E] border border-white/10 rounded px-2 py-1 text-white font-mono" 
                       value={newRecipe.coverage_per_unit} onChange={e => setNewRecipe({...newRecipe, coverage_per_unit: e.target.value})} placeholder="0.33" />
                     <span>{newRecipe.calculation_variable}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">Ej. Si seleccionaste Squares y Shingles: 1 Bundle cubre 0.33 Squares.</p>
+                  <p className="text-xs text-gray-500 mt-2">e.g. If you selected Squares and Shingles: 1 Bundle covers 0.33 Squares.</p>
                 </div>
                 
                 <div className="flex gap-3 pt-4 border-t border-white/10">
-                  <button type="button" onClick={() => setIsAddingRecipe(false)} className="flex-1 py-2 text-gray-400 hover:text-white transition-colors">Cancelar</button>
+                  <button type="button" onClick={() => setIsAddingRecipe(false)} className="flex-1 py-2 text-gray-400 hover:text-white transition-colors">Cancel</button>
                   <button type="submit" className="flex-1 py-2 bg-[#E2FF00] text-black font-semibold rounded-lg hover:bg-[#d4f000] transition-colors flex justify-center items-center gap-2">
-                    <Save size={18} /> Guardar Fórmula
+                    <Save size={18} /> Save Formula
                   </button>
                 </div>
               </form>

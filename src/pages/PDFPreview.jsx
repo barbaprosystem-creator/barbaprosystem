@@ -16,7 +16,7 @@ export default function PDFPreview() {
 
   const parseNotesAndPhotos = (notes) => {
     if (!notes) return { text: '', photos: [] };
-    const marker = '[FOTOS DE INSPECCIÓN]';
+    const marker = '[INSPECTION PHOTOS]';
     const splitIndex = notes.indexOf(marker);
     if (splitIndex === -1) return { text: notes, photos: [] };
     
@@ -30,7 +30,7 @@ export default function PDFPreview() {
   useEffect(() => {
     async function fetchEstimate() {
       if (!id) {
-        setError("No se proporcionó un ID de estimado válido.");
+        setError("No valid estimate ID was provided.");
         setLoading(false);
         return;
       }
@@ -57,10 +57,10 @@ export default function PDFPreview() {
         });
       } catch (err) {
         if (err.name === 'AbortError') {
-          setError("La propuesta tardó demasiado en cargar. Por favor intenta de nuevo.");
+          setError("The proposal took too long to load. Please try again.");
         } else {
           console.error("Error fetching estimate:", err);
-          setError("No pudimos cargar la información de la propuesta. Puede que el enlace no sea válido.");
+          setError("We could not load the proposal details. The link may not be valid.");
         }
       } finally {
         setLoading(false);
@@ -68,7 +68,6 @@ export default function PDFPreview() {
     }
     fetchEstimate();
   }, [id]);
-
 
   // Simple signature canvas drawing logic
   useEffect(() => {
@@ -130,12 +129,10 @@ export default function PDFPreview() {
     if (!isSigned || isProcessing) return;
     setIsProcessing(true);
     
-    // Aquí podrías guardar la firma en Supabase como Base64 si lo deseas,
-    // o actualizar el estado del estimado a 'accepted'.
     try {
        await supabase.from('estimates').update({ status: 'accepted' }).eq('id', id);
     } catch(e) {
-       console.error("Error al actualizar:", e);
+       console.error("Error updating:", e);
     }
     
     setTimeout(() => {
@@ -148,7 +145,7 @@ export default function PDFPreview() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white">
         <Loader className="animate-spin text-[#FACB00] mb-4" size={48} />
-        <p className="text-gray-400">Cargando propuesta...</p>
+        <p className="text-gray-400">Loading proposal...</p>
       </div>
     );
   }
@@ -157,14 +154,14 @@ export default function PDFPreview() {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center text-white p-8 text-center">
         <FileText size={64} className="text-red-500 mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Propuesta No Encontrada</h2>
+        <h2 className="text-2xl font-bold mb-2">Proposal Not Found</h2>
         <p className="text-gray-400">{error}</p>
       </div>
     );
   }
 
   const { estimate, contact, items } = estimateData;
-  const dateFormatted = new Date(estimate.created_at || Date.now()).toLocaleDateString('es-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const dateFormatted = new Date(estimate.created_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   const total = estimate.grand_total || items.reduce((acc, item) => acc + (item.total || item.unit_price * item.quantity), 0);
   const subtotal = estimate.subtotal || total;
 
@@ -174,15 +171,15 @@ export default function PDFPreview() {
       <div className="w-full max-w-4xl mb-6 flex justify-between items-end print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <FileText className="text-[#FACB00]" /> Vista Previa del PDF Interactivo
+            <FileText className="text-[#FACB00]" /> Interactive PDF Preview
           </h1>
-          <p className="text-[#888] text-sm mt-1">Este es el documento final que el cliente verá y firmará en su teléfono o en tu tablet.</p>
+          <p className="text-[#888] text-sm mt-1">This is the final document that the client will see and sign on their phone or tablet.</p>
         </div>
         <div className="flex gap-3">
            <button 
              onClick={() => window.print()}
              className="px-4 py-2 bg-[#1a1a1a] text-white rounded-lg flex items-center gap-2 border border-[#333] hover:bg-[#2a2a2a] transition-all">
-             <Download size={16} /> Guardar como PDF
+             <Download size={16} /> Save as PDF
            </button>
         </div>
       </div>
@@ -194,12 +191,12 @@ export default function PDFPreview() {
         <div className="bg-[#111] print:bg-[#111] text-white p-8 flex justify-between items-start border-b-[6px] border-[#FACB00]" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
           <div>
             <img src="/logo-barba.png" alt="Barba Construction" className="h-16 mb-2 object-contain" />
-            <p className="text-xs text-gray-400 mt-2">Excelencia en Roofing, Siding & Gutters<br/>(502) 305-8421<br/>barbaconstruct@gmail.com</p>
+            <p className="text-xs text-gray-400 mt-2">Excellence in Roofing, Siding & Gutters<br/>(502) 305-8421<br/>barbaconstruct@gmail.com</p>
           </div>
           <div className="text-right">
-            <h1 className="text-3xl font-light text-gray-300">ESTIMADO</h1>
+            <h1 className="text-3xl font-light text-gray-300">ESTIMATE</h1>
             <p className="text-[#FACB00] font-bold mt-1 text-lg">#{estimate.id.split('-')[0].toUpperCase()}</p>
-            <p className="text-sm text-gray-400 mt-2">Fecha: {dateFormatted}</p>
+            <p className="text-sm text-gray-400 mt-2">Date: {dateFormatted}</p>
           </div>
         </div>
 
@@ -208,9 +205,9 @@ export default function PDFPreview() {
           
           {/* Client Info */}
           <div className="mb-8">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Preparado para:</p>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Prepared for:</p>
             <p className="text-xl font-bold">{contact?.first_name} {contact?.last_name}</p>
-            <p className="text-gray-600 text-sm">{contact?.address || 'Dirección no especificada'}</p>
+            <p className="text-gray-600 text-sm">{contact?.address || 'Address not specified'}</p>
             <p className="text-gray-600 text-sm">{contact?.email || ''} | {contact?.phone || ''}</p>
           </div>
 
@@ -218,7 +215,7 @@ export default function PDFPreview() {
           {(estimate.notes || estimate.scope_of_work) && (
             <div className="mb-10 bg-gray-50 p-6 rounded-lg border border-gray-100">
               <p className="text-xs font-bold text-[#FACB00] uppercase tracking-wider mb-3 flex items-center gap-2">
-                Propuesta del Proyecto
+                Project Proposal
               </p>
               <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-wrap font-serif">
                 {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).text}
@@ -230,12 +227,12 @@ export default function PDFPreview() {
           {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).photos.length > 0 && (
             <div className="mb-10">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 border-b border-gray-200 pb-2">
-                Fotos de Inspección y Área de Trabajo
+                Inspection & Jobsite Photos
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {parseNotesAndPhotos(estimate.notes || estimate.scope_of_work).photos.map((url, i) => (
                   <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
-                    <img src={url} alt={`Inspección ${i+1}`} className="w-full h-full object-cover" />
+                    <img src={url} alt={`Inspection ${i+1}`} className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
@@ -247,9 +244,9 @@ export default function PDFPreview() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b-2 border-gray-200">
-                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase">Descripción / Servicio</th>
-                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase text-center">Cantidad</th>
-                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase text-right">Precio</th>
+                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase">Description / Service</th>
+                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase text-center">Quantity</th>
+                  <th className="py-3 px-2 text-xs font-bold text-gray-500 uppercase text-right">Price</th>
                 </tr>
               </thead>
               <tbody>
@@ -265,7 +262,7 @@ export default function PDFPreview() {
                   </tr>
                 )) : (
                   <tr className="border-b border-gray-100">
-                    <td className="py-4 px-2 font-medium" colSpan="3">Servicios incluidos en la cotización general.</td>
+                    <td className="py-4 px-2 font-medium" colSpan="3">Services included in the general estimate.</td>
                   </tr>
                 )}
               </tbody>
@@ -279,7 +276,7 @@ export default function PDFPreview() {
                   <span>{formatMoney(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-xl font-black text-[#111] pt-2 border-t-2 border-gray-800">
-                  <span>Total Estimado:</span>
+                  <span>Estimated Total:</span>
                   <span>{formatMoney(total)}</span>
                 </div>
               </div>
@@ -293,15 +290,15 @@ export default function PDFPreview() {
             
             {/* Financing Block */}
             <div className="flex flex-col">
-              <h4 className="text-sm font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">Información de Financiamiento</h4>
+              <h4 className="text-sm font-bold text-gray-800 mb-2 border-b border-gray-200 pb-2">Financing Information</h4>
               <p className="text-sm text-gray-600 leading-relaxed">
-                El financiamiento para este proyecto se tramita de manera presencial en nuestras oficinas. Visítenos para procesar su solicitud con <strong>Servi Financial</strong> de forma rápida y segura. Contáctenos para más detalles.
+                Financing for this project is processed in person at our offices. Visit us to process your request with <strong>Servi Financial</strong> quickly and securely. Contact us for details.
               </p>
             </div>
 
             {/* Signature Block */}
             <div className="flex flex-col">
-              <h4 className="text-sm font-bold text-gray-800 mb-2">Firma del Cliente (Toque para firmar)</h4>
+              <h4 className="text-sm font-bold text-gray-800 mb-2">Client Signature (Touch to sign)</h4>
               <div className="border-2 border-dashed border-gray-300 bg-gray-50 rounded-xl flex-1 relative overflow-hidden min-h-[140px]">
                 <canvas 
                   ref={canvasRef} 
@@ -311,7 +308,7 @@ export default function PDFPreview() {
                 />
                 {!isSigned && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30 z-0">
-                    <span className="text-3xl font-serif italic text-gray-400">Firme aquí</span>
+                    <span className="text-3xl font-serif italic text-gray-400">Sign here</span>
                   </div>
                 )}
               </div>
@@ -325,14 +322,14 @@ export default function PDFPreview() {
                    }}
                    className="text-xs text-red-500 font-bold hover:underline"
                  >
-                   Borrar Firma
+                   Clear Signature
                  </button>
                  <button 
                     disabled={!isSigned || isProcessing}
                     onClick={handleAuthorize}
                     className={`py-2 px-6 rounded-lg font-bold transition-all ${isSigned && !isProcessing ? 'bg-[#FACB00] hover:bg-[#e0b600] shadow-lg text-black' : 'bg-gray-300 text-white cursor-not-allowed'}`}>
                     <span className="flex items-center gap-2">
-                      {isProcessing ? 'Procesando...' : <><CheckCircle size={16}/> Autorizar y Pagar</>}
+                      {isProcessing ? 'Processing...' : <><CheckCircle size={16}/> Authorize & Sign</>}
                     </span>
                  </button>
               </div>
@@ -350,23 +347,23 @@ export default function PDFPreview() {
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle size={40} />
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">¡Propuesta Aprobada!</h2>
-            <p className="text-gray-600 mb-6">Su firma ha sido guardada. En breve, recibirá su factura oficial a través de <strong>QuickBooks</strong> para realizar su pago inicial y asegurar su proyecto.</p>
+            <h2 className="text-2xl font-black text-gray-900 mb-2">Proposal Approved!</h2>
+            <p className="text-gray-600 mb-6">Your signature has been saved. Shortly, you will receive your official invoice through <strong>QuickBooks</strong> to make your initial deposit and secure your project.</p>
             <div className="flex flex-col gap-3">
               <button 
                 onClick={() => {
                   const url = `${window.location.origin}/catalog`;
                   navigator.clipboard.writeText(url);
-                  alert('¡Enlace del catálogo copiado! Compártelo con tu cliente.');
+                  alert('Catalog link copied! Share it with your client.');
                 }}
                 className="bg-[#111] text-white border border-[#333] font-bold py-3 px-6 rounded-lg w-full hover:bg-[#2a2a2a] transition-colors flex justify-center items-center gap-2">
                 <Package size={20} className="text-[#FACB00]" />
-                Copiar Enlace del Catálogo
+                Copy Catalog Link
               </button>
               <button 
                 onClick={() => setPaymentSuccess(false)}
                 className="bg-[#FACB00] text-black font-bold py-3 px-6 rounded-lg w-full hover:bg-[#e0b600] transition-colors">
-                Cerrar
+                Close
               </button>
             </div>
           </div>

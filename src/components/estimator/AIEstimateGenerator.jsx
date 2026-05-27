@@ -16,7 +16,7 @@ export default function AIEstimateGenerator() {
       recognitionRef.current = new SpeechRecognition();
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
-      recognitionRef.current.lang = 'es-ES'; // We assume spanish
+      recognitionRef.current.lang = 'en-US'; // We assume English
 
       recognitionRef.current.onresult = (event) => {
         let currentTranscript = '';
@@ -47,7 +47,7 @@ export default function AIEstimateGenerator() {
         recognitionRef.current.start();
         setIsListening(true);
       } else {
-        alert('El reconocimiento de voz no está soportado en este navegador.');
+        alert('Speech recognition is not supported in this browser.');
       }
     }
   };
@@ -69,11 +69,11 @@ export default function AIEstimateGenerator() {
         });
         setText(''); // clear input after success
       } else {
-        throw new Error('Formato devuelto por la IA no es válido');
+        throw new Error('Format returned by the AI is not valid');
       }
     } catch (error) {
       console.error(error);
-      alert('Hubo un error generando el estimado con IA: ' + error.message);
+      alert('There was an error generating the estimate with AI: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -89,8 +89,8 @@ export default function AIEstimateGenerator() {
           <Bot size={22} color="#f97316" />
         </div>
         <div>
-          <h2 className="text-lg font-bold text-white m-0">Asistente de IA (Voz/Texto)</h2>
-          <p className="text-[#9ca3af] text-sm m-0">Escribe o dicta el trabajo a realizar y la IA creará el recibo oficial.</p>
+          <h2 className="text-lg font-bold text-white m-0">AI Assistant (Voice/Text)</h2>
+          <p className="text-[#9ca3af] text-sm m-0">Type or dictate the scope of work and the AI will generate the estimate.</p>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export default function AIEstimateGenerator() {
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Ej: Necesito un estimado para un techo de asfalto de 15 squares con seguro, y reemplazar 2 ventanas blancas de vinilo..."
+          placeholder="e.g., Smith Family needs a roof replacement of 20 squares, 50 linear ft of gutters, and 3 new vinyl windows..."
           className="w-full bg-[#0f172a] border border-[#374151] rounded-xl p-4 text-white resize-none outline-none focus:border-[#f97316] transition-colors"
           rows={4}
           disabled={isLoading}
@@ -117,12 +117,12 @@ export default function AIEstimateGenerator() {
             {isListening ? (
               <>
                 <StopCircle size={18} className="animate-pulse" />
-                Detener Grabación
+                Stop Recording
               </>
             ) : (
               <>
                 <Mic size={18} />
-                Dictar por Voz
+                Dictate Voice
               </>
             )}
           </button>
@@ -135,12 +135,12 @@ export default function AIEstimateGenerator() {
             {isLoading ? (
               <>
                 <Loader2 size={18} className="animate-spin" />
-                Analizando...
+                Analyzing...
               </>
             ) : (
               <>
                 <Send size={18} />
-                Generar
+                Generate
               </>
             )}
           </button>
@@ -150,8 +150,8 @@ export default function AIEstimateGenerator() {
       <div className="mt-4 flex items-start gap-2 text-xs text-[#6b7280]">
         <Info size={14} className="mt-[2px] flex-shrink-0" />
         <p className="m-0">
-          La IA utiliza automáticamente la <strong>Tabla Oficial de Precios 2026</strong>. 
-          Al generar, los ítems se añadirán a tu recibo a la derecha. Puedes editar las cantidades o borrarlos si la IA se equivoca.
+          The AI automatically uses the <strong>Official 2026 Price Table</strong>. 
+          Upon generation, items will be added to your receipt on the right. You can edit quantities or delete them if needed.
         </p>
       </div>
     </div>

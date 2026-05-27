@@ -8,12 +8,12 @@ import { Eye } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 const PIPELINE_STAGES = [
-  { id: 'new_lead',       label: 'Nuevo',            color: '#3b82f6' },
-  { id: 'contacted',      label: 'Contactado',        color: '#f59e0b' },
-  { id: 'appointment_set',label: 'Cita Agendada',     color: '#8b5cf6' },
-  { id: 'estimate_sent',  label: 'Estimado Enviado',  color: '#06b6d4' },
-  { id: 'closed_won',     label: '✓ Ganado',          color: '#10b981' },
-  { id: 'closed_lost',    label: 'Perdido',         color: '#ef4444' },
+  { id: 'new_lead',       label: 'New Lead',         color: '#3b82f6' },
+  { id: 'contacted',      label: 'Contacted',        color: '#f59e0b' },
+  { id: 'appointment_set',label: 'Appointment Set',  color: '#8b5cf6' },
+  { id: 'estimate_sent',  label: 'Estimate Sent',    color: '#06b6d4' },
+  { id: 'closed_won',     label: '✓ Won',            color: '#10b981' },
+  { id: 'closed_lost',    label: 'Lost',             color: '#ef4444' },
 ];
 
 const SOURCES = [
@@ -21,17 +21,17 @@ const SOURCES = [
   { id: 'facebook',  label: 'Facebook',  icon: 'FB',  color: '#1877F2' },
   { id: 'instagram', label: 'Instagram', icon: 'IG',  color: '#E1306C' },
   { id: 'tiktok',    label: 'TikTok',    icon: 'TT',  color: '#010101' },
-  { id: 'referral',  label: 'Referido',  icon: 'REF', color: '#10b981' },
-  { id: 'phone',     label: 'Telefono',  icon: 'TEL', color: '#6b7280' },
+  { id: 'referral',  label: 'Referral',  icon: 'REF', color: '#10b981' },
+  { id: 'phone',     label: 'Phone',     icon: 'TEL', color: '#6b7280' },
   { id: 'walk_in',   label: 'Walk-in',   icon: 'WLK', color: '#f59e0b' },
   { id: 'web',       label: 'Web',       icon: 'WEB', color: '#8b5cf6' },
-  { id: 'other',     label: 'Otro',      icon: 'OTR', color: '#6b7280' },
+  { id: 'other',     label: 'Other',     icon: 'OTR', color: '#6b7280' },
 ];
 
 const QUALITY = {
-  hot:  { label: 'Caliente', color: '#ef4444', dot: '🔴' },
-  warm: { label: 'Tibio',    color: '#f59e0b', dot: '🟡' },
-  cold: { label: 'Frio',     color: '#3b82f6', dot: '🔵' },
+  hot:  { label: 'Hot',  color: '#ef4444', dot: '🔴' },
+  warm: { label: 'Warm', color: '#f59e0b', dot: '🟡' },
+  cold: { label: 'Cold', color: '#3b82f6', dot: '🔵' },
 };
 
 const srcMap = Object.fromEntries(SOURCES.map(s => [s.id, s]));
@@ -85,7 +85,7 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
         {/* Source quick-select */}
         {!contact?.id && (
           <div style={{ padding: '0 24px 16px' }}>
-            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Origen del Lead</p>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lead Source</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
               {SOURCES.map(s => (
                 <button
@@ -118,46 +118,46 @@ function ContactForm({ contact, onSave, onClose, salespeople }) {
         <form onSubmit={handleSubmit} className="crm-form">
           <div className="crm-form-grid">
             <div className="form-group"><label>{t('common.name')} *</label><input value={form.first_name} onChange={e => set('first_name', e.target.value)} required /></div>
-            <div className="form-group"><label>Apellido *</label><input value={form.last_name} onChange={e => set('last_name', e.target.value)} required /></div>
+            <div className="form-group"><label>Last Name *</label><input value={form.last_name} onChange={e => set('last_name', e.target.value)} required /></div>
             <div className="form-group"><label>{t('common.phone')}</label><input value={form.phone} onChange={e => set('phone', e.target.value)} placeholder="(502) 555-0000" /></div>
             <div className="form-group"><label>{t('common.email')}</label><input type="email" value={form.email} onChange={e => set('email', e.target.value)} /></div>
             <div className="form-group full-width"><label>{t('common.address')}</label><input value={form.address} onChange={e => set('address', e.target.value)} /></div>
-            <div className="form-group"><label>Ciudad</label><input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Louisville" /></div>
-            <div className="form-group"><label>Estado</label><input value={form.state} onChange={e => set('state', e.target.value)} /></div>
+            <div className="form-group"><label>City</label><input value={form.city} onChange={e => set('city', e.target.value)} placeholder="Louisville" /></div>
+            <div className="form-group"><label>State</label><input value={form.state} onChange={e => set('state', e.target.value)} /></div>
             <div className="form-group"><label>ZIP</label><input value={form.zip} onChange={e => set('zip', e.target.value)} /></div>
 
             <div className="form-group">
-              <label>Etapa</label>
+              <label>Stage</label>
               <select value={form.pipeline_status} onChange={e => set('pipeline_status', e.target.value)}>
                 {PIPELINE_STAGES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </div>
             <div className="form-group">
-              <label>Calidad del Lead</label>
+              <label>Lead Quality</label>
               <select value={form.lead_quality || 'warm'} onChange={e => set('lead_quality', e.target.value)}>
-                <option value="hot">Caliente</option>
-                <option value="warm">Tibio</option>
-                <option value="cold">Frio</option>
+                <option value="hot">Hot</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
               </select>
             </div>
             {profile?.role !== 'salesperson' && (
               <div className="form-group">
-                <label>Asignar a</label>
+                <label>Assign to</label>
                 <select value={form.assigned_to || ''} onChange={e => set('assigned_to', e.target.value || null)}>
-                  <option value="">Sin asignar</option>
+                  <option value="">Unassigned</option>
                   {salespeople.map(sp => <option key={sp.id} value={sp.id}>{sp.full_name}</option>)}
                 </select>
               </div>
             )}
             {contact?.id && (
               <div className="form-group">
-                <label>Origen</label>
+                <label>Source</label>
                 <select value={form.source} onChange={e => set('source', e.target.value)}>
                   {SOURCES.map(s => <option key={s.id} value={s.id}>{s.icon} {s.label}</option>)}
                 </select>
               </div>
             )}
-            <div className="form-group full-width"><label>Notas</label><textarea value={form.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} /></div>
+            <div className="form-group full-width"><label>Notes</label><textarea value={form.notes || ''} onChange={e => set('notes', e.target.value)} rows={3} /></div>
           </div>
           <div className="modal-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>{t('actions.cancel')}</button>
@@ -197,7 +197,7 @@ function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
             type="button"
             onClick={(e) => { e.stopPropagation(); onChatClick(lead); }}
             className="p-1 text-[#888] hover:text-green-400 hover:bg-green-400/10 rounded transition-colors ml-1"
-            title="Chat de WhatsApp"
+            title="WhatsApp Chat"
           >
             <MessageCircle size={14} />
           </button>
@@ -205,7 +205,7 @@ function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
             type="button"
             onClick={(e) => { e.stopPropagation(); onViewClick(lead.id); }}
             className="p-1 text-[#888] hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors ml-1"
-            title="Ver Expediente 360"
+            title="View 360 File"
           >
             <Eye size={14} />
           </button>
@@ -219,7 +219,7 @@ function LeadCard({ lead, onClick, onChatClick, onViewClick }) {
           <span className="lead-assigned">{lead.assigned_profile.full_name}</span>
         </div>
       )}
-      <div className="lead-card-date"><Calendar size={12} /><span>{new Date(lead.created_at).toLocaleDateString('es')}</span></div>
+      <div className="lead-card-date"><Calendar size={12} /><span>{new Date(lead.created_at).toLocaleDateString('en-US')}</span></div>
     </div>
   );
 }
@@ -304,13 +304,13 @@ export default function CRMPipeline() {
         <div className="crm-toolbar-right">
           <div className="crm-search">
             <Search size={16} />
-            <input placeholder="Buscar nombre, telefono..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input placeholder="Search name, phone..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <div className="crm-view-toggle">
             <button className={viewMode === 'kanban' ? 'active' : ''} onClick={() => setViewMode('kanban')} title="Kanban">
               <span className="material-symbols-outlined">view_kanban</span>
             </button>
-            <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="Lista">
+            <button className={viewMode === 'list' ? 'active' : ''} onClick={() => setViewMode('list')} title="List">
               <span className="material-symbols-outlined">view_list</span>
             </button>
           </div>
@@ -332,7 +332,7 @@ export default function CRMPipeline() {
             color: filterSource === 'all' ? '#f97316' : '#9ca3af', cursor: 'pointer',
           }}
         >
-          Todos ({contacts.length})
+          All ({contacts.length})
         </button>
         {sourceCounts.map(s => (
           <button
@@ -380,7 +380,7 @@ export default function CRMPipeline() {
                 </div>
                 <div className="kanban-column-body">
                   {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} onViewClick={setViewClient} />)}
-                  {stageLeads.length === 0 && <div className="kanban-empty"><p>Sin leads</p></div>}
+                  {stageLeads.length === 0 && <div className="kanban-empty"><p>No leads</p></div>}
                 </div>
               </div>
             );
@@ -392,7 +392,7 @@ export default function CRMPipeline() {
             <thead>
               <tr>
                 <th>{t('common.name')}</th><th>{t('common.phone')}</th><th>{t('common.address')}</th>
-                <th>Origen</th><th>Calidad</th><th>{t('crm.stage')}</th>
+                <th>Source</th><th>Quality</th><th>{t('crm.stage')}</th>
                 <th>{t('crm.assignedTo')}</th><th>{t('common.date')}</th><th></th>
               </tr>
             </thead>
@@ -422,7 +422,7 @@ export default function CRMPipeline() {
                       </span>
                     </td>
                     <td>{c.assigned_profile?.full_name || '-'}</td>
-                    <td>{new Date(c.created_at).toLocaleDateString('es')}</td>
+                    <td>{new Date(c.created_at).toLocaleDateString('en-US')}</td>
                     <td>
                       <button 
                         type="button"
@@ -436,7 +436,7 @@ export default function CRMPipeline() {
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setViewClient(c.id); }}
                         className="p-2 text-[#888888] hover:text-blue-400 hover:bg-blue-400/10 rounded-lg transition-colors"
-                        title="Ver Expediente 360"
+                        title="View 360 File"
                       >
                         <Eye size={18} />
                       </button>

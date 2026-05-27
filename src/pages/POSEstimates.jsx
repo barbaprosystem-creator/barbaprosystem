@@ -17,7 +17,10 @@ const STATUS_COLORS = {
 // Parser helper to extract photo URLs from scope_of_work
 function extractPhotosFromScope(scope) {
   if (!scope) return [];
-  const parts = scope.split('[FOTOS DE INSPECCIÓN]');
+  let parts = scope.split('[INSPECTION PHOTOS]');
+  if (parts.length < 2) {
+    parts = scope.split('[FOTOS DE INSPECCIÓN]');
+  }
   if (parts.length < 2) return [];
   return parts[1]
     .split('\n')
@@ -76,13 +79,13 @@ export default function POSEstimates() {
       await loadEstimate(id);
       navigate('/pos/estimator');
     } catch (err) {
-      alert('Error al cargar el estimado para edición: ' + err.message);
+      alert('Error loading estimate for editing: ' + err.message);
     }
   };
 
   async function resendEmail(est) {
     if (!est.contact?.email) {
-      alert('El cliente no tiene correo registrado.');
+      alert('The client does not have a registered email.');
       return;
     }
     setSendingEmailId(est.id);
@@ -95,29 +98,29 @@ export default function POSEstimates() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: est.contact.email,
-          subject: `Reenvío: Propuesta de Proyecto EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
+          subject: `Resend: Project Proposal EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
               <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
                 <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
-                <p style="color: #888888; font-size: 12px; margin-top: 0;">Excelencia en Roofing, Siding & Gutters</p>
+                <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
               </div>
               
               <div style="padding: 40px 30px;">
-                <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hola ${est.contact.first_name},</h2>
-                <p style="color: #444444; line-height: 1.6; font-size: 15px;">Adjunto encontrarás la propuesta detallada para tu proyecto. Queremos agradecerte por darnos la oportunidad de transformar tu hogar.</p>
+                <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${est.contact.first_name},</h2>
+                <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
                 
                 <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                  ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Encuentra los detalles de los servicios a continuación.'}
+                  ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
                 </div>
                 
-                <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Resumen de Inversión</h3>
+                <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
                 <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
                   ${(items || []).map(item => `
                     <tr>
                       <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
                         <strong style="color: #111111;">${item.description}</strong><br/>
-                        <span style="font-size: 13px; color: #888888;">Cantidad: ${item.quantity}</span>
+                        <span style="font-size: 13px; color: #888888;">Quantity: ${item.quantity}</span>
                       </td>
                       <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
                         ${formatMoney(item.total)}
@@ -128,27 +131,27 @@ export default function POSEstimates() {
                 
                 <div style="text-align: right; padding-top: 10px;">
                   <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${formatMoney(est.subtotal || 0)}</p>
-                  <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Total Estimado: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
+                  <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Estimated Total: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
                 </div>
 
                 <div style="text-align: center; margin: 40px 0;">
                   <a href="https://barbaprosystem.com/p/${est.id}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
-                    Ver Estimado, Firmar y Autorizar
+                    View Estimate, Sign and Authorize
                   </a>
-                  <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Haz clic en el botón para ver el PDF oficial, firmarlo y aprobar el proyecto.</p>
+                  <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Click the button to view the official PDF, sign it, and approve the project.</p>
                 </div>
 
                 <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
                 
-                <p style="color: #444444; line-height: 1.6; font-size: 14px;">Quedo a tu entera disposición para cualquier consulta o aclaración que puedas necesitar sobre esta propuesta.</p>
+                <p style="color: #444444; line-height: 1.6; font-size: 14px;">I remain at your entire disposal for any questions or clarifications you may need regarding this proposal.</p>
                 <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
-                  Atentamente,<br/>
-                  <strong>${profile?.full_name || 'Equipo de Ventas'}</strong><br/>
+                  Sincerely,<br/>
+                  <strong>${profile?.full_name || 'Sales Team'}</strong><br/>
                   <span style="color: #666666;">Barba Construction</span>
                 </p>
               </div>
               <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
-                © ${new Date().getFullYear()} Barba Construction. Todos los derechos reservados.
+                © ${new Date().getFullYear()} Barba Construction. All rights reserved.
               </div>
             </div>
           `
@@ -157,7 +160,7 @@ export default function POSEstimates() {
       
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result.error || 'Error al reenviar el correo');
+        throw new Error(result.error || 'Error resending email');
       }
       
       // Update estimate status to sent if it was draft
@@ -165,10 +168,10 @@ export default function POSEstimates() {
         await supabase.from('estimates').update({ status: 'sent', updated_at: new Date().toISOString() }).eq('id', est.id);
         fetchEstimates();
       }
-      alert('Estimado reenviado correctamente por correo.');
+      alert('Estimate successfully resent by email.');
     } catch (err) {
-      console.error('Error al reenviar el correo:', err);
-      alert(`Error de Resend: ${err.message}`);
+      console.error('Error resending email:', err);
+      alert(`Resend Error: ${err.message}`);
     } finally {
       setSendingEmailId(null);
     }
@@ -184,7 +187,7 @@ export default function POSEstimates() {
       >
         <img 
           src={urls[0]} 
-          alt="Inspección" 
+          alt="Inspection" 
           className="w-full h-full object-cover"
         />
         {urls.length > 1 && (
@@ -230,7 +233,7 @@ export default function POSEstimates() {
             />
           </div>
           <button className="btn-primary" onClick={() => navigate('/pos/estimator')}>
-            Crear Estimado
+            Create Estimate
           </button>
         </div>
       </div>
@@ -262,7 +265,7 @@ export default function POSEstimates() {
                 <th className="px-6 py-4">#</th>
                 <th className="px-6 py-4">{t('estimates.client')}</th>
                 <th className="px-6 py-4">{t('common.address')}</th>
-                <th className="px-6 py-4">Fotos</th>
+                <th className="px-6 py-4">Photos</th>
                 <th className="px-6 py-4">{t('estimates.total')}</th>
                 <th className="px-6 py-4">{t('estimates.status')}</th>
                 <th className="px-6 py-4">{t('estimates.date')}</th>
@@ -306,7 +309,7 @@ export default function POSEstimates() {
                     <div className="flex justify-end gap-2">
                       <button 
                         className="p-1.5 text-gray-400 hover:text-white bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded-lg transition-colors"
-                        title="Ver PDF Preview" 
+                        title="View PDF Preview" 
                         onClick={() => window.open(`/p/${est.id}`, '_blank')}
                       >
                         <FileText size={15} />
@@ -315,14 +318,14 @@ export default function POSEstimates() {
                         <>
                           <button 
                             className="p-1.5 text-gray-400 hover:text-[#f97316] bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded-lg transition-colors"
-                            title="Editar Estimado" 
+                            title="Edit Estimate" 
                             onClick={() => handleEdit(est.id)}
                           >
                             <Edit size={15} />
                           </button>
                           <button 
                             className="p-1.5 text-gray-400 hover:text-blue-400 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded-lg transition-colors disabled:opacity-40"
-                            title="Reenviar por Correo" 
+                            title="Resend Email" 
                             disabled={sendingEmailId === est.id}
                             onClick={() => resendEmail(est)}
                           >
@@ -356,7 +359,7 @@ export default function POSEstimates() {
           <button 
             onClick={() => setActiveGalleryPhotos(null)}
             className="absolute top-6 right-6 text-white/70 hover:text-white bg-[#111]/80 hover:bg-[#222] p-3 rounded-full transition-all z-50 border border-white/10"
-            title="Cerrar"
+            title="Close"
           >
             <X size={20} />
           </button>
@@ -369,7 +372,7 @@ export default function POSEstimates() {
             <div className="relative w-full aspect-[4/3] max-h-[70vh] bg-black rounded-2xl overflow-hidden border border-[#222] flex items-center justify-center shadow-2xl">
               <img 
                 src={activeGalleryPhotos[activePhotoIndex]} 
-                alt={`Foto de Inspección ${activePhotoIndex + 1}`}
+                alt={`Inspection Photo ${activePhotoIndex + 1}`}
                 className="max-w-full max-h-full object-contain select-none"
               />
               
@@ -413,7 +416,7 @@ export default function POSEstimates() {
             )}
             
             <p className="text-white/60 text-xs font-semibold tracking-widest uppercase">
-              Foto {activePhotoIndex + 1} de {activeGalleryPhotos.length}
+              Photo {activePhotoIndex + 1} of {activeGalleryPhotos.length}
             </p>
           </div>
         </div>

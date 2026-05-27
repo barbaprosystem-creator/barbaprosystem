@@ -41,12 +41,12 @@ function AlertBanner({ payments }) {
       <div style={{ flex: 1 }}>
         {overdue.length > 0 && (
           <p style={{ margin: '0 0 4px', fontWeight: '700', color: '#ef4444', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
-            <AlertTriangle size={14} className="mr-1.5" /> {overdue.length} pago{overdue.length > 1 ? `s` : ``} vencido{overdue.length > 1 ? `s` : ``}
+            <AlertTriangle size={14} className="mr-1.5" /> {overdue.length} overdue payment{overdue.length > 1 ? `s` : ``}
           </p>
         )}
         {dueSoon.length > 0 && (
           <p style={{ margin: 0, fontWeight: '600', color: '#f59e0b', fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-            <Clock size={14} className="mr-1.5" /> {dueSoon.length} pago{dueSoon.length > 1 ? `s` : ``} vence en menos de 3 dias
+            <Clock size={14} className="mr-1.5" /> {dueSoon.length} payment{dueSoon.length > 1 ? `s` : ``} due in less than 3 days
           </p>
         )}
       </div>
@@ -95,11 +95,11 @@ export default function AdminDashboard() {
       ]);
       if (pErr && pErr.code !== '23505') throw pErr;
 
-      alert("Datos de prueba cargados exitosamente!");
+      alert("Test data successfully loaded!");
       window.location.reload();
     } catch (err) {
       console.error(err);
-      alert("Error al cargar datos: " + err.message);
+      alert("Error loading data: " + err.message);
     }
   };
 
@@ -164,8 +164,8 @@ export default function AdminDashboard() {
 
   const SOURCE_ICONS = {
     google: 'Google', facebook: 'Facebook', instagram: 'Instagram',
-    tiktok: 'TikTok', referral: 'Referido', phone: 'Telefono',
-    walk_in: 'Visita', web: 'Web', other: 'Otro',
+    tiktok: 'TikTok', referral: 'Referral', phone: 'Phone',
+    walk_in: 'Walk-in', web: 'Web', other: 'Other',
   };
 
   const STAGE_COLORS = {
@@ -173,8 +173,8 @@ export default function AdminDashboard() {
     estimate_sent: '#06b6d4', closed_won: '#10b981', closed_lost: '#ef4444',
   };
   const STAGE_LABELS = {
-    new_lead: 'Nuevo', contacted: 'Contactado', appointment_set: 'Cita',
-    estimate_sent: 'Estimado', closed_won: 'Ganado', closed_lost: 'Perdido',
+    new_lead: 'New', contacted: 'Contacted', appointment_set: 'Appointment',
+    estimate_sent: 'Estimate', closed_won: 'Won', closed_lost: 'Lost',
   };
 
   return (
@@ -182,11 +182,11 @@ export default function AdminDashboard() {
       <header className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1>Dashboard</h1>
-          <p className="text-muted">Barba Construction - Resumen operativo</p>
+          <p className="text-muted">Barba Construction - Operational summary</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '13px', color: '#6b7280' }}>
-            {new Date().toLocaleDateString('es', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </span>
         </div>
       </header>
@@ -199,7 +199,7 @@ export default function AdminDashboard() {
         <StatCard icon={FileText}     label={t('dashboard.estimatesSent')}    value={stats.estimatesSent}            accent="#fbbf24" />
         <StatCard icon={DollarSign}   label={t('dashboard.totalRevenue')}     value={formatCurrency(stats.totalRevenue)}  accent="#a78bfa" />
         <StatCard icon={Clock}        label={t('dashboard.pendingPayments')}  value={formatCurrency(stats.pendingPayments)} accent="#fb923c" />
-        <StatCard icon={AlertTriangle}label="Pagos Vencidos"                   value={formatCurrency(stats.overduePayments)} accent="#ef4444" />
+        <StatCard icon={AlertTriangle}label="Overdue Payments"                 value={formatCurrency(stats.overduePayments)} accent="#ef4444" />
       </div>
 
       <div className="dashboard-sections">
@@ -300,7 +300,7 @@ export default function AdminDashboard() {
                       {STAGE_LABELS[lead.pipeline_status] || lead.pipeline_status}
                     </span>
                     <p style={{ margin: '4px 0 0', fontSize: '11px', color: '#4b5563' }}>
-                      {new Date(lead.created_at).toLocaleDateString('es')}
+                      {new Date(lead.created_at).toLocaleDateString('en-US')}
                     </p>
                   </div>
                 </div>

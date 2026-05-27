@@ -10,20 +10,20 @@ import ProjectMaterialsTab from '../../components/projects/ProjectMaterialsTab';
 import { formatCurrency, formatDate } from '../../lib/utils';
 
 const STATUS_MAP = {
-  pending:     { label: 'Pendiente',   color: '#6b7280' },
-  scheduled:   { label: 'Agendado',    color: '#3b82f6' },
-  in_progress: { label: 'En Progreso', color: '#f59e0b' },
-  completed:   { label: 'Completado',  color: '#10b981' },
-  on_hold:     { label: 'En Espera',   color: '#ef4444' },
+  pending:     { label: 'Pending',     color: '#6b7280' },
+  scheduled:   { label: 'Scheduled',   color: '#3b82f6' },
+  in_progress: { label: 'In Progress', color: '#f59e0b' },
+  completed:   { label: 'Completed',   color: '#10b981' },
+  on_hold:     { label: 'On Hold',     color: '#ef4444' },
 };
 
 const TABS = [
-  { id: 'pipeline', label: 'Pipeline Semanal', Icon: BarChart3 },
-  { id: 'materials', label: 'Materiales (BOM)', Icon: PackageSearch },
-  { id: 'accounting', label: 'Contabilidad',   Icon: DollarSign },
-  { id: 'payments', label: 'Pagos del Cliente', Icon: DollarSign },
-  { id: 'photos',   label: 'Fotos',            Icon: Camera },
-  { id: 'documents',label: 'Documentos',       Icon: FileText },
+  { id: 'pipeline', label: 'Weekly Pipeline', Icon: BarChart3 },
+  { id: 'materials', label: 'Materials (BOM)', Icon: PackageSearch },
+  { id: 'accounting', label: 'Accounting',      Icon: DollarSign },
+  { id: 'payments', label: 'Client Payments',   Icon: DollarSign },
+  { id: 'photos',   label: 'Photos',            Icon: Camera },
+  { id: 'documents',label: 'Documents',         Icon: FileText },
 ];
 
 export default function ProjectDetail({ projectId, onBack }) {
@@ -45,8 +45,6 @@ export default function ProjectDetail({ projectId, onBack }) {
 
   async function fetchAll() {
     setLoading(true);
-
-
 
     const [{ data: proj }, { data: pays }, { data: pics }] = await Promise.all([
       supabase.from('projects')
@@ -89,7 +87,7 @@ export default function ProjectDetail({ projectId, onBack }) {
       setPaymentForm({ payment_type: 'partial', amount: '', due_date: new Date().toISOString().split('T')[0] });
       fetchAll();
     } catch(err) {
-      alert("Error al agregar el pago");
+      alert("Error adding payment");
     } finally {
       setSavingPayment(false);
     }
@@ -98,12 +96,12 @@ export default function ProjectDetail({ projectId, onBack }) {
   if (loading) return (
     <div className="flex items-center justify-center py-20 text-[#555555]">
       <Loader2 size={28} className="animate-spin mr-3" />
-      <span>Cargando proyecto...</span>
+      <span>Loading project...</span>
     </div>
   );
 
   if (!project) return (
-    <div className="text-center py-20 text-[#555555]">Proyecto no encontrado.</div>
+    <div className="text-center py-20 text-[#555555]">Project not found.</div>
   );
 
   const status = STATUS_MAP[project.status] || STATUS_MAP.pending;
@@ -118,7 +116,7 @@ export default function ProjectDetail({ projectId, onBack }) {
           onClick={onBack}
           className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] text-[#888888] hover:text-[#e0e0e0] hover:border-[#444444] transition-all text-sm font-medium"
         >
-          <ArrowLeft size={16} /> Proyectos
+          <ArrowLeft size={16} /> Projects
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
@@ -144,7 +142,7 @@ export default function ProjectDetail({ projectId, onBack }) {
               <User size={18} className="text-violet-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Cliente</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Client</p>
               <p className="text-sm font-bold text-[#f0f0f0] truncate">
                 {project.contact.first_name} {project.contact.last_name}
               </p>
@@ -161,7 +159,7 @@ export default function ProjectDetail({ projectId, onBack }) {
               <MapPin size={18} className="text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Direccion</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Address</p>
               <p className="text-sm font-bold text-[#f0f0f0] truncate">{project.address}</p>
             </div>
           </div>
@@ -172,10 +170,10 @@ export default function ProjectDetail({ projectId, onBack }) {
             <DollarSign size={18} className="text-emerald-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Cobrado</p>
+            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Collected</p>
             <p className="text-sm font-bold text-emerald-400">{formatCurrency(totalPaid)}</p>
             {totalOwed > 0 && (
-              <p className="text-xs text-amber-400">{formatCurrency(totalOwed)} pendiente</p>
+              <p className="text-xs text-amber-400">{formatCurrency(totalOwed)} pending</p>
             )}
           </div>
         </div>
@@ -185,12 +183,12 @@ export default function ProjectDetail({ projectId, onBack }) {
             <Calendar size={18} className="text-blue-400" />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Inicio</p>
+            <p className="text-[11px] text-[#555555] uppercase tracking-wider">Start</p>
             <p className="text-sm font-bold text-[#f0f0f0]">
-              {project.start_date ? formatDate(project.start_date) : 'Sin definir'}
+              {project.start_date ? formatDate(project.start_date) : 'Not defined'}
             </p>
             {project.target_end_date && (
-              <p className="text-xs text-[#888888]">Fin: {formatDate(project.target_end_date)}</p>
+              <p className="text-xs text-[#888888]">End: {formatDate(project.target_end_date)}</p>
             )}
           </div>
         </div>
@@ -221,10 +219,10 @@ export default function ProjectDetail({ projectId, onBack }) {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-[#f0f0f0]">Pipeline Semanal de Obra</h3>
+                <h3 className="text-base font-bold text-[#f0f0f0]">Weekly Work Pipeline</h3>
                 <p className="text-sm text-[#888888] mt-0.5">
-                  Progreso por semanas del calendario.{' '}
-                  {canEdit ? 'Click en una tarea para cambiar estado.' : ''}
+                  Weekly calendar progress.{' '}
+                  {canEdit ? 'Click a task to change status.' : ''}
                 </p>
               </div>
             </div>
@@ -250,18 +248,18 @@ export default function ProjectDetail({ projectId, onBack }) {
         {activeTab === 'payments' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold text-[#f0f0f0]">Historial de Pagos</h3>
+              <h3 className="text-base font-bold text-[#f0f0f0]">Payment History</h3>
               {canEdit && (
                 <button
                   onClick={() => setShowPaymentModal(true)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#3b82f6] hover:bg-[#2563eb] text-xs font-bold text-white transition-colors"
                 >
-                  <Plus size={14} /> Nuevo Pago
+                  <Plus size={14} /> New Payment
                 </button>
               )}
             </div>
             {payments.length === 0 ? (
-              <p className="text-sm text-[#555555] text-center py-8">No hay pagos registrados para este proyecto.</p>
+              <p className="text-sm text-[#555555] text-center py-8">No payments registered for this project.</p>
             ) : (
               <div className="space-y-3">
                 {payments.map(pay => {
@@ -287,11 +285,11 @@ export default function ProjectDetail({ projectId, onBack }) {
                         </div>
                         <div>
                           <p className="text-sm font-bold text-[#e0e0e0]">
-                            {pay.payment_type === 'deposit' ? 'Deposito' :
-                             pay.payment_type === 'partial' ? 'Pago Parcial' : 'Pago Final'}
+                            {pay.payment_type === 'deposit' ? 'Deposit' :
+                             pay.payment_type === 'partial' ? 'Partial Payment' : 'Final Payment'}
                           </p>
                           {pay.due_date && (
-                            <p className="text-xs text-[#555555]">Vence: {formatDate(pay.due_date)}</p>
+                            <p className="text-xs text-[#555555]">Due: {formatDate(pay.due_date)}</p>
                           )}
                         </div>
                       </div>
@@ -304,7 +302,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                             onClick={() => markPaymentReceived(pay.id)}
                             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-colors"
                           >
-                            <CheckCircle2 size={13} /> Recibido
+                            <CheckCircle2 size={13} /> Received
                           </button>
                         )}
                       </div>
@@ -332,24 +330,24 @@ export default function ProjectDetail({ projectId, onBack }) {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-sm overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b border-[#222]">
-              <h2 className="text-xl font-bold text-white">Nuevo Pago</h2>
+              <h2 className="text-xl font-bold text-white">New Payment</h2>
               <button onClick={() => setShowPaymentModal(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
             </div>
             
             <form id="payment-form" onSubmit={handleAddPayment} className="p-5 space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tipo de Pago</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Payment Type</label>
                 <select 
                   value={paymentForm.payment_type} onChange={e => setPaymentForm({...paymentForm, payment_type: e.target.value})}
                   className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#3b82f6]"
                 >
-                  <option value="deposit">Depósito (Adelanto)</option>
-                  <option value="partial">Pago Parcial / Avance</option>
-                  <option value="final">Pago Final</option>
+                  <option value="deposit">Deposit (Down Payment)</option>
+                  <option value="partial">Partial Payment / Draw</option>
+                  <option value="final">Final Payment</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Monto Total ($)</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Total Amount ($)</label>
                 <input 
                   required type="number" step="0.01" min="0"
                   value={paymentForm.amount} onChange={e => setPaymentForm({...paymentForm, amount: e.target.value})}
@@ -358,7 +356,7 @@ export default function ProjectDetail({ projectId, onBack }) {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Fecha de Vencimiento</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Due Date</label>
                 <input 
                   required type="date"
                   value={paymentForm.due_date} onChange={e => setPaymentForm({...paymentForm, due_date: e.target.value})}
@@ -368,9 +366,9 @@ export default function ProjectDetail({ projectId, onBack }) {
             </form>
             
             <div className="p-5 border-t border-[#222] flex gap-3">
-              <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white font-bold transition-colors">Cancelar</button>
+              <button type="button" onClick={() => setShowPaymentModal(false)} className="flex-1 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white font-bold transition-colors">Cancel</button>
               <button form="payment-form" type="submit" disabled={savingPayment} className="flex-1 py-2 rounded-lg bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold transition-colors disabled:opacity-50">
-                {savingPayment ? 'Guardando...' : 'Guardar Pago'}
+                {savingPayment ? 'Saving...' : 'Save Payment'}
               </button>
             </div>
           </div>
@@ -379,4 +377,3 @@ export default function ProjectDetail({ projectId, onBack }) {
     </div>
   );
 }
-

@@ -33,7 +33,7 @@ export default function ProjectPhotosTab({ projectId }) {
 
   const handleUploadClick = (type) => {
     if (projectId.startsWith('mock-')) {
-      alert("No puedes subir fotos a un proyecto de prueba. Por favor crea un proyecto real primero para usar esta función.");
+      alert("You cannot upload photos to a demo project. Please create a real project first to use this feature.");
       return;
     }
     setUploadType(type);
@@ -84,7 +84,7 @@ export default function ProjectPhotosTab({ projectId }) {
       fetchPhotos();
     } catch (err) {
       console.error(err);
-      alert('Error subiendo foto. Asegúrate de tener el storage "jobsite_photos" configurado en Supabase.');
+      alert('Error uploading photo. Make sure the storage "jobsite_photos" is configured in Supabase.');
     } finally {
       setUploading(false);
       e.target.value = null;
@@ -92,7 +92,7 @@ export default function ProjectPhotosTab({ projectId }) {
   };
 
   const deletePhoto = async (id, path) => {
-    if (!confirm('¿Seguro que deseas eliminar esta foto?')) return;
+    if (!confirm('Are you sure you want to delete this photo?')) return;
     
     await supabase.storage.from('jobsite_photos').remove([path]);
     await supabase.from('project_photos').delete().eq('id', id);
@@ -106,7 +106,7 @@ export default function ProjectPhotosTab({ projectId }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between border-b border-[#222] pb-2">
         <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          {type === 'before' ? '📸 Fotos del Antes' : '✨ Fotos del Después'}
+          {type === 'before' ? '📸 Before Photos' : '✨ After Photos'}
         </h3>
         <button 
           onClick={() => handleUploadClick(type)}
@@ -116,14 +116,14 @@ export default function ProjectPhotosTab({ projectId }) {
           }`}
         >
           {uploading && uploadType === type ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-          Subir Foto ({title})
+          Upload Photo ({title})
         </button>
       </div>
 
       {photoList.length === 0 ? (
         <div className="bg-[#111] border border-dashed border-[#333] rounded-xl p-8 text-center flex flex-col items-center">
           <ImageIcon size={32} className="text-gray-600 mb-2" />
-          <p className="text-sm text-gray-500">No hay fotos de "{title}" todavía.</p>
+          <p className="text-sm text-gray-500">No photos of "{title}" yet.</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -131,7 +131,7 @@ export default function ProjectPhotosTab({ projectId }) {
             <div key={photo.id} className="relative aspect-square rounded-xl overflow-hidden border border-[#222] group bg-[#111]">
               <img
                 src={supabase.storage.from('jobsite_photos').getPublicUrl(photo.storage_path).data.publicUrl}
-                alt="Foto"
+                alt="Photo"
                 className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               <button 
@@ -152,8 +152,8 @@ export default function ProjectPhotosTab({ projectId }) {
   return (
     <div className="space-y-8">
       <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
-      {renderPhotoGrid('Antes', beforePhotos, 'before')}
-      {renderPhotoGrid('Después', afterPhotos, 'after')}
+      {renderPhotoGrid('Before', beforePhotos, 'before')}
+      {renderPhotoGrid('After', afterPhotos, 'after')}
     </div>
   );
 }

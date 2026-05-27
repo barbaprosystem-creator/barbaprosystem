@@ -1,36 +1,35 @@
-export async function generateProposalContext(clientName, items, total, language = 'es') {
-  const langName = language === 'en' ? 'Inglés' : 'Español';
+export async function generateProposalContext(clientName, items, total, language = 'en') {
   const prompt = `
-Eres el asistente de ventas experto de Barba Construction, una empresa premium de roofing, siding y gutters.
-Genera un "Scope of Work" para el cliente: ${clientName || 'Cliente No Especificado'}
+You are the expert sales assistant of Barba Construction, a premium roofing, siding, and gutters company.
+Generate a "Scope of Work" for the client: ${clientName || 'Unspecified Client'}
 
-Ítems cotizados:
+Quoted items:
 ${items.map(i => `- ${i.name} (${i.quantity}): $${i.total.toFixed(2)}`).join('\n')}
 
-Total Estimado: $${total.toFixed(2)}
+Estimated Total: $${total.toFixed(2)}
 
-REGLAS DE FORMATO (Barba Construction Style Guidelines):
-1. Tono: Profesional, limpio, conciso y orientado al cliente.
-2. Idioma: Escribe toda la propuesta estrictamente en ${langName}.
-3. Precios: NO desglose precios individuales. El documento solo debe mostrar el precio total al final a menos que el usuario indique lo contrario.
-4. Garantía: Siempre incluir "2-year labor warranty by Barba Construction" y mencionar la garantía del fabricante para materiales.
-5. Inclusiones: Siempre incluye remoción de escombros (haul-off), cleanup, final inspection.
-6. Exclusiones: Excluye daños estructurales ocultos (como madera podrida adicional no cotizada) y permisos.
+FORMATTING RULES (Barba Construction Style Guidelines):
+1. Tone: Professional, clean, concise, and client-oriented.
+2. Language: Write the entire proposal strictly in English.
+3. Pricing: DO NOT list individual item prices. The document should only show the total price at the end unless specified otherwise.
+4. Warranty: Always include "2-year labor warranty by Barba Construction" and mention the manufacturer's warranty for materials.
+5. Inclusions: Always include debris removal (haul-off), cleanup, and final inspection.
+6. Exclusions: Exclude hidden structural damage (such as additional rotted wood not quoted) and permits.
 
-LÓGICA POR SERVICIO (Aplica si detectas estos ítems):
-- Roofing: Incluye "Remove existing roofing down to decking", "Synthetic underlayment", "Ice and water shield", "Drip edge", "Starter shingles", "Proper sealing of penetrations".
-- Gutters: Incluye "Proper slope", "Seal joints", "Evaluate water flow".
-- Siding: Incluye "House wrap/moisture barrier", "Seal transitions", "Install J-channel & trim".
-- Windows: Incluye "Proper flashing tape", "Insulate and seal gaps", "Premium exterior caulking".
+SERVICE-SPECIFIC LOGIC (Apply if you detect these items):
+- Roofing: Include "Remove existing roofing down to decking", "Synthetic underlayment", "Ice and water shield", "Drip edge", "Starter shingles", "Proper sealing of penetrations".
+- Gutters: Include "Proper slope", "Seal joints", "Evaluate water flow".
+- Siding: Include "House wrap/moisture barrier", "Seal transitions", "Install J-channel & trim".
+- Windows: Include "Proper flashing tape", "Insulate and seal gaps", "Premium exterior caulking".
 
-ESTRUCTURA ESTRICTA DEL DOCUMENTO A GENERAR (Usa este formato):
-1. Project Description (Resumen ejecutivo corto)
-2. Scope of Work (Detalle técnico de los ítems cotizados basado en las reglas de arriba)
-3. Included (Lo que incluye el servicio por defecto)
-4. Not Included / Exclusions (Lo excluido por defecto)
-5. Warranty (Garantía)
+STRICT DOCUMENT STRUCTURE TO GENERATE (Use this format):
+1. Project Description (Short executive summary)
+2. Scope of Work (Technical details of the quoted items based on the rules above)
+3. Included (What is included by default)
+4. Not Included / Exclusions (What is excluded by default)
+5. Warranty (Warranty terms)
 
-IMPORTANTE: Sé extremadamente preciso. No agregues relleno. NO uses Markdown como **asteriscos** porque se verá mal en el PDF, usa texto plano estructurado.
+IMPORTANT: Be extremely precise. No fluff. DO NOT use Markdown format (such as **asterisks**) because it renders poorly on the PDF, use clean structured plain text.
 `;
 
   try {
@@ -50,25 +49,26 @@ IMPORTANTE: Sé extremadamente preciso. No agregues relleno. NO uses Markdown co
     
     return data.choices[0].message.content;
   } catch (err) {
-    console.error('Error llamando a la IA:', err);
+    console.error('Error calling AI:', err);
     throw err;
   }
 }
 
 export async function refineProposalContext(currentText, instructions) {
   const prompt = `
-Eres el asistente de ventas experto de Barba Construction.
-Aquí tienes el borrador actual de la propuesta de un cliente:
+You are the expert sales assistant of Barba Construction.
+Here is the current draft of a client's proposal:
 
---- INICIO DEL BORRADOR ---
+--- DRAFT START ---
 ${currentText}
---- FIN DEL BORRADOR ---
+--- DRAFT END ---
 
-El vendedor ha solicitado la siguiente modificación o ajuste:
+The salesperson has requested the following modification or adjustment:
 "${instructions}"
 
-Por favor, reescribe el borrador aplicando EXACTAMENTE lo que pide el vendedor, pero manteniendo el tono profesional, limpio y la estructura original. 
-Devuelve ÚNICAMENTE el texto de la propuesta modificada, sin saludos ni comentarios extras. NO uses formato Markdown (como **asteriscos**), usa texto plano estructurado.
+Please rewrite the draft applying EXACTLY what the salesperson requested, but maintaining the professional, clean tone and the original structure.
+Generate the response strictly in English.
+Return ONLY the modified proposal text, without greetings or extra comments. DO NOT use Markdown format (such as **asterisks**), use clean structured plain text.
 `;
 
   try {
@@ -88,7 +88,7 @@ Devuelve ÚNICAMENTE el texto de la propuesta modificada, sin saludos ni comenta
     
     return data.choices[0].message.content;
   } catch (err) {
-    console.error('Error llamando a la IA:', err);
+    console.error('Error calling AI:', err);
     throw err;
   }
 }
@@ -138,8 +138,8 @@ ${items.map(i => `ID: ${i.id} | Categoría: ${i.category} | Ítem: ${i.item_name
 }
 
 export async function askCopilot(messages, contextString = null) {
-  let systemMessage = `Eres "Barba Copilot", el asistente inteligente y oráculo operativo exclusivo de Barba Construction.
-Tu misión es ayudar a la gerencia, vendedores y encargados de operaciones. Responde siempre en español, con un tono ultra-profesional, resolutivo y eficiente.
+  let systemMessage = `You are "Barba Copilot", the intelligent assistant and exclusive operational oracle of Barba Construction.
+Your mission is to help management, salespeople, and operations managers. Always respond in English, with an ultra-professional, decisive, and efficient tone.
 
 BARBA CONSTRUCTION – OFFICIAL PRICE TABLE 2026
 📌 
@@ -151,7 +151,7 @@ It is mandatory to take multiple photos 📸 from different angles, measure all 
 ROOFING
 🔴 ASPHALT ROOF → $350 / SQ
 🔴 ASPHALT ROOF (INSURANCE JOBS) → $400 / SQ
-🔴 METAL ROOF (ANY COLOR) → $1,000/ SQ
+🔴 METAL ROOF (ANY COLOR) → $1,000 / SQ
 🔴 TPO ROOF → $1,200 / SQ
 🔴 PLYWOOD REPLACEMENT (ROOF & EXTERIOR WALLS) → $90 / sheet
 🔴 SKYLIGHT REPLACEMENT → $1,950 each
@@ -162,7 +162,7 @@ CHIMNEY / FLASHING
 
 🚿 
 GUTTERS • SOFFIT • PORCH
-🟦 GUTTERS & DOWNSPOUTS (5” / 6”) → $15 por / linear ft 😳minimo
+🟦 GUTTERS & DOWNSPOUTS (5” / 6”) → $15 per / linear ft 😳minimum
 🟦 GUTTER GUARD → $8/ linear ft
 🟦 VINYL SOFFIT → $18 linear ft
 🟦 METAL WRAPPED FASCIA → $18  linear ft
@@ -171,9 +171,9 @@ GUTTERS • SOFFIT • PORCH
 🧱 
 SIDING (MATERIAL + LABOR INCLUDED)
 🟩 VINYL SIDING – HORIZONTAL → $580 / SQ regular
-🟩 VINYL SIDING – VERTICAL → $850 / SQ parado 
+🟩 VINYL SIDING – VERTICAL → $850 / SQ standing
 🟩 HARDIE BOARD (FIBER CEMENT) → $1,500 / SQ
-🟩 WOOD SIDING (RECOMMENDED) → $2000/ SQ
+🟩 WOOD SIDING (RECOMMENDED) → $2000 / SQ
 Includes in all: removal of old siding, house wrap, full installation, J-channel, corners, cuts around openings, sealing & final cleanup.
 
 🪟 
@@ -181,7 +181,7 @@ WINDOWS
 🟨 VINYL WHITE → $400 each
 🟨 VINYL SAND → $750 each
 🟨 VINYL BLACK → $950 each
-🟨 BASEMENT WINDOW – WHITE → $400each
+🟨 BASEMENT WINDOW – WHITE → $400 each
 🟨 BASEMENT WINDOW – OTHER COLOR → $650 each
 🟨 BASEMENT EGRESS WINDOW – ALL INCLUDED → $5,800 each
 (Cut-out, window, metal, cover, sump pump, outlet & ladder included)
@@ -189,8 +189,8 @@ WINDOWS
 🚪 
 DOORS (REMOVE & INSTALL)
 🟫 INTERIOR DOOR → $850
-🟫 EXTERIOR DOOR 36” × 80” → $2,900 estándar
-     EXTERIOR STORM DOOR-$950
+🟫 EXTERIOR DOOR 36” × 80” → $2,900 standard
+     EXTERIOR STORM DOOR → $950
 🟫 DOUBLE EXTERIOR DOOR 70–72” × 80” → $3,500
 🟫 SLIDING GLASS DOOR → $3,200
 🟫 NEW OPENING (ANY DOOR) → $3,900 minimum
@@ -273,7 +273,7 @@ PLUMBING (PRICE PER SERVICE)
 🚰 NEW WATER LINE (PEX/COPPER) → $18 / ft
 🚰 NEW DRAIN LINE (PVC) → $22 / ft
 🚰 LAUNDRY HOOKUPS (COMPLETE) → $750
-🚰 FULL BATHROUGH-IN → $1,600
+🚰 FULL BATH ROUGH-IN → $1,600
 🚰 WATER HEATER (TANK) → $1,650
 🚰 TANKLESS WATER HEATER → $3,900
 🚰 SUMP PUMP + DISCHARGE → $850
@@ -323,7 +323,7 @@ CONCRETE & ASPHALT
 
 🚧 
 FENCING (MATERIAL + LABOR)
-🔷 CHAIN LINK – GALVANIZED (4 FT) → $30/ ft
+🔷 CHAIN LINK – GALVANIZED (4 FT) → $30 / ft
 🔷 CHAIN LINK – BLACK (4 FT) → $30 / ft
 🔷 WOOD FENCE – DOG EAR (6 FT) → $35 / ft
 🔷 HORSE FENCE – WOOD (4 FT) → $35 / ft
@@ -345,7 +345,7 @@ HVAC – INSTALLED (PERMIT INCLUDED)
 
 🏗️ 
 NEW CONSTRUCTION & ADDITIONS
-🏗️ NEW CONSTRUCTION (FULL BUILD – STANDARD MATERIALS) → $190/ sq ft
+🏗️ NEW CONSTRUCTION (FULL BUILD – STANDARD MATERIALS) → $190 / sq ft
 🏗️ ADDITION + SIDING + BATHROOM → $190 / sq ft
 🏗️ BRICK ADDITION + BATHROOM → $200 / sq ft
 🏗️ SIDING ADDITION – NO BATH / NO KITCHEN / NO PLUMBING → $170 / sq ft
@@ -356,10 +356,10 @@ ALL PRICES MAY CHANGE AT ANY TIME DUE TO JOB DIFFICULTY OR MATERIAL COST CHANGES
 ANY ESTIMATE OUTSIDE THIS TABLE, ANY PRICE CHANGE OR ANY DISCOUNT MUST BE APPROVED ONLY AND EXCLUSIVELY BY:
 LÁZARO BARBA – CEO, BARBA CONSTRUCTION
 
-Utiliza EXCLUSIVAMENTE esta información de precios para cualquier estimación, consulta o validación de propuestas comerciales.`;
+Use ONLY this price table for any estimation, query, or commercial validation.`;
 
   if (contextString) {
-    systemMessage += `\n\nCONTEXTO ACTUAL DE LA CONVERSACIÓN:\nEl usuario está preguntando específicamente sobre esto:\n${contextString}\n\nUsa este contexto para responder a sus preguntas de forma precisa.`;
+    systemMessage += `\n\nCURRENT CONVERSATION CONTEXT:\nThe user is asking specifically about this:\n${contextString}\n\nUse this context to answer their questions precisely.`;
   }
 
   const payloadMessages = [
@@ -384,7 +384,7 @@ Utiliza EXCLUSIVAMENTE esta información de precios para cualquier estimación, 
     
     return data.choices[0].message.content;
   } catch (err) {
-    console.error('Error llamando a la IA (Copilot):', err);
+    console.error('Error calling AI (Copilot):', err);
     throw err;
   }
 }
@@ -446,42 +446,42 @@ Formato de salida esperado (solo JSON, nada de markdown ni explicaciones):
 export async function generateEstimateFromText(inputText, prices = []) {
   const pricesListStr = prices.length > 0 
     ? prices.map(p => `- [${p.category.toUpperCase()}] ${p.item_name}: $${p.sell_price} / ${p.unit_type}${p.convert_unit_ai ? ' (AUTO-CONVERT ENABLED)' : ''}`).join('\n')
-    : 'No hay precios disponibles en la base de datos. Usa tu mejor criterio.';
+    : 'No prices available in the database. Use your best judgment.';
 
   const convertItems = prices.filter(p => p.convert_unit_ai);
   const conversionRulesStr = convertItems.length > 0
-    ? convertItems.map(p => `- Para "${p.item_name}" (${p.category}): La unidad oficial es "${p.unit_type}". DEBES convertir cualquier cantidad expresada en otras unidades (por ejemplo, si te dicen "2000 sqft" de Asphalt Roof y la unidad es "sq", conviértelo a "20 sq" porque 1 sq = 100 sqft; si dicen "15 squares" de horizontal siding y la unidad es "sqft", conviértelo a "1500 sqft", etc.).`).join('\n')
+    ? convertItems.map(p => `- For "${p.item_name}" (${p.category}): The official unit is "${p.unit_type}". You MUST convert any quantity expressed in other units (for example, if they tell you "2000 sqft" of Asphalt Roof and the unit is "sq", convert it to "20 sq" because 1 sq = 100 sqft; if they say "15 squares" of horizontal siding and the unit is "sqft", convert it to "1500 sqft", etc.).`).join('\n')
     : '';
 
   const prompt = `
-Eres la IA Oficial de Estimados de Barba Construction.
-Tu objetivo es analizar el texto dictado o escrito por el vendedor y extraer los ítems necesarios para construir un estimado en formato JSON estricto.
+You are the Official Estimate AI of Barba Construction.
+Your goal is to analyze the text dictated or written by the salesperson and extract the items needed to construct an estimate in a strict JSON format.
 
-=== INICIO BASE DE CONOCIMIENTOS OFICIAL BARBA CONSTRUCTION ===
-1. IDENTIDAD DE LA COMPAÑÍA
-Nombre: BARBA CONSTRUCTION BUILDER
-Frases obligatorias: FINANCING AVAILABLE, FREE ESTIMATES, 2 YEAR LABOR WARRANTY, MATERIALS AND LABOR INCLUDED
-Estilo visual: Premium, Profesional tipo banco, Logo centrado.
+=== START OF OFFICIAL BARBA CONSTRUCTION KNOWLEDGE BASE ===
+1. COMPANY IDENTITY
+Name: BARBA CONSTRUCTION BUILDER
+Mandatory phrases: FINANCING AVAILABLE, FREE ESTIMATES, 2 YEAR LABOR WARRANTY, MATERIALS AND LABOR INCLUDED
+Visual style: Premium, professional bank-like, centered logo.
 
-5. TABLA OFICIAL DE PRECIOS DINÁMICA (DESDE LA BASE DE DATOS)
+5. OFFICIAL DYNAMIC PRICE TABLE (FROM DATABASE)
 ${pricesListStr}
-=== FIN BASE DE CONOCIMIENTOS ===
+=== END OF KNOWLEDGE BASE ===
 
-${conversionRulesStr ? `=== REGLAS OBLIGATORIAS DE CONVERSIÓN DE MEDIDAS ===
+${conversionRulesStr ? `=== MANDATORY MEASUREMENT CONVERSION RULES ===
 ${conversionRulesStr}
 ` : ''}
 
-REGLAS DE EXTRACCIÓN:
-- Basándote en el texto del vendedor, identifica todos los servicios y materiales mencionados.
-- Calcula las cantidades. (Ejemplo: si dice "un techo de asfalto de 15 squares", la cantidad es 15, el precio unitario es 380 si es estándar. El total es 15 * 380).
-- Si un ítem tiene activa la conversión automática (AUTO-CONVERT ENABLED) y el usuario dicta medidas en otras unidades, realiza la conversión matemática correspondiente antes de calcular el total y rellenar la cantidad. (Por ejemplo, si la unidad del ítem es "sq", 2000 sqft se convierten a 20).
-- Devuelve un JSON con este formato exacto:
+EXTRACTION RULES:
+- Based on the salesperson's text, identify all mentioned services and materials.
+- Calculate quantities. (Example: if it says "an asphalt roof of 15 squares", quantity is 15, unit price is 380 if standard. Total is 15 * 380).
+- If an item has auto-convert enabled (AUTO-CONVERT ENABLED) and the user dictates measurements in other units, perform the corresponding mathematical conversion before calculating the total and filling the quantity. (For example, if the item's unit is "sq", 2000 sqft is converted to 20).
+- Return a JSON with this exact format:
 {
   "items": [
     {
       "service": "roofing",
-      "name": "Nombre descriptivo premium del servicio",
-      "details": "Detalles (ej: 15 SQ @ $380/SQ)",
+      "name": "Premium descriptive name of service",
+      "details": "Details (e.g. 15 SQ @ $380/SQ)",
       "quantity": 15,
       "unitPrice": 380,
       "total": 5700
@@ -489,11 +489,11 @@ REGLAS DE EXTRACCIÓN:
   ]
 }
 
-- Asegúrate de que el unitPrice coincida con la Tabla Oficial proporcionada. Si el texto especifica que es un trabajo "flip" o "insurance" y no hay un precio exacto, ajusta lógicamente.
-- Si el usuario dicta medidas crudas (ej "100 pies de cerca"), haz el cálculo.
-- IMPORTANTE: No devuelvas NADA más que el objeto JSON crudo (sin marcadores \`\`\`json ni texto alrededor).
+- Ensure that the unitPrice matches the provided Official Table. If the text specifies that it is a "flip" or "insurance" job and there is no exact price, adjust logically.
+- If the user dictates raw measurements (e.g. "100 feet of fence"), calculate it.
+- IMPORTANT: Return absolutely NOTHING else other than the raw JSON object (no \`\`\`json block markdown markers or text around it).
 
-TEXTO DEL VENDEDOR:
+SALESPERSON'S TEXT:
 "${inputText}"
 `;
 
@@ -517,11 +517,11 @@ TEXTO DEL VENDEDOR:
     try {
       return JSON.parse(content);
     } catch (e) {
-      console.error('Error parseando JSON de la IA:', content);
-      throw new Error('La respuesta de la IA no fue un JSON válido.');
+      console.error('Error parsing AI JSON response:', content);
+      throw new Error('AI response was not a valid JSON.');
     }
   } catch (err) {
-    console.error('Error en generateEstimateFromText:', err);
+    console.error('Error in generateEstimateFromText:', err);
     throw err;
   }
 }

@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 export default function GlobalChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hola, soy Barba Copilot. Conozco las reglas de precios de la empresa y tengo acceso a los datos del CRM en tiempo real. ¿En qué te puedo ayudar hoy?' }
+    { role: 'assistant', content: 'Hello, I am Barba Copilot. I know the company\'s pricing rules and have access to live CRM data. How can I help you today?' }
   ]);
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
@@ -33,27 +33,27 @@ export default function GlobalChatbot() {
       const { data: payData } = await supabase.from('payments').select('amount, status, due_date').neq('status', 'received').order('due_date', { ascending: true }).limit(10);
       const { data: bData } = await supabase.from('profiles').select('full_name, role').in('role', ['supervisor']).limit(10);
 
-      let ctx = "DATOS EN VIVO DEL CRM (Úsalos si el usuario pregunta por proyectos, pagos o brigadas):\n\n";
+      let ctx = "LIVE CRM DATA (Use these if the user asks about projects, payments, or crews):\n\n";
       
-      ctx += "Proyectos recientes:\n";
+      ctx += "Recent projects:\n";
       if (pData && pData.length > 0) {
-        ctx += pData.map(p => `- ${p.title} (Estatus: ${p.status}, Inicio: ${p.start_date || 'N/A'})`).join('\n') + "\n\n";
+        ctx += pData.map(p => `- ${p.title} (Status: ${p.status}, Start: ${p.start_date || 'N/A'})`).join('\n') + "\n\n";
       } else {
-        ctx += "No hay proyectos recientes.\n\n";
+        ctx += "No recent projects.\n\n";
       }
 
-      ctx += "Pagos Pendientes:\n";
+      ctx += "Pending Payments:\n";
       if (payData && payData.length > 0) {
-        ctx += payData.map(p => `- Pago de $${p.amount} (Estatus: ${p.status}, Vence: ${p.due_date || 'N/A'})`).join('\n') + "\n\n";
+        ctx += payData.map(p => `- Payment of $${p.amount} (Status: ${p.status}, Due: ${p.due_date || 'N/A'})`).join('\n') + "\n\n";
       } else {
-        ctx += "No hay pagos pendientes.\n\n";
+        ctx += "No pending payments.\n\n";
       }
 
-      ctx += "Brigadas/Supervisores Activos:\n";
+      ctx += "Crews/Active Supervisors:\n";
       if (bData && bData.length > 0) {
         ctx += bData.map(b => `- ${b.full_name}`).join('\n') + "\n";
       } else {
-        ctx += "No hay supervisores activos.\n";
+        ctx += "No active supervisors.\n";
       }
       
       setGlobalContext(ctx);
@@ -114,7 +114,7 @@ export default function GlobalChatbot() {
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <button onClick={() => setIsOpen(false)} className="p-1.5 text-gray-400 hover:text-white rounded transition-colors" title="Cerrar">
+          <button onClick={() => setIsOpen(false)} className="p-1.5 text-gray-400 hover:text-white rounded transition-colors" title="Close">
             <X size={18} />
           </button>
         </div>
@@ -137,7 +137,7 @@ export default function GlobalChatbot() {
           {isThinking && (
             <div className="flex justify-start">
               <div className="bg-[#222] text-gray-400 p-3 rounded-xl rounded-tl-none flex items-center gap-2 text-sm">
-                <Loader2 size={14} className="animate-spin" /> Procesando consulta...
+                <Loader2 size={14} className="animate-spin" /> Processing request...
               </div>
             </div>
           )}
@@ -152,7 +152,7 @@ export default function GlobalChatbot() {
             type="text" 
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Escribe tu pregunta en lenguaje natural..."
+            placeholder="Ask a question in plain English..."
             className="w-full bg-[#151515] text-white rounded-lg pl-4 pr-10 py-3 border border-[#333] focus:outline-none focus:border-[#FACB00] transition-colors text-sm"
             disabled={isThinking}
           />

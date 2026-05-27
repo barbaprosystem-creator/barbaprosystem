@@ -85,7 +85,7 @@ export default function PricingSettings() {
   }
 
   async function deleteItem(id) {
-    if (!confirm('¿Eliminar este ítem de precios?')) return;
+    if (!confirm('Delete this pricing item?')) return;
     await supabase.from('price_catalog').delete().eq('id', id);
     fetchItems();
   }
@@ -103,16 +103,16 @@ export default function PricingSettings() {
     if (error) {
       // Revert if error
       setItems(prev => prev.map(item => item.id === id ? { ...item, convert_unit_ai: currentValue } : item));
-      alert('Error al guardar configuración de conversión: ' + error.message);
+      alert('Error saving conversion setting: ' + error.message);
     }
   }
 
   async function analyzeMarket() {
     if (items.length === 0) {
-      alert('No hay ítems para analizar.');
+      alert('No items to analyze.');
       return;
     }
-    if (!confirm('¿Analizar los precios de mercado actuales usando IA? Esto tomará unos segundos.')) return;
+    if (!confirm('Analyze current market prices using AI? This will take a few seconds.')) return;
     setAnalyzingMarket(true);
     try {
       const marketData = await analyzeMarketPrices(items);
@@ -132,9 +132,9 @@ export default function PricingSettings() {
       
       await Promise.all(promises);
       await fetchItems();
-      alert('Análisis de mercado completado exitosamente.');
+      alert('Market analysis completed successfully.');
     } catch (err) {
-      alert('Error analizando mercado: ' + err.message);
+      alert('Error analyzing market: ' + err.message);
     } finally {
       setAnalyzingMarket(false);
     }
@@ -154,16 +154,16 @@ export default function PricingSettings() {
     <div className="pricing-page">
       <header className="admin-page-header">
         <div>
-          <h1><Tag size={22} /> Precios</h1>
-          <p className="text-muted">Edita tus precios de venta directos para los estimadores.</p>
+          <h1><Tag size={22} /> Pricing</h1>
+          <p className="text-muted">Edit your direct selling prices for estimators.</p>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn-secondary" onClick={analyzeMarket} disabled={analyzingMarket} style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(168, 85, 247, 0.1)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
             {analyzingMarket ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
-            {analyzingMarket ? 'Analizando...' : 'Analizar Mercado (IA)'}
+            {analyzingMarket ? 'Analyzing...' : 'Analyze Market (AI)'}
           </button>
           <button className="btn-primary" onClick={() => { setShowAdd(!showAdd); setEditId(null); }}>
-            <Plus size={18} /> Agregar Ítem
+            <Plus size={18} /> Add Item
           </button>
         </div>
       </header>
@@ -172,11 +172,11 @@ export default function PricingSettings() {
       <div className="pricing-toolbar">
         <div className="pricing-search">
           <Search size={16} />
-          <input type="text" placeholder="Buscar ítems..." value={search} onChange={e => setSearch(e.target.value)} />
+          <input type="text" placeholder="Search items..." value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="pricing-filters">
           <button className={`filter-chip ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-            Todos ({items.length})
+            All ({items.length})
           </button>
           {CATEGORIES.filter(c => catCounts[c]).map(cat => (
             <button key={cat} className={`filter-chip ${filter === cat ? 'active' : ''}`} onClick={() => setFilter(cat)}>
@@ -190,42 +190,42 @@ export default function PricingSettings() {
       {showAdd && (
         <div className="pricing-add-form">
           <div className="pricing-add-header">
-            <h3>Nuevo Ítem de Precio</h3>
+            <h3>New Pricing Item</h3>
             <button className="btn-icon" onClick={() => setShowAdd(false)}><X size={16} /></button>
           </div>
           <div className="pricing-form-grid">
             <div className="pricing-form-field">
-              <label>Categoría</label>
+              <label>Category</label>
               <select value={newItem.category} onChange={e => setNewItem({ ...newItem, category: e.target.value })}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div className="pricing-form-field">
-              <label>Nombre del Ítem *</label>
-              <input placeholder="ej: Shingle 3-Tab" value={newItem.item_name}
+              <label>Item Name *</label>
+              <input placeholder="e.g. Shingle 3-Tab" value={newItem.item_name}
                 onChange={e => setNewItem({ ...newItem, item_name: e.target.value })} />
             </div>
             <div className="pricing-form-field" style={{ gridColumn: 'span 2' }}>
-              <label>Descripción</label>
-              <input placeholder="Descripción opcional..." value={newItem.description}
+              <label>Description</label>
+              <input placeholder="Optional description..." value={newItem.description}
                 onChange={e => setNewItem({ ...newItem, description: e.target.value })} />
             </div>
             <div className="pricing-form-field">
-              <label>Unidad</label>
+              <label>Unit</label>
               <select value={newItem.unit_type} onChange={e => setNewItem({ ...newItem, unit_type: e.target.value })}>
                 {UNIT_TYPES.map(u => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
             <div className="pricing-form-field">
-              <label>Precio de Venta ($) *</label>
+              <label>Sale Price ($) *</label>
               <input type="number" min="0" step="0.01" placeholder="0.00" value={newItem.sell_price}
                 onChange={e => setNewItem({ ...newItem, sell_price: e.target.value })} />
             </div>
           </div>
           <div className="pricing-form-actions">
-            <button className="btn-ghost" onClick={() => setShowAdd(false)}>Cancelar</button>
+            <button className="btn-ghost" onClick={() => setShowAdd(false)}>Cancel</button>
             <button className="btn-primary" onClick={addItem} disabled={saving}>
-              <Save size={16} /> {saving ? 'Guardando...' : 'Guardar Ítem'}
+              <Save size={16} /> {saving ? 'Saving...' : 'Save Item'}
             </button>
           </div>
         </div>
@@ -234,22 +234,22 @@ export default function PricingSettings() {
       {/* Table */}
       <div className="pricing-table-wrap">
         {loading ? (
-          <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>Cargando precios...</div>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>Loading prices...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>
-            No se encontraron ítems. {items.length === 0 ? 'Agrega tu primer ítem arriba.' : 'Intenta otro filtro.'}
+            No items found. {items.length === 0 ? 'Add your first item above.' : 'Try another filter.'}
           </div>
         ) : (
           <table className="pricing-table">
             <thead>
               <tr>
-                <th>Categoría</th>
-                <th>Ítem / Descripción</th>
-                <th>Unidad</th>
-                <th>Precio Venta</th>
-                <th>Conv. IA</th>
-                <th>Mercado (IA)</th>
-                <th style={{ width: 100 }}>Acciones</th>
+                <th>Category</th>
+                <th>Item / Description</th>
+                <th>Unit</th>
+                <th>Sale Price</th>
+                <th>AI Conv.</th>
+                <th>Market (AI)</th>
+                <th style={{ width: 100 }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -266,10 +266,10 @@ export default function PricingSettings() {
                     <td>
                       <input className="pricing-inline-input" value={editForm.item_name}
                         onChange={e => setEditForm({ ...editForm, item_name: e.target.value })}
-                        placeholder="Nombre" />
+                        placeholder="Name" />
                       <input className="pricing-inline-input pricing-desc-input" value={editForm.description}
                         onChange={e => setEditForm({ ...editForm, description: e.target.value })}
-                        placeholder="Descripción (opcional)" />
+                        placeholder="Description (optional)" />
                     </td>
                     <td>
                       <select className="pricing-inline-input" value={editForm.unit_type}
@@ -286,10 +286,10 @@ export default function PricingSettings() {
                     <td style={{ color: '#888' }}>-</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn-icon success" onClick={saveEdit} title="Guardar" disabled={saving}>
+                        <button className="btn-icon success" onClick={saveEdit} title="Save" disabled={saving}>
                           <Check size={15} />
                         </button>
-                        <button className="btn-icon" onClick={cancelEdit} title="Cancelar">
+                        <button className="btn-icon" onClick={cancelEdit} title="Cancel">
                           <X size={15} />
                         </button>
                       </div>
@@ -308,7 +308,7 @@ export default function PricingSettings() {
                     <td>
                       <button
                         onClick={() => toggleConvertUnitAI(item.id, item.convert_unit_ai)}
-                        title={item.convert_unit_ai ? "Desactivar conversión de unidades IA" : "Activar conversión automática de unidades para la IA"}
+                        title={item.convert_unit_ai ? "Deactivate AI unit conversion" : "Activate automatic unit conversion for the AI"}
                         style={{
                           background: item.convert_unit_ai ? 'rgba(249, 115, 22, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                           border: `1px solid ${item.convert_unit_ai ? '#f97316' : '#444'}`,
@@ -325,27 +325,27 @@ export default function PricingSettings() {
                         }}
                       >
                         <Sparkles size={12} />
-                        {item.convert_unit_ai ? 'Activo' : 'Inactivo'}
+                        {item.convert_unit_ai ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td>
                       {item.market_price ? (
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{formatCurrency(item.market_price)}</span>
-                          <span style={{ fontSize: '10px', color: '#666' }}>
-                            Act. {new Date(item.market_price_updated_at).toLocaleDateString('es')}
-                          </span>
+                           <span style={{ color: '#c084fc', fontWeight: 'bold' }}>{formatCurrency(item.market_price)}</span>
+                           <span style={{ fontSize: '10px', color: '#666' }}>
+                             Updated {new Date(item.market_price_updated_at).toLocaleDateString('en-US')}
+                           </span>
                         </div>
                       ) : (
-                        <span style={{ color: '#555', fontStyle: 'italic', fontSize: '12px' }}>Sin analizar</span>
+                        <span style={{ color: '#555', fontStyle: 'italic', fontSize: '12px' }}>Not analyzed</span>
                       )}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn-icon" onClick={() => startEdit(item)} title="Editar">
+                        <button className="btn-icon" onClick={() => startEdit(item)} title="Edit">
                           <Edit2 size={15} />
                         </button>
-                        <button className="btn-icon danger" onClick={() => deleteItem(item.id)} title="Eliminar">
+                        <button className="btn-icon danger" onClick={() => deleteItem(item.id)} title="Delete">
                           <Trash2 size={15} />
                         </button>
                       </div>

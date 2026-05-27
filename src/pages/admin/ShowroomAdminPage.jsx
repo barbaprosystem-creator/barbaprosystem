@@ -43,7 +43,7 @@ export default function ShowroomAdminPage() {
     }).select().single();
 
     if (error) {
-      alert('Error al crear categoría');
+      alert('Error creating category');
     } else {
       setCategories([...categories, data]);
       setShowCategoryForm(false);
@@ -53,7 +53,7 @@ export default function ShowroomAdminPage() {
   }
 
   async function handleDeleteCategory(id) {
-    if (!confirm('¿Seguro que deseas eliminar esta categoría y TODAS sus fotos?')) return;
+    if (!confirm('Are you sure you want to delete this category and ALL of its photos?')) return;
     // Las imágenes se borran en cascada por la base de datos (ON DELETE CASCADE),
     // pero idealmente deberían borrarse del Storage también. Por simplicidad de este demo, solo borramos el registro.
     await supabase.from('showroom_categories').delete().eq('id', id);
@@ -107,7 +107,7 @@ export default function ShowroomAdminPage() {
   }
 
   async function handleDeleteImage(id) {
-    if (!confirm('¿Eliminar esta foto?')) return;
+    if (!confirm('Delete this photo?')) return;
     await supabase.from('showroom_images').delete().eq('id', id);
     setImages(images.filter(img => img.id !== id));
   }
@@ -116,12 +116,12 @@ export default function ShowroomAdminPage() {
     <div className="admin-page p-6 lg:p-10 space-y-6 h-full flex flex-col">
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
-          <h1><ImageIcon size={24}/> Administrador de Showroom</h1>
+          <h1><ImageIcon size={24}/> Showroom Manager</h1>
         </div>
         {!selectedCategory && (
           <div className="crm-toolbar-right">
             <button className="btn-primary" onClick={() => setShowCategoryForm(true)}>
-              <Plus size={18}/> Nueva Categoría
+              <Plus size={18}/> New Category
             </button>
           </div>
         )}
@@ -133,12 +133,12 @@ export default function ShowroomAdminPage() {
           <div className="p-4 border-b border-[#333]">
             <h2 className="font-bold text-lg text-white flex items-center gap-2">
               <Folder size={20} className="text-indigo-400"/>
-              Categorías ({categories.length})
+              Categories ({categories.length})
             </h2>
           </div>
           
           {loading ? (
-            <div className="p-8 text-center text-gray-500"><Loader2 className="animate-spin mx-auto mb-2"/> Cargando...</div>
+            <div className="p-8 text-center text-gray-500"><Loader2 className="animate-spin mx-auto mb-2"/> Loading...</div>
           ) : (
             <ul className="divide-y divide-[#333]">
               {categories.map(cat => (
@@ -156,13 +156,13 @@ export default function ShowroomAdminPage() {
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
                     className="text-gray-500 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Eliminar categoría"
+                    title="Delete category"
                   >
                     <Trash2 size={16}/>
                   </button>
                 </li>
               ))}
-              {categories.length === 0 && <li className="p-8 text-center text-gray-500">No hay categorías.</li>}
+              {categories.length === 0 && <li className="p-8 text-center text-gray-500">No categories found.</li>}
             </ul>
           )}
         </div>
@@ -172,9 +172,9 @@ export default function ShowroomAdminPage() {
           <div className="flex-1 bg-[#1a1a1a] rounded-xl border border-[#333] flex flex-col min-h-0">
             <div className="p-4 border-b border-[#333] flex justify-between items-center">
               <div>
-                <button className="lg:hidden text-indigo-400 text-sm mb-2 hover:underline" onClick={() => setSelectedCategory(null)}>&larr; Volver a Categorías</button>
+                <button className="lg:hidden text-indigo-400 text-sm mb-2 hover:underline" onClick={() => setSelectedCategory(null)}>&larr; Back to Categories</button>
                 <h2 className="font-bold text-xl text-white">{selectedCategory.name}</h2>
-                <p className="text-sm text-gray-400">{images.length} fotos en esta categoría</p>
+                <p className="text-sm text-gray-400">{images.length} photos in this category</p>
               </div>
               <div>
                 <input 
@@ -191,7 +191,7 @@ export default function ShowroomAdminPage() {
                   className="btn-primary flex items-center gap-2"
                 >
                   {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16}/>}
-                  {uploading ? 'Subiendo...' : 'Subir Fotos'}
+                  {uploading ? 'Uploading...' : 'Upload Photos'}
                 </button>
               </div>
             </div>
@@ -200,7 +200,7 @@ export default function ShowroomAdminPage() {
               {images.length === 0 && !uploading && (
                 <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-4">
                   <ImageIcon size={48} className="opacity-20"/>
-                  <p>Aún no hay fotos en esta categoría.</p>
+                  <p>No photos in this category yet.</p>
                 </div>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -225,20 +225,20 @@ export default function ShowroomAdminPage() {
       {showCategoryForm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <form onSubmit={handleCreateCategory} className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md p-6">
-            <h3 className="text-xl font-bold text-white mb-4">Nueva Categoría</h3>
+            <h3 className="text-xl font-bold text-white mb-4">New Category</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Nombre (Ej: Roofing, Cocinas)</label>
+                <label className="block text-sm text-gray-400 mb-1">Name (e.g. Roofing, Kitchens)</label>
                 <input required type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white"/>
               </div>
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Descripción</label>
+                <label className="block text-sm text-gray-400 mb-1">Description</label>
                 <textarea value={newCatDesc} onChange={e => setNewCatDesc(e.target.value)} className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white h-24"/>
               </div>
             </div>
             <div className="flex gap-2 mt-6">
-              <button type="button" className="btn-secondary flex-1" onClick={() => setShowCategoryForm(false)}>Cancelar</button>
-              <button type="submit" className="btn-primary flex-1">Guardar</button>
+              <button type="button" className="btn-secondary flex-1" onClick={() => setShowCategoryForm(false)}>Cancel</button>
+              <button type="submit" className="btn-primary flex-1">Save</button>
             </div>
           </form>
         </div>

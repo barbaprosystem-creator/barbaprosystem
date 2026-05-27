@@ -62,7 +62,7 @@ function ClientSearch({ onSelect, onClear, selectedContact }) {
         <input
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Buscar cliente por nombre o telefono..."
+          placeholder="Search client by name or phone..."
           style={{
             background: 'none', border: 'none', outline: 'none',
             color: '#e2e8f0', fontSize: '14px', flex: 1,
@@ -148,35 +148,35 @@ export default function Estimator() {
   }, [selectedContactId]);
 
   const handleSave = async () => {
-    if (!receiptItems.length) { alert('Agrega al menos un servicio al estimado.'); return; }
+    if (!receiptItems.length) { alert('Add at least one service to the estimate.'); return; }
     setSaving(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-        let photoUrls = [];
-        if (photos.length > 0) {
-          for (const p of photos) {
-            try {
-              const fileExt = p.file.name.split('.').pop() || 'jpg';
-              const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-              const filePath = `${user?.id || 'public'}/${fileName}`;
-              
-              const { error: uploadError } = await supabase.storage.from('jobsite_photos').upload(filePath, p.file);
-              if (!uploadError) {
-                const { data } = supabase.storage.from('jobsite_photos').getPublicUrl(filePath);
-                photoUrls.push(data.publicUrl);
-              } else {
-                console.error('Error uploading photo:', uploadError);
-              }
-            } catch (e) {
-              console.error('Upload catch error:', e);
+      let photoUrls = [];
+      if (photos.length > 0) {
+        for (const p of photos) {
+          try {
+            const fileExt = p.file.name.split('.').pop() || 'jpg';
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+            const filePath = `${user?.id || 'public'}/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage.from('jobsite_photos').upload(filePath, p.file);
+            if (!uploadError) {
+              const { data } = supabase.storage.from('jobsite_photos').getPublicUrl(filePath);
+              photoUrls.push(data.publicUrl);
+            } else {
+              console.error('Error uploading photo:', uploadError);
             }
+          } catch (e) {
+            console.error('Upload catch error:', e);
           }
         }
+      }
 
-        let finalScope = receiptItems.map(i => `${i.name}: ${i.details}`).join('\n');
-        if (photoUrls.length > 0) {
-          finalScope += '\n\n[FOTOS DE INSPECCIÓN]\n' + photoUrls.join('\n');
-        }
+      let finalScope = receiptItems.map(i => `${i.name}: ${i.details}`).join('\n');
+      if (photoUrls.length > 0) {
+        finalScope += '\n\n[INSPECTION PHOTOS]\n' + photoUrls.join('\n');
+      }
 
       const payload = {
         contact_id: selectedContactId || null,
@@ -237,7 +237,7 @@ export default function Estimator() {
       setPhotos([]);
       setEditingEstimateId(null);
       setSelectedContactId('');
-    } catch (err) { alert('Error al guardar: ' + err.message); }
+    } catch (err) { alert('Error saving: ' + err.message); }
     finally { setSaving(false); }
   };
 
@@ -250,13 +250,13 @@ export default function Estimator() {
           border: '1px solid #374151',
         }}>
           <div style={{ fontSize: '64px', marginBottom: '16px' }}>✓</div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800' }}>!Estimado Guardado!</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: '24px', fontWeight: '800' }}>Estimate Saved!</h2>
           <p style={{ color: '#9ca3af', marginBottom: '8px' }}>
-            Estimado #{String(estimateNum).padStart(4, '0')} creado exitosamente.
+            Estimate #{String(estimateNum).padStart(4, '0')} created successfully.
           </p>
           {contact && (
             <p style={{ color: '#f97316', fontWeight: '600', marginBottom: '24px' }}>
-              Cliente: {contact.first_name} {contact.last_name}
+              Client: {contact.first_name} {contact.last_name}
             </p>
           )}
           <button
@@ -264,7 +264,7 @@ export default function Estimator() {
             style={{ width: '100%' }}
             onClick={() => { setSaved(false); setContact(null); setEstimateNum(null); }}
           >
-            <FileText size={18} /> Nuevo Estimado
+            <FileText size={18} /> New Estimate
           </button>
         </div>
       </div>
@@ -275,15 +275,15 @@ export default function Estimator() {
     <div className="admin-page p-6 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold tracking-tight">Nuevo Estimado</h1>
-        <p className="text-[#888888]">Selecciona servicios y genera un presupuesto para el cliente</p>
+        <h1 className="text-3xl font-bold tracking-tight">New Estimate</h1>
+        <p className="text-[#888888]">Select services and generate a quote for the client</p>
       </div>
 
       {/* Client Selector */}
       <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-6">
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <User size={18} color="#f97316" />
-          <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Cliente (opcional)</h2>
+          <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Client (optional)</h2>
         </div>
         <ClientSearch
           selectedContact={contact}
@@ -301,14 +301,14 @@ export default function Estimator() {
           className={`flex items-center gap-2 px-4 py-2 font-bold transition-colors ${activeTab === 'ai' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}`}
         >
           <Sparkles size={18} />
-          Asistente IA (Voz/Texto)
+          AI Assistant (Voice/Text)
         </button>
         <button 
           onClick={() => setActiveTab('manual')}
           className={`flex items-center gap-2 px-4 py-2 font-bold transition-colors ${activeTab === 'manual' ? 'text-[#f97316] border-b-2 border-[#f97316]' : 'text-[#9ca3af] hover:text-white'}`}
         >
           <Settings2 size={18} />
-          Configuración Manual
+          Manual Configuration
         </button>
       </div>
 
@@ -337,7 +337,7 @@ export default function Estimator() {
               }}
             >
               {saving ? <Loader2 size={20} className="spin" /> : <FileText size={20} />}
-              {saving ? 'Guardando...' : 'Guardar Estimado'}
+              {saving ? 'Saving...' : 'Save Estimate'}
             </button>
           )}
         </div>
@@ -345,4 +345,3 @@ export default function Estimator() {
     </div>
   );
 }
-

@@ -4,23 +4,23 @@ import { Plus, CheckCircle2, Clock, AlertCircle, X, Save, ChevronLeft, ChevronRi
 
 // -- Color coding: green=done, yellow=in_progress, gray=pending, red=delayed
 const STATUS_CONFIG = {
-  completed:   { label: 'Completado', color: '#10b981', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', Icon: CheckCircle2 },
-  in_progress: { label: 'En Proceso', color: '#f59e0b', bg: 'bg-amber-500/20',   border: 'border-amber-500/40',   text: 'text-amber-300',   Icon: Clock },
-  pending:     { label: 'Pendiente',  color: '#6b7280', bg: 'bg-slate-500/20',   border: 'border-slate-500/40',   text: 'text-slate-300',   Icon: Clock },
-  delayed:     { label: 'Retrasado',  color: '#ef4444', bg: 'bg-red-500/20',     border: 'border-red-500/40',     text: 'text-red-300',     Icon: AlertCircle },
+  completed:   { label: 'Completed', color: '#10b981', bg: 'bg-emerald-500/20', border: 'border-emerald-500/40', text: 'text-emerald-300', Icon: CheckCircle2 },
+  in_progress: { label: 'In Progress', color: '#f59e0b', bg: 'bg-amber-500/20',   border: 'border-amber-500/40',   text: 'text-amber-300',   Icon: Clock },
+  pending:     { label: 'Pending',  color: '#6b7280', bg: 'bg-slate-500/20',   border: 'border-slate-500/40',   text: 'text-slate-300',   Icon: Clock },
+  delayed:     { label: 'Delayed',  color: '#ef4444', bg: 'bg-red-500/20',     border: 'border-red-500/40',     text: 'text-red-300',     Icon: AlertCircle },
 };
 
 const TASK_CATEGORIES = [
-  { id: 'demolition', label: 'Demolicion' },
-  { id: 'roofing',    label: 'Techos' },
+  { id: 'demolition', label: 'Demolition' },
+  { id: 'roofing',    label: 'Roofing' },
   { id: 'siding',     label: 'Siding' },
-  { id: 'windows',    label: 'Ventanas' },
-  { id: 'gutters',    label: 'Canales' },
+  { id: 'windows',    label: 'Windows' },
+  { id: 'gutters',    label: 'Gutters' },
   { id: 'framing',    label: 'Framing' },
-  { id: 'painting',   label: 'Pintura' },
-  { id: 'inspection', label: 'Inspeccion' },
-  { id: 'cleanup',    label: 'Limpieza' },
-  { id: 'delivery',   label: 'Entrega' },
+  { id: 'painting',   label: 'Painting' },
+  { id: 'inspection', label: 'Inspection' },
+  { id: 'cleanup',    label: 'Cleanup' },
+  { id: 'delivery',   label: 'Delivery' },
   { id: 'general',    label: 'General' },
 ];
 
@@ -48,7 +48,7 @@ function getWeeks(startDate, count) {
 }
 
 function formatShortDate(d) {
-  return d.toLocaleDateString('es-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function isCurrentWeek(week) {
@@ -71,7 +71,7 @@ function TaskChip({ task, canEdit, onStatusChange, onDelete, onShift }) {
   return (
     <div className={`group relative flex flex-col gap-1 px-3 py-2 rounded-xl border ${cfg.bg} ${cfg.border} transition-all duration-200 cursor-pointer hover:scale-[1.02]`}
       onClick={cycleStatus}
-      title={canEdit ? 'Click para cambiar estado' : ''}
+      title={canEdit ? 'Click to change status' : ''}
     >
       <div className="flex items-center gap-2">
         <Icon size={13} className={cfg.text + ' flex-none'} />
@@ -80,17 +80,17 @@ function TaskChip({ task, canEdit, onStatusChange, onDelete, onShift }) {
       {canEdit && (
         <div className="opacity-0 group-hover:opacity-100 flex items-center justify-end gap-2 mt-1 transition-opacity">
           <button
-            title="Adelantar 1 semana"
+            title="Shift forward 1 week"
             className="text-[#555555] hover:text-blue-400 p-1"
             onClick={e => { e.stopPropagation(); onShift(task.id, -1); }}
           ><ChevronLeft size={14} /></button>
           <button
-            title="Atrasar 1 semana (Retraso)"
+            title="Shift back 1 week (Delay)"
             className="text-[#555555] hover:text-orange-400 p-1"
             onClick={e => { e.stopPropagation(); onShift(task.id, 1); }}
           ><ChevronRight size={14} /></button>
           <button
-            title="Eliminar"
+            title="Delete"
             className="text-[#555555] hover:text-red-400 p-1 ml-1"
             onClick={e => { e.stopPropagation(); onDelete(task.id); }}
           ><X size={14} /></button>
@@ -118,7 +118,7 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
         autoFocus
         value={title}
         onChange={e => setTitle(e.target.value)}
-        placeholder="Nombre de tarea..."
+        placeholder="Task name..."
         className="w-full bg-[#1a1a1a] border border-[#333333] rounded-lg px-3 py-2 text-xs text-[#f0f0f0] placeholder-[#555555] focus:outline-none focus:border-[#F5C518]"
       />
       <select
@@ -130,10 +130,10 @@ function AddTaskForm({ weekStart, weekEnd, projectId, onAdd, onCancel }) {
       </select>
       <div className="flex gap-2">
         <button type="submit" className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-violet-600 hover:bg-violet-500 rounded-lg text-xs font-semibold text-white transition-colors">
-          <Save size={11} /> Guardar
+          <Save size={11} /> Save
         </button>
         <button type="button" onClick={onCancel} className="flex-1 py-1.5 bg-[#2a2a2a] hover:bg-[#333333] rounded-lg text-xs text-[#c0c0c0] transition-colors">
-          Cancelar
+          Cancel
         </button>
       </div>
     </form>
@@ -206,10 +206,10 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
     newEnd.setDate(newEnd.getDate() + (direction * 7));
 
     let newTitle = task.title;
-    if (direction > 0 && !newTitle.includes('(Retrasado)')) {
-      newTitle = newTitle.replace(' (Adelantado)', '') + ' (Retrasado)';
-    } else if (direction < 0 && !newTitle.includes('(Adelantado)')) {
-      newTitle = newTitle.replace(' (Retrasado)', '') + ' (Adelantado)';
+    if (direction > 0 && !newTitle.includes('(Delayed)')) {
+      newTitle = newTitle.replace(' (Early)', '') + ' (Delayed)';
+    } else if (direction < 0 && !newTitle.includes('(Early)')) {
+      newTitle = newTitle.replace(' (Delayed)', '') + ' (Early)';
     }
 
     const updates = {
@@ -242,7 +242,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
   if (loading) return (
     <div className="flex items-center justify-center py-12 text-[#555555]">
       <div className="animate-spin rounded-full h-6 w-6 border-2 border-violet-500 border-t-transparent mr-3" />
-      Cargando pipeline...
+      Loading pipeline...
     </div>
   );
 
@@ -283,7 +283,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
               onClick={() => setWeekOffset(0)}
               className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
             >
-              Hoy
+              Today
             </button>
           )}
         </div>
@@ -307,7 +307,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
             />
           </div>
           <span className="text-xs font-bold text-[#c0c0c0] whitespace-nowrap">
-            {totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0}% completado
+            {totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0}% completed
           </span>
         </div>
       )}
@@ -328,7 +328,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                 }`}
               >
                 <p className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-violet-400' : 'text-[#555555]'}`}>
-                  {isCurrent ? '• Esta Semana' : `Semana ${i + 1 + weekOffset}`}
+                  {isCurrent ? '• This Week' : `Week ${i + 1 + weekOffset}`}
                 </p>
                 <p className="text-xs text-[#888888] mt-0.5">
                   {formatShortDate(week.start)} - {formatShortDate(week.end)}
@@ -369,7 +369,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
                       onClick={() => setAddingWeek(i)}
                       className="flex items-center justify-center gap-1 py-2 rounded-xl border border-dashed border-[#2a2a2a] text-slate-600 hover:border-violet-600/50 hover:text-violet-500 transition-all duration-200 text-xs"
                     >
-                      <Plus size={12} /> Tarea
+                      <Plus size={12} /> Task
                     </button>
                   )
                 )}
@@ -382,7 +382,7 @@ export default function WeeklyPipelineBoard({ projectId, startDate, canEdit = fa
       {totalTasks === 0 && !canEdit && (
         <div className="text-center py-8 text-[#555555]">
           <AlertCircle size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No hay tareas en el pipeline todavia.</p>
+          <p className="text-sm">No tasks in the pipeline yet.</p>
         </div>
       )}
     </div>

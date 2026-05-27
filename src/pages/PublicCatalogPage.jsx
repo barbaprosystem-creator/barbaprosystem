@@ -6,10 +6,10 @@ export default function PublicCatalogPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
-  const [activeCategory, setActiveCategory] = useState('Todos');
+  const [activeCategory, setActiveCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Carrito de selección
+  // Selection Cart
   const [selectedItems, setSelectedItems] = useState([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [clientInfo, setClientInfo] = useState({ name: '', address: '', email: '', phone: '', smsOptIn: false });
@@ -32,9 +32,9 @@ export default function PublicCatalogPage() {
       
       setItems(data || []);
       
-      // Extraer categorías únicas
+      // Extract unique categories
       const uniqueCategories = [...new Set(data.map(item => item.category))];
-      setCategories(['Todos', ...uniqueCategories]);
+      setCategories(['All', ...uniqueCategories]);
       
     } catch (error) {
       console.error('Error fetching catalog items:', error);
@@ -53,7 +53,7 @@ export default function PublicCatalogPage() {
   };
 
   const filteredItems = items.filter(item => {
-    const matchesCategory = activeCategory === 'Todos' || item.category === activeCategory;
+    const matchesCategory = activeCategory === 'All' || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesCategory && matchesSearch;
@@ -63,31 +63,31 @@ export default function PublicCatalogPage() {
 
   const handleSendWhatsApp = () => {
     if (!clientInfo.name) {
-      alert('Por favor ingresa tu nombre antes de enviar.');
+      alert('Please enter your name before sending.');
       return;
     }
 
-    let message = `*NUEVA SELECCIÓN DE MATERIALES*%0A`;
-    message += `👤 *Cliente:* ${clientInfo.name}%0A`;
+    let message = `*NEW MATERIAL SELECTION*%0A`;
+    message += `👤 *Client:* ${clientInfo.name}%0A`;
     if (clientInfo.address) {
-      message += `📍 *Dirección:* ${clientInfo.address}%0A`;
+      message += `📍 *Address:* ${clientInfo.address}%0A`;
     }
     if (clientInfo.phone) {
-      message += `📞 *Teléfono:* ${clientInfo.phone}%0A`;
+      message += `📞 *Phone:* ${clientInfo.phone}%0A`;
     }
     if (clientInfo.smsOptIn) {
-      message += `✅ *SMS Opt-In:* Aceptado%0A`;
+      message += `✅ *SMS Opt-In:* Accepted%0A`;
     }
     message += `%0A`;
     
-    message += `*MATERIALES SELECCIONADOS:*%0A`;
+    message += `*SELECTED MATERIALS:*%0A`;
     selectedItems.forEach((item, index) => {
       message += `${index + 1}. ${item.name} - $${Number(item.price).toFixed(2)}%0A`;
     });
     
-    message += `%0A💰 *Total Estimado:* $${totalPrice.toFixed(2)}`;
+    message += `%0A💰 *Estimated Total:* $${totalPrice.toFixed(2)}`;
 
-    // Reemplaza este número con el número de WhatsApp de la oficina
+    // Replace this number with the office WhatsApp number
     const phoneNumber = "15023383720"; 
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
     
@@ -97,28 +97,28 @@ export default function PublicCatalogPage() {
 
   const handleSendEmail = async () => {
     if (!clientInfo.name || !clientInfo.email) {
-      alert('Por favor ingresa tu nombre y tu correo electrónico antes de enviar.');
+      alert('Please enter your name and email address before sending.');
       return;
     }
 
     setIsSendingEmail(true);
 
-    let htmlBody = `<h2>Nueva Selección de Materiales de: ${clientInfo.name}</h2>`;
-    htmlBody += `<p><strong>Email del cliente:</strong> ${clientInfo.email}</p>`;
+    let htmlBody = `<h2>New Material Selection from: ${clientInfo.name}</h2>`;
+    htmlBody += `<p><strong>Client Email:</strong> ${clientInfo.email}</p>`;
     if (clientInfo.address) {
-      htmlBody += `<p><strong>Dirección:</strong> ${clientInfo.address}</p>`;
+      htmlBody += `<p><strong>Address:</strong> ${clientInfo.address}</p>`;
     }
     if (clientInfo.phone) {
-      htmlBody += `<p><strong>Teléfono:</strong> ${clientInfo.phone}</p>`;
+      htmlBody += `<p><strong>Phone:</strong> ${clientInfo.phone}</p>`;
     }
     if (clientInfo.smsOptIn) {
-      htmlBody += `<p><strong>SMS Opt-In:</strong> Aceptado por el cliente</p>`;
+      htmlBody += `<p><strong>SMS Opt-In:</strong> Accepted by client</p>`;
     }
-    htmlBody += `<h3>Materiales Seleccionados:</h3><ul>`;
+    htmlBody += `<h3>Selected Materials:</h3><ul>`;
     selectedItems.forEach((item) => {
       htmlBody += `<li>${item.name} - $${Number(item.price).toFixed(2)}</li>`;
     });
-    htmlBody += `</ul><br/><h3>Total Estimado: $${totalPrice.toFixed(2)}</h3>`;
+    htmlBody += `</ul><br/><h3>Estimated Total: $${totalPrice.toFixed(2)}</h3>`;
 
     try {
       const response = await fetch('/api/send-email', {
@@ -128,7 +128,7 @@ export default function PublicCatalogPage() {
         },
         body: JSON.stringify({
           to: 'barbaprosystem@gmail.com', 
-          subject: `Selección de Materiales - ${clientInfo.name}`,
+          subject: `Material Selection - ${clientInfo.name}`,
           html: htmlBody,
           fromName: clientInfo.name
         }),
@@ -189,14 +189,14 @@ export default function PublicCatalogPage() {
         }
         // ----------------------------
 
-        alert('¡Selección enviada exitosamente por correo a la oficina y guardada en el CRM!');
+        alert('Selection successfully emailed to the office and saved in the CRM!');
         setIsCartOpen(false);
       } else {
-        alert('Error al enviar: ' + (result.error || 'Desconocido'));
+        alert('Error sending: ' + (result.error || 'Unknown'));
       }
     } catch (error) {
-      console.error('Error al enviar correo:', error);
-      alert('Hubo un error de conexión.');
+      console.error('Error sending email:', error);
+      alert('There was a connection error.');
     } finally {
       setIsSendingEmail(false);
     }
@@ -207,7 +207,7 @@ export default function PublicCatalogPage() {
       <div className="min-h-screen bg-[#12131c] flex items-center justify-center text-white">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Cargando catálogo...</p>
+          <p className="text-gray-400">Loading catalog...</p>
         </div>
       </div>
     );
@@ -221,7 +221,7 @@ export default function PublicCatalogPage() {
           <div className="flex items-center gap-3">
             <img src="/logo-barba.png" alt="Barba Construction" className="h-10 w-auto object-contain" />
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Catálogo de Materiales</h1>
+              <h1 className="text-xl font-bold tracking-tight">Material Catalog</h1>
               <p className="text-xs text-blue-400 font-medium">Barba Construction</p>
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function PublicCatalogPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Filtros */}
+        {/* Filters */}
         <div className="mb-8 flex flex-col md:flex-row gap-4 justify-between items-center">
           <div className="w-full md:w-auto overflow-x-auto pb-2 flex gap-2 hide-scrollbar">
             {categories.map(cat => (
@@ -265,7 +265,7 @@ export default function PublicCatalogPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={18} />
             <input 
               type="text" 
-              placeholder="Buscar material..."
+              placeholder="Search material..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-[#2a2d3d] border border-[#34384c] rounded-full pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-500 transition-colors"
@@ -273,7 +273,7 @@ export default function PublicCatalogPage() {
           </div>
         </div>
 
-        {/* Grid de Productos */}
+        {/* Product Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-24">
           {filteredItems.map(item => {
             const isSelected = selectedItems.some(i => i.id === item.id);
@@ -289,7 +289,7 @@ export default function PublicCatalogPage() {
                   {item.image_url ? (
                     <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-500">Sin foto</div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-500">No photo</div>
                   )}
                   
                   {isSelected && (
@@ -316,7 +316,7 @@ export default function PublicCatalogPage() {
                       className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-blue-400 mb-4 transition-colors"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <LinkIcon size={12} /> Ver en tienda
+                      <LinkIcon size={12} /> View in store
                     </a>
                   )}
                   
@@ -328,7 +328,7 @@ export default function PublicCatalogPage() {
                         : 'bg-[#2a2d3d] text-white hover:bg-blue-600'
                     }`}
                   >
-                    {isSelected ? 'Quitar de la lista' : 'Añadir a mi selección'}
+                    {isSelected ? 'Remove from selection' : 'Add to selection'}
                   </button>
                 </div>
               </div>
@@ -338,8 +338,8 @@ export default function PublicCatalogPage() {
         
         {filteredItems.length === 0 && (
           <div className="text-center py-20">
-            <h3 className="text-2xl font-bold text-white mb-2">No encontramos materiales</h3>
-            <p className="text-gray-400">Intenta buscar con otra palabra o categoría.</p>
+            <h3 className="text-2xl font-bold text-white mb-2">No materials found</h3>
+            <p className="text-gray-400">Try searching with another term or category.</p>
           </div>
         )}
       </main>
@@ -351,7 +351,7 @@ export default function PublicCatalogPage() {
             <div className="p-6 border-b border-[#34384c] flex justify-between items-center bg-[#2a2d3d]">
               <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <ShoppingCart size={24} />
-                Mi Selección ({selectedItems.length})
+                My Selection ({selectedItems.length})
               </h2>
               <button 
                 onClick={() => setIsCartOpen(false)}
@@ -365,13 +365,13 @@ export default function PublicCatalogPage() {
               {selectedItems.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-gray-500">
                   <ShoppingCart size={64} className="mb-4 opacity-50" />
-                  <p className="text-lg font-medium">Tu selección está vacía</p>
-                  <p className="text-sm mt-2 text-center">Explora el catálogo y añade los materiales que te gusten para tu proyecto.</p>
+                  <p className="text-lg font-medium">Your selection is empty</p>
+                  <p className="text-sm mt-2 text-center">Explore the catalog and add the materials you like for your project.</p>
                   <button 
                     onClick={() => setIsCartOpen(false)}
                     className="mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium"
                   >
-                    Explorar Catálogo
+                    Explore Catalog
                   </button>
                 </div>
               ) : (
@@ -397,16 +397,16 @@ export default function PublicCatalogPage() {
                   
                   <div className="mt-8 pt-6 border-t border-[#34384c]">
                     <div className="flex justify-between items-end mb-6">
-                      <span className="text-gray-400 font-medium">Total Estimado</span>
+                      <span className="text-gray-400 font-medium">Estimated Total</span>
                       <span className="text-3xl font-black text-white">${totalPrice.toFixed(2)}</span>
                     </div>
                     
                     <div className="space-y-4">
-                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Datos para el envío</h3>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">Contact Information</h3>
                       <div>
                         <input 
                           type="text" 
-                          placeholder="Tu Nombre Completo *"
+                          placeholder="Your Full Name *"
                           value={clientInfo.name}
                           onChange={(e) => setClientInfo({...clientInfo, name: e.target.value})}
                           className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
@@ -415,7 +415,7 @@ export default function PublicCatalogPage() {
                       <div>
                         <input 
                           type="email" 
-                          placeholder="Tu Correo Electrónico *"
+                          placeholder="Your Email *"
                           value={clientInfo.email}
                           onChange={(e) => setClientInfo({...clientInfo, email: e.target.value})}
                           className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
@@ -424,7 +424,7 @@ export default function PublicCatalogPage() {
                       <div>
                         <input 
                           type="text" 
-                          placeholder="Dirección del Proyecto (Opcional)"
+                          placeholder="Project Address (Optional)"
                           value={clientInfo.address}
                           onChange={(e) => setClientInfo({...clientInfo, address: e.target.value})}
                           className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
@@ -433,7 +433,7 @@ export default function PublicCatalogPage() {
                       <div>
                         <input 
                           type="tel" 
-                          placeholder="Tu Número de Teléfono *"
+                          placeholder="Your Phone Number *"
                           value={clientInfo.phone}
                           onChange={(e) => setClientInfo({...clientInfo, phone: e.target.value})}
                           className="w-full bg-[#12131c] border border-[#34384c] rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500 transition-colors"
@@ -458,7 +458,7 @@ export default function PublicCatalogPage() {
                           className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe57] text-white py-3 rounded-xl font-bold transition-colors shadow-lg shadow-[#25D366]/20"
                         >
                           <Send size={20} />
-                          Enviar por WhatsApp
+                          Send via WhatsApp
                         </button>
 
                         <button 
@@ -471,11 +471,11 @@ export default function PublicCatalogPage() {
                           ) : (
                             <Send size={20} />
                           )}
-                          Enviar Selección por Correo
+                          Send Selection by Email
                         </button>
                       </div>
                       <p className="text-xs text-center text-gray-500 mt-2">
-                        Esto abrirá WhatsApp con tu selección para enviarla a nuestro equipo.
+                        This will open WhatsApp with your selection to send to our team.
                       </p>
                     </div>
                   </div>

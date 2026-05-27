@@ -9,8 +9,8 @@ const STATUS_COLORS = {
   received: '#10b981',
   overdue:  '#ef4444',
 };
-const TYPE_MAP  = { deposit: 'Deposito', partial: 'Parcial', final: 'Final' };
-const METHOD_MAP = { check: 'Cheque', zelle: 'Zelle', cash: 'Efectivo', card: 'Tarjeta', financing: 'Financiamiento' };
+const TYPE_MAP  = { deposit: 'Deposit', partial: 'Partial', final: 'Final' };
+const METHOD_MAP = { check: 'Check', zelle: 'Zelle', cash: 'Cash', card: 'Card', financing: 'Financing' };
 
 function daysUntil(dateStr) {
   if (!dateStr) return null;
@@ -60,7 +60,7 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
             <div className="form-group full-width">
               <label>{t('payments.project')}</label>
               <select value={form.project_id} onChange={e => handleProjectChange(e.target.value)} required>
-                <option value="">-- Selecciona proyecto --</option>
+                <option value="">-- Select project --</option>
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>
                     PRJ-{String(p.project_number).padStart(4,'0')} - {p.title}
@@ -75,27 +75,27 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
             <div className="form-group">
               <label>{t('common.type')}</label>
               <select value={form.payment_type} onChange={e => set('payment_type', e.target.value)}>
-                <option value="deposit">Deposito</option>
-                <option value="partial">Parcial</option>
+                <option value="deposit">Deposit</option>
+                <option value="partial">Partial</option>
                 <option value="final">Final</option>
               </select>
             </div>
             <div className="form-group">
               <label>{t('payments.method')}</label>
               <select value={form.payment_method} onChange={e => set('payment_method', e.target.value)}>
-                <option value="check">Cheque</option>
+                <option value="check">Check</option>
                 <option value="zelle">Zelle</option>
-                <option value="cash">Efectivo</option>
-                <option value="card">Tarjeta</option>
-                <option value="financing">Financiamiento</option>
+                <option value="cash">Cash</option>
+                <option value="card">Card</option>
+                <option value="financing">Financing</option>
               </select>
             </div>
             <div className="form-group">
               <label>{t('common.status')}</label>
               <select value={form.status} onChange={e => set('status', e.target.value)}>
-                <option value="pending">Pendiente</option>
-                <option value="received">Recibido</option>
-                <option value="overdue">Vencido</option>
+                <option value="pending">Pending</option>
+                <option value="received">Received</option>
+                <option value="overdue">Overdue</option>
               </select>
             </div>
             <div className="form-group">
@@ -111,7 +111,7 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
             <button type="button" className="btn-secondary" onClick={onClose}>{t('actions.cancel')}</button>
             <button type="submit" className="btn-primary" disabled={saving}>
               {saving ? <Loader2 size={18} className="spin" /> : <DollarSign size={16} />}
-              Registrar Pago
+              Register Payment
             </button>
           </div>
         </form>
@@ -134,7 +134,7 @@ function ReminderModal({ payment, onClose }) {
         reminder_type: 'manual',
         channel: method,
         sent_at: new Date().toISOString(),
-        message_body: `Recordatorio de pago: ${formatCurrency(payment.amount)} vence el ${formatDate(payment.due_date)}`,
+        message_body: `Payment reminder: ${formatCurrency(payment.amount)} due on ${formatDate(payment.due_date)}`,
       });
       // Update reminder flags
       const updates = {};
@@ -152,13 +152,13 @@ function ReminderModal({ payment, onClose }) {
           <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: '#f9731622', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
             <BellRing size={28} color="#f97316" />
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: '20px' }}>Enviar Recordatorio</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: '20px' }}>Send Reminder</h2>
           <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
             {payment.contact?.first_name} {payment.contact?.last_name} - {formatCurrency(payment.amount)}
           </p>
           {payment.due_date && (
             <p style={{ color: '#f59e0b', fontSize: '13px', marginTop: '4px' }}>
-              Vence: {formatDate(payment.due_date)}
+              Due: {formatDate(payment.due_date)}
             </p>
           )}
         </div>
@@ -166,19 +166,19 @@ function ReminderModal({ payment, onClose }) {
         {sent ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>✓</div>
-            <p style={{ color: '#10b981', fontWeight: '600' }}>Recordatorio registrado</p>
+            <p style={{ color: '#10b981', fontWeight: '600' }}>Reminder logged</p>
             <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
-              Cuando Twilio/Resend este configurado, se enviara automaticamente.
+              Once Twilio/Resend is configured, it will be sent automatically.
             </p>
-            <button className="btn-primary" onClick={onClose} style={{ marginTop: '20px', width: '100%' }}>Cerrar</button>
+            <button className="btn-primary" onClick={onClose} style={{ marginTop: '20px', width: '100%' }}>Close</button>
           </div>
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               {[
-                { id: 'sms',   label: 'SMS',          desc: 'Mensaje de texto via Twilio' },
-                { id: 'email', label: 'Email',         desc: 'Correo via Resend' },
-                { id: 'both',  label: 'SMS + Email',      desc: 'Ambos canales (recomendado)' },
+                { id: 'sms',   label: 'SMS',          desc: 'Text message via Twilio' },
+                { id: 'email', label: 'Email',         desc: 'Email via Resend' },
+                { id: 'both',  label: 'SMS + Email',      desc: 'Both channels (recommended)' },
               ].map(opt => (
                 <button
                   key={opt.id}
@@ -196,13 +196,13 @@ function ReminderModal({ payment, onClose }) {
               ))}
             </div>
             <div style={{ background: '#1e293b', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '12px', color: '#9ca3af' }}>
-              <strong style={{ color: '#f59e0b' }}>Pendiente configuracion:</strong> Twilio y Resend deben estar configurados para envio real. Por ahora se registra el intento.
+              <strong style={{ color: '#f59e0b' }}>Configuration pending:</strong> Twilio and Resend must be configured for live sending. For now, the attempt is logged.
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn-secondary" onClick={onClose} style={{ flex: 1 }}>Cancelar</button>
+              <button className="btn-secondary" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
               <button className="btn-primary" onClick={handleSend} disabled={sending} style={{ flex: 2 }}>
                 {sending ? <Loader2 size={16} className="spin" /> : <Bell size={16} />}
-                Enviar Recordatorio
+                Send Reminder
               </button>
             </div>
           </>
@@ -217,7 +217,7 @@ export default function PaymentTracker() {
 
   const STATUS_MAP = {
     pending:  { label: t('status.pending'),   color: STATUS_COLORS.pending,  icon: Clock },
-    received: { label: 'Recibido',            color: STATUS_COLORS.received, icon: CheckCircle },
+    received: { label: 'Received',            color: STATUS_COLORS.received, icon: CheckCircle },
     overdue:  { label: t('status.overdue'),   color: STATUS_COLORS.overdue,  icon: AlertTriangle },
   };
 
@@ -273,12 +273,12 @@ export default function PaymentTracker() {
       <div className="crm-toolbar">
         <div className="crm-toolbar-left">
           <h1>{t('payments.title')}</h1>
-          <span className="crm-count">{payments.length} registros</span>
+          <span className="crm-count">{payments.length} records</span>
         </div>
         <div className="crm-toolbar-right">
           <div className="crm-search">
             <Search size={16} />
-            <input placeholder="Buscar proyecto o cliente..." value={search} onChange={e => setSearch(e.target.value)} />
+            <input placeholder="Search project or client..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <button className="btn-primary" onClick={() => setShowAdd(true)}>
             <Plus size={18} /><span>{t('payments.newPayment')}</span>
@@ -289,8 +289,8 @@ export default function PaymentTracker() {
       {/* Summary Cards */}
       <div className="payment-summary">
         {[
-          { label: 'Total Facturado',  val: totals.total,    icon: DollarSign,   cls: '',        filter: 'all' },
-          { label: 'Recibido',         val: totals.received, icon: CheckCircle,  cls: 'success', filter: 'received' },
+          { label: 'Total Invoiced',  val: totals.total,    icon: DollarSign,   cls: '',        filter: 'all' },
+          { label: 'Received',         val: totals.received, icon: CheckCircle,  cls: 'success', filter: 'received' },
           { label: t('status.pending'), val: totals.pending,  icon: Clock,        cls: 'warning', filter: 'pending' },
           { label: t('status.overdue'), val: totals.overdue,  icon: AlertTriangle,cls: 'danger',  filter: 'overdue' },
         ].map(card => (
@@ -316,7 +316,7 @@ export default function PaymentTracker() {
             <tr>
               <th>{t('payments.project')}</th><th>{t('payments.client')}</th><th>{t('common.type')}</th>
               <th>{t('payments.method')}</th><th>{t('payments.amount')}</th><th>{t('common.status')}</th>
-              <th>Vence</th><th>Pagado</th><th>{t('common.actions')}</th>
+              <th>Due Date</th><th>Paid Date</th><th>{t('common.actions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -342,7 +342,7 @@ export default function PaymentTracker() {
                         {formatDate(pay.due_date)}
                         {days !== null && pay.status === 'pending' && (
                           <span style={{ display: 'block', fontSize: '11px', color: isOverdue ? '#ef4444' : isDueSoon ? '#f59e0b' : '#6b7280' }}>
-                            {days < 0 ? `${Math.abs(days)}d vencido` : days === 0 ? '!Hoy!' : `${days}d restantes`}
+                            {days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? 'Today!' : `${days}d remaining`}
                           </span>
                         )}
                       </span>
@@ -352,14 +352,14 @@ export default function PaymentTracker() {
                   <td>
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                       {pay.status === 'pending' && (
-                        <button className="icon-btn success" title="Marcar Recibido" onClick={() => markReceived(pay.id)}>
+                        <button className="icon-btn success" title="Mark Received" onClick={() => markReceived(pay.id)}>
                           <CheckCircle size={15} />
                         </button>
                       )}
                       {(pay.status === 'pending' || pay.status === 'overdue') && (
                         <button
                           className="icon-btn"
-                          title="Enviar Recordatorio"
+                          title="Send Reminder"
                           onClick={() => setReminderPay(pay)}
                           style={{ color: '#f97316', borderColor: '#f9731644' }}
                         >
@@ -372,7 +372,7 @@ export default function PaymentTracker() {
               );
             })}
             {filtered.length === 0 && (
-              <tr><td colSpan={9} className="crm-empty-row">No hay pagos registrados</td></tr>
+              <tr><td colSpan={9} className="crm-empty-row">No payments registered</td></tr>
             )}
           </tbody>
         </table>
