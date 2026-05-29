@@ -41,7 +41,7 @@ export default function TermsOfService() {
                 <strong>Rates & Frequency:</strong> As always, <strong>message and data rates may apply</strong> for any messages sent to you from us and to us from you. Message frequency varies based on your active projects. If you have any questions about your text plan or data plan, it is best to contact your wireless provider.
               </p>
               <p>
-                <strong>Privacy:</strong> For all questions about privacy, please read our <a href="/privacy" className="text-blue-600 underline">Privacy Policy</a>.
+                <strong>Privacy:</strong> For all questions about privacy, please read our <a href="/privacy-policy" className="text-blue-600 underline">Privacy Policy</a>.
               </p>
             </div>
           </section>

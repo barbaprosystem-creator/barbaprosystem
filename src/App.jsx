@@ -59,7 +59,12 @@ export default function App() {
   // Render immediately, no loading screen, no auth check.
   // These must work for customers who click a link from their email.
   // ==========================================
-  const PUBLIC_PATHS = ['/p/', '/contract/', '/catalog', '/privacy', '/terms', '/eula', '/contact'];
+  const PUBLIC_PATHS = [
+    '/p/', '/contract/', '/catalog', 
+    '/privacy', '/privacy-policy', '/privacypolicy', '/privacy_policy', 
+    '/terms', '/terms-of-service', '/termsofservice', '/terms-and-conditions', '/termsandconditions', '/terms_of_service', 
+    '/eula', '/contact'
+  ];
   const isPublicPath = PUBLIC_PATHS.some(p => window.location.pathname.startsWith(p));
 
   if (isPublicPath) {
@@ -69,8 +74,19 @@ export default function App() {
           <Route path="/p/:id" element={<PDFPreview />} />
           <Route path="/contract/:id" element={<PublicContract />} />
           <Route path="/catalog" element={<PublicCatalogPage />} />
+          
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+          <Route path="/privacy_policy" element={<PrivacyPolicy />} />
+
           <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/termsofservice" element={<TermsOfService />} />
+          <Route path="/terms-and-conditions" element={<TermsOfService />} />
+          <Route path="/termsandconditions" element={<TermsOfService />} />
+          <Route path="/terms_of_service" element={<TermsOfService />} />
+
           <Route path="/eula" element={<EULA />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -115,7 +131,17 @@ export default function App() {
         
         {/* Legal Pages for Integrations */}
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+        <Route path="/privacy_policy" element={<PrivacyPolicy />} />
+
         <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/termsofservice" element={<TermsOfService />} />
+        <Route path="/terms-and-conditions" element={<TermsOfService />} />
+        <Route path="/termsandconditions" element={<TermsOfService />} />
+        <Route path="/terms_of_service" element={<TermsOfService />} />
+
         <Route path="/eula" element={<EULA />} />
         <Route path="/contact" element={<ContactUs />} />
 

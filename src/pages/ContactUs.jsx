@@ -67,7 +67,7 @@ export default function ContactUs() {
                   className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FACB00] focus:ring-[#FACB00] bg-[#0a0a0a]"
                 />
                 <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-normal">
-                  I agree to receive SMS text messages from Barba Construction regarding my estimates, project updates, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. View our <Link to="/privacy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
+                  I agree to receive SMS text messages from Barba Construction regarding my estimates, project updates, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. View our <Link to="/privacy-policy" className="text-[#FACB00] hover:underline">Privacy Policy</Link> and <Link to="/terms-of-service" className="text-[#FACB00] hover:underline">Terms of Service</Link>.
                 </label>
               </div>
             </div>

@@ -448,7 +448,7 @@ export default function PublicCatalogPage() {
                           className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 bg-[#2a2d3d]"
                         />
                         <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-tight">
-                          By checking this box, you agree to receive SMS text messages from Barba Construction regarding your estimates, projects, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. See our <a href="/privacy" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
+                          By checking this box, you agree to receive SMS text messages from Barba Construction regarding your estimates, projects, and appointments. Message frequency varies. Message & data rates may apply. Reply STOP to opt out, HELP for help. See our <a href="/privacy-policy" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Privacy Policy</a> and <a href="/terms-of-service" className="text-blue-400 underline" target="_blank" rel="noopener noreferrer">Terms of Service</a>.
                         </label>
                       </div>
                       
