@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { useAuth } from '../../hooks/useAuth';
+
 
 const STATUS_COLORS = {
   pending:     '#6b7280',
@@ -13,10 +15,12 @@ const STATUS_COLORS = {
   on_hold:     '#ef4444',
 };
 
-const EMPTY_FORM = { title: '', address: '', sold_price: 0, status: 'pending', start_date: '' };
+const EMPTY_FORM = { title: '', address: '', sold_price: 0, status: 'pending', start_date: '', contact_id: '', project_type: 'standard', purchase_price: 0 };
 
 export default function ProjectsList() {
   const { t } = useLanguage();
+  const { role } = useAuth();
+
 
   const STATUS_MAP = {
     pending:     { label: t('status.pending'),    color: STATUS_COLORS.pending },
@@ -31,11 +35,18 @@ export default function ProjectsList() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [projectTypeFilter, setProjectTypeFilter] = useState('standard');
+
+
+  // Contacts for project linking
+  const [contacts, setContacts] = useState([]);
+  const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', phone: '', email: '' });
 
   // Create modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [newProject, setNewProject] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+
 
   // Edit modal
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -46,7 +57,15 @@ export default function ProjectsList() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  useEffect(() => { fetchProjects(); }, []);
+  useEffect(() => {
+    fetchProjects();
+    fetchContacts();
+  }, []);
+
+  async function fetchContacts() {
+    const { data } = await supabase.from('contacts').select('id, first_name, last_name').order('first_name');
+    setContacts(data || []);
+  }
 
   async function fetchProjects() {
     setLoading(true);
@@ -58,21 +77,44 @@ export default function ProjectsList() {
     setLoading(false);
   }
 
+
   // ── CREATE ──────────────────────────────────────────
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
+      let finalContactId = newProject.contact_id;
+      if (newProject.contact_id === 'new_customer') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            first_name: newCustomer.first_name,
+            last_name: newCustomer.last_name,
+            phone: newCustomer.phone || null,
+            email: newCustomer.email || null,
+            pipeline_status: 'contacted',
+          })
+          .select()
+          .single();
+        if (contactError) throw contactError;
+        finalContactId = contactData.id;
+        fetchContacts();
+      }
+
       const { error } = await supabase.from('projects').insert([{
         title: newProject.title,
         address: newProject.address,
         sold_price: Number(newProject.sold_price),
         status: newProject.status,
         start_date: newProject.start_date || null,
+        contact_id: finalContactId || null,
+        project_type: projectTypeFilter,
+        purchase_price: projectTypeFilter === 'fix_flip' ? Number(newProject.purchase_price) : 0,
       }]);
       if (error) throw error;
       setCreateModalOpen(false);
       setNewProject(EMPTY_FORM);
+      setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
       fetchProjects();
     } catch (err) {
       alert('Error creating project: ' + err.message);
@@ -92,7 +134,11 @@ export default function ProjectsList() {
       status: project.status || 'pending',
       start_date: project.start_date ? project.start_date.slice(0, 10) : '',
       progress_pct: project.progress_pct || 0,
+      contact_id: project.contact_id || '',
+      project_type: project.project_type || 'standard',
+      purchase_price: project.purchase_price || 0,
     });
+    setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
     setEditModalOpen(true);
   };
 
@@ -100,6 +146,24 @@ export default function ProjectsList() {
     e.preventDefault();
     setEditSaving(true);
     try {
+      let finalContactId = editProject.contact_id;
+      if (editProject.contact_id === 'new_customer') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            first_name: newCustomer.first_name,
+            last_name: newCustomer.last_name,
+            phone: newCustomer.phone || null,
+            email: newCustomer.email || null,
+            pipeline_status: 'contacted',
+          })
+          .select()
+          .single();
+        if (contactError) throw contactError;
+        finalContactId = contactData.id;
+        fetchContacts();
+      }
+
       const { error } = await supabase.from('projects').update({
         title: editProject.title,
         address: editProject.address,
@@ -107,10 +171,14 @@ export default function ProjectsList() {
         status: editProject.status,
         start_date: editProject.start_date || null,
         progress_pct: Number(editProject.progress_pct),
+        contact_id: finalContactId || null,
+        project_type: editProject.project_type || 'standard',
+        purchase_price: editProject.project_type === 'fix_flip' ? Number(editProject.purchase_price) : 0,
       }).eq('id', editProject.id);
       if (error) throw error;
       setEditModalOpen(false);
       setEditProject(null);
+      setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
       fetchProjects();
     } catch (err) {
       alert('Error updating project: ' + err.message);
@@ -118,6 +186,8 @@ export default function ProjectsList() {
       setEditSaving(false);
     }
   };
+
+
 
   // ── DELETE ──────────────────────────────────────────
   const openDelete = (e, project) => {
@@ -151,6 +221,11 @@ export default function ProjectsList() {
 
   const filtered = projects.filter(p => {
     if (filterStatus !== 'all' && p.status !== filterStatus) return false;
+    
+    // Filter by project_type
+    const type = p.project_type || 'standard';
+    if (type !== projectTypeFilter) return false;
+
     if (!search) return true;
     const s = search.toLowerCase();
     return p.title?.toLowerCase().includes(s) ||
@@ -158,14 +233,46 @@ export default function ProjectsList() {
       p.address?.toLowerCase().includes(s);
   });
 
+
   if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>{t('actions.loading')}</p></div>;
 
   return (
     <div className="projects-page">
       <div className="crm-toolbar">
-        <div className="crm-toolbar-left">
-          <h1>{t('projects.title')}</h1>
-          <span className="crm-count">{projects.length} {t('common.total_count')}</span>
+        <div className="crm-toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div>
+            <h1>{t('projects.title')}</h1>
+            <span className="crm-count">{projects.length} {t('common.total_count')}</span>
+          </div>
+          
+          {role === 'admin' && (
+            <div className="flex bg-slate-900 border border-slate-700/60 p-1 rounded-xl ml-4 select-none">
+              <button
+                type="button"
+                onClick={() => setProjectTypeFilter('standard')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-250 cursor-pointer ${
+                  projectTypeFilter === 'standard'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Briefcase size={13} />
+                <span>Standard</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setProjectTypeFilter('fix_flip')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-250 cursor-pointer ${
+                  projectTypeFilter === 'fix_flip'
+                    ? 'bg-amber-600 text-white shadow-lg'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Home size={13} />
+                <span>Fix & Flip</span>
+              </button>
+            </div>
+          )}
         </div>
         <div className="crm-toolbar-right">
           <div className="crm-search">
@@ -177,6 +284,7 @@ export default function ProjectsList() {
           </button>
         </div>
       </div>
+
 
       {/* Status Tabs */}
       <div className="estimate-tabs">
@@ -258,6 +366,13 @@ export default function ProjectsList() {
                 <span>Supervisor: {project.supervisor.full_name}</span>
               </div>
             )}
+            {project.project_type === 'fix_flip' && project.purchase_price > 0 && (
+              <div className="project-detail text-amber-400 font-semibold">
+                <Home size={14} className="text-amber-500" />
+                <span>Purchase Price: {formatCurrency(project.purchase_price)}</span>
+              </div>
+            )}
+
 
             {/* Progress Bar */}
             <div className="project-progress">
@@ -319,6 +434,77 @@ export default function ProjectsList() {
                   <label>{t('projects.startDate')}</label>
                   <input type="date" value={newProject.start_date} onChange={e => setNewProject({...newProject, start_date: e.target.value})} />
                 </div>
+
+                {projectTypeFilter === 'fix_flip' && (
+                  <div className="form-group">
+                    <label>Purchase Price ($)</label>
+                    <input type="number" min="0" step="0.01" value={newProject.purchase_price} onChange={e => setNewProject({...newProject, purchase_price: e.target.value})} />
+                  </div>
+                )}
+
+
+                <div className="form-group">
+                  <label>Client</label>
+                  <select
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                    value={newProject.contact_id || ''}
+                    onChange={e => setNewProject({ ...newProject, contact_id: e.target.value })}
+                  >
+                    <option value="">-- No Client --</option>
+                    <option value="new_customer" className="text-blue-400 font-bold">+ New Customer</option>
+                    {contacts.map(c => (
+                      <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {newProject.contact_id === 'new_customer' && (
+                  <div className="col-span-full bg-slate-900/60 p-4 border border-slate-700 rounded-lg space-y-3 mt-2">
+                    <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">New Client Details</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">First Name *</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.first_name || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, first_name: e.target.value })}
+                          required={newProject.contact_id === 'new_customer'}
+                          placeholder="John"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Last Name *</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.last_name || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, last_name: e.target.value })}
+                          required={newProject.contact_id === 'new_customer'}
+                          placeholder="Doe"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Phone</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.phone || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                          placeholder="(502) 555-0100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Email</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.email || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setCreateModalOpen(false)}>{t('actions.cancel')}</button>
@@ -373,6 +559,77 @@ export default function ProjectsList() {
                     style={{ width: '100%', accentColor: '#f59e0b' }}
                   />
                 </div>
+
+                {editProject.project_type === 'fix_flip' && (
+                  <div className="form-group">
+                    <label>Purchase Price ($)</label>
+                    <input type="number" min="0" step="0.01" value={editProject.purchase_price} onChange={e => setEditProject({...editProject, purchase_price: e.target.value})} />
+                  </div>
+                )}
+
+
+                <div className="form-group">
+                  <label>Client</label>
+                  <select
+                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                    value={editProject.contact_id || ''}
+                    onChange={e => setEditProject({ ...editProject, contact_id: e.target.value })}
+                  >
+                    <option value="">-- No Client --</option>
+                    <option value="new_customer" className="text-blue-400 font-bold">+ New Customer</option>
+                    {contacts.map(c => (
+                      <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {editProject.contact_id === 'new_customer' && (
+                  <div className="col-span-full bg-slate-900/60 p-4 border border-slate-700 rounded-lg space-y-3 mt-2">
+                    <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">New Client Details</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">First Name *</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.first_name || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, first_name: e.target.value })}
+                          required={editProject.contact_id === 'new_customer'}
+                          placeholder="John"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Last Name *</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.last_name || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, last_name: e.target.value })}
+                          required={editProject.contact_id === 'new_customer'}
+                          placeholder="Doe"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Phone</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.phone || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                          placeholder="(502) 555-0100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Email</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                          value={newCustomer.email || ''}
+                          onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                          placeholder="john@example.com"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={() => setEditModalOpen(false)}>{t('actions.cancel')}</button>
@@ -385,6 +642,7 @@ export default function ProjectsList() {
           </div>
         </div>
       )}
+
 
       {/* ── DELETE CONFIRMATION ──────────────────────── */}
       {deleteTarget && (

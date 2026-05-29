@@ -5,12 +5,35 @@ import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Plus, X, Briefcase, Users, CalendarSync, Link as LinkIcon, CheckCircle2, RefreshCw, Trash2 } from 'lucide-react';
+import { Plus, X, Briefcase, Users, CalendarSync, Link as LinkIcon, CheckCircle2, RefreshCw, Trash2, Pencil } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 
 const locales = { 'en': enUS };
 
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
+
+const PALETTE_COLORS = [
+  { label: 'Blue (Default)', hex: '#3b82f6' },
+  { label: 'Green', hex: '#10b981' },
+  { label: 'Yellow', hex: '#f59e0b' },
+  { label: 'Red', hex: '#ef4444' },
+  { label: 'Purple', hex: '#8b5cf6' },
+  { label: 'Pink', hex: '#ec4899' },
+  { label: 'Indigo', hex: '#6366f1' },
+  { label: 'Teal', hex: '#14b8a6' },
+];
+
+const toDateTimeLocalString = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const tzOffset = d.getTimezoneOffset() * 60000;
+  return (new Date(d.getTime() - tzOffset)).toISOString().slice(0, 16);
+};
+
+const parseDateTimeLocal = (str) => {
+  return str ? new Date(str) : new Date();
+};
+
 
 const SALES_TYPES = {
   appointment: { label: 'Appointment', color: '#3b82f6' },
@@ -55,8 +78,10 @@ export default function CalendarPage() {
   const [crmEvents, setCrmEvents]           = useState([]);   // from Supabase
   const [googleEvents, setGoogleEvents]     = useState([]);   // from Google Calendar API
   const [showForm, setShowForm]             = useState(false);
-  const [form, setForm]                     = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date(), assigned_to: '', contact_id: '' });
+  const [form, setForm]                     = useState({ title: '', event_type: 'appointment', description: '', start: new Date(), end: new Date(), assigned_to: '', contact_id: '', color: '', service_type: '' });
+  const [newCustomer, setNewCustomer]       = useState({ first_name: '', last_name: '', phone: '', email: '' });
   const [isSyncing, setIsSyncing]           = useState(false);
+
   const [isFetchingGoogle, setIsFetchingGoogle] = useState(false);
   const [users, setUsers]                   = useState([]);
   const [contacts, setContacts]             = useState([]);
@@ -153,8 +178,13 @@ export default function CalendarPage() {
         event_type:  ev.event_type,
         desc:        ev.description,
         source:      'crm',
+        contact_id:  ev.contact_id,
+        assigned_to: ev.assigned_to,
+        color:       ev.color,
+        service_type: ev.service_type,
       })));
     }
+
   }, [activeTab, profile?.id, role, tabConfig.calendarType]);
 
   // ── Fetch events from Google Calendar ──────────────────────
@@ -202,7 +232,8 @@ export default function CalendarPage() {
   ];
 
   const handleSelectSlot = ({ start, end }) => {
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '', contact_id: '' });
+    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '', contact_id: '', color: '', service_type: '' });
+    setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
     setSelectedEvent(null);
     setShowForm(true);
   };
@@ -212,71 +243,129 @@ export default function CalendarPage() {
     setShowForm(true);
   };
 
+  const handleEditClick = () => {
+    if (!selectedEvent) return;
+    setForm({
+      id:           selectedEvent.id,
+      title:        selectedEvent.title,
+      event_type:   selectedEvent.event_type || tabConfig.defaultType,
+      description:  selectedEvent.desc || '',
+      start:        selectedEvent.start,
+      end:          selectedEvent.end,
+      assigned_to:  selectedEvent.assigned_to || '',
+      contact_id:   selectedEvent.contact_id || '',
+      color:        selectedEvent.color || '',
+      service_type: selectedEvent.service_type || '',
+    });
+    setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
+    setSelectedEvent(null); // Switch details view to form edit view
+  };
+
+
   const handleCreate = async (e) => {
     e.preventDefault();
     setIsSyncing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. Save in Supabase
-      const { error } = await supabase.from('calendar_events').insert({
-        title:         form.title,
-        event_type:    form.event_type,
-        description:   form.description,
-        start_time:    form.start.toISOString(),
-        all_day:       false,
-        created_by:    user.id,
-        calendar_type: tabConfig.calendarType,
-        assigned_to:   form.assigned_to || null,
-        contact_id:    form.contact_id || null,
-      });
-      if (error) throw error;
+      let finalContactId = form.contact_id;
+      if (form.contact_id === 'new_customer') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            first_name: newCustomer.first_name,
+            last_name: newCustomer.last_name,
+            phone: newCustomer.phone || null,
+            email: newCustomer.email || null,
+            pipeline_status: 'appointment_set', // saved to pipeline phase 'agendado' (Appointment Set)
+          })
+          .select()
+          .single();
+        if (contactError) throw contactError;
+        finalContactId = contactData.id;
+        // Reload contacts list
+        const { data: newContacts } = await supabase.from('contacts').select('id, first_name, last_name').order('first_name');
+        setContacts(newContacts || []);
+      }
+
+      // If form has ID, we update, otherwise insert
+      if (form.id) {
+        const { error } = await supabase.from('calendar_events').update({
+          title:         form.title,
+          event_type:    form.event_type,
+          description:   form.description,
+          start_time:    form.start.toISOString(),
+          end_time:      form.end.toISOString(),
+          assigned_to:   form.assigned_to || null,
+          contact_id:    finalContactId || null,
+          color:         form.color || null,
+          service_type:  form.service_type || null,
+        }).eq('id', form.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('calendar_events').insert({
+          title:         form.title,
+          event_type:    form.event_type,
+          description:   form.description,
+          start_time:    form.start.toISOString(),
+          end_time:      form.end.toISOString(),
+          all_day:       false,
+          created_by:    user.id,
+          calendar_type: tabConfig.calendarType,
+          assigned_to:   form.assigned_to || null,
+          contact_id:    finalContactId || null,
+          color:         form.color || null,
+          service_type:  form.service_type || null,
+        });
+        if (error) throw error;
+      }
 
       // 1b. Auto-transition client to appointment_set in pipeline if associated
-      if (form.contact_id) {
+      if (finalContactId) {
         await supabase
           .from('contacts')
           .update({ pipeline_status: 'appointment_set' })
-          .eq('id', form.contact_id);
+          .eq('id', finalContactId);
       }
 
-      // 2. Sync to Google Calendar
-      let targetToken = googleRefreshToken;
-      const isAssignedToOther = form.assigned_to && form.assigned_to !== user.id;
+      // 2. Sync to Google Calendar (only on new event creation to avoid updates duplication)
+      if (!form.id) {
+        let targetToken = googleRefreshToken;
+        const isAssignedToOther = form.assigned_to && form.assigned_to !== user.id;
 
-      if (isAssignedToOther) {
-        // Query target profile's refresh token
-        const { data: assignedProfile, error: profileErr } = await supabase
-          .from('profiles')
-          .select('google_refresh_token')
-          .eq('id', form.assigned_to)
-          .single();
-        
-        if (!profileErr && assignedProfile?.google_refresh_token) {
-          targetToken = assignedProfile.google_refresh_token;
-        } else {
-          targetToken = null; // No token connected for this salesperson
+        if (isAssignedToOther) {
+          const { data: assignedProfile, error: profileErr } = await supabase
+            .from('profiles')
+            .select('google_refresh_token')
+            .eq('id', form.assigned_to)
+            .single();
+          
+          if (!profileErr && assignedProfile?.google_refresh_token) {
+            targetToken = assignedProfile.google_refresh_token;
+          } else {
+            targetToken = null;
+          }
         }
-      }
 
-      if (targetToken) {
-        try {
-          await fetch('/api/calendar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              summary:     `[${tabConfig.eventTypes[form.event_type]?.label}] ${form.title}`,
-              description: form.description,
-              start:       { dateTime: form.start.toISOString() },
-              end:         { dateTime: form.end.toISOString() },
-              user_refresh_token: targetToken,
-            }),
-          });
-        } catch (gErr) {
-          console.warn('Google sync warning:', gErr);
+        if (targetToken) {
+          try {
+            await fetch('/api/calendar', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                summary:     `[${tabConfig.eventTypes[form.event_type]?.label}] ${form.title}`,
+                description: form.description,
+                start:       { dateTime: form.start.toISOString() },
+                end:         { dateTime: form.end.toISOString() },
+                user_refresh_token: targetToken,
+              }),
+            });
+          } catch (gErr) {
+            console.warn('Google sync warning:', gErr);
+          }
+        } else if (isAssignedToOther) {
+          console.info('Salesperson has not connected their Google Calendar yet. Saved only in CRM.');
         }
-      } else if (isAssignedToOther) {
-        console.info('Salesperson has not connected their Google Calendar yet. Saved only in CRM.');
       }
 
       setShowForm(false);
@@ -289,6 +378,7 @@ export default function CalendarPage() {
       setIsSyncing(false);
     }
   };
+
 
   const handleDeleteEvent = async (event) => {
     if (!confirm(`Delete "${event.title}"?`)) return;
@@ -304,6 +394,8 @@ export default function CalendarPage() {
     let color = '#6b7280';
     if (event.source === 'google') {
       color = '#4285f4'; // Google blue
+    } else if (event.color) {
+      color = event.color;
     } else {
       color = tabConfig.eventTypes[event.event_type]?.color || '#6b7280';
     }
@@ -320,6 +412,7 @@ export default function CalendarPage() {
       },
     };
   };
+
 
   const isViewingEvent = selectedEvent !== null;
   const syncStatus = isFetchingGoogle
@@ -418,8 +511,21 @@ export default function CalendarPage() {
           onSelectSlot={handleSelectSlot}
           onSelectEvent={handleSelectEvent}
           eventPropGetter={eventStyleGetter}
+          components={{
+            event: ({ event }) => (
+              <div className="flex flex-col h-full justify-between py-0.5">
+                <div className="font-semibold truncate text-[12px] leading-snug">{event.title}</div>
+                {event.service_type && (
+                  <div className="text-[9px] font-bold opacity-90 bg-black/45 px-1 py-0.2 rounded w-fit truncate mt-0.5 border border-white/10 uppercase tracking-wider">
+                    🛠️ {event.service_type}
+                  </div>
+                )}
+              </div>
+            )
+          }}
           className="barba-big-calendar"
         />
+
       </div>
 
       {/* Modal — View or Create Event */}
@@ -441,6 +547,13 @@ export default function CalendarPage() {
                   </div>
                   <button className="text-slate-400 hover:text-white" onClick={() => { setShowForm(false); setSelectedEvent(null); }}><X size={20} /></button>
                 </div>
+                {selectedEvent.service_type && (
+                  <div className="mb-3">
+                    <span className="px-2.5 py-1 text-xs font-bold bg-slate-700 text-slate-200 rounded border border-slate-600 uppercase tracking-wider">
+                      🛠️ Service: {selectedEvent.service_type}
+                    </span>
+                  </div>
+                )}
                 {selectedEvent.desc && (
                   <p className="text-slate-300 mb-4 text-sm leading-relaxed">{selectedEvent.desc}</p>
                 )}
@@ -451,31 +564,41 @@ export default function CalendarPage() {
                   </a>
                 )}
                 <div className="flex justify-between gap-3 pt-4 border-t border-slate-700">
-                  {selectedEvent.source === 'crm' ? (
-                    <button
-                      className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-lg hover:bg-red-600/30"
-                      onClick={() => handleDeleteEvent(selectedEvent)}
-                    >
-                      <Trash2 size={16} /> Delete
-                    </button>
-                  ) : <div />}
+                  <div className="flex gap-2">
+                    {selectedEvent.source === 'crm' && (
+                      <>
+                        <button
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-600/30 rounded-lg hover:bg-blue-600/30 transition font-medium text-sm"
+                          onClick={handleEditClick}
+                        >
+                          <Pencil size={16} /> Edit
+                        </button>
+                        <button
+                          className="flex items-center gap-2 px-4 py-2 bg-red-600/20 text-red-400 border border-red-600/30 rounded-lg hover:bg-red-600/30 transition font-medium text-sm"
+                          onClick={() => handleDeleteEvent(selectedEvent)}
+                        >
+                          <Trash2 size={16} /> Delete
+                        </button>
+                      </>
+                    )}
+                  </div>
                   <button className="px-5 py-2 text-slate-300 hover:bg-slate-700 rounded-lg font-medium" onClick={() => { setShowForm(false); setSelectedEvent(null); }}>
                     Close
                   </button>
                 </div>
               </>
             ) : (
-              /* ── Create Event ── */
+              /* ── Create / Edit Event ── */
               <>
                 <div className="flex justify-between items-center border-b border-slate-700 pb-4 mb-4">
                   <h2 className="text-xl font-bold flex items-center gap-2">
-                    <CalendarSync className="text-blue-400" /> New Event
+                    <CalendarSync className="text-blue-400" /> {form.id ? 'Edit Event' : 'New Event'}
                   </h2>
                   <button className="text-slate-400 hover:text-white" onClick={() => setShowForm(false)}><X size={20} /></button>
                 </div>
 
                 <form onSubmit={handleCreate}>
-                  <div className="space-y-4">
+                  <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-1">Title *</label>
                       <input
@@ -516,6 +639,81 @@ export default function CalendarPage() {
                         </select>
                       </div>
                     </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-1">Start Date & Time</label>
+                        <input
+                          type="datetime-local"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                          value={toDateTimeLocalString(form.start)}
+                          onChange={e => setForm({ ...form, start: parseDateTimeLocal(e.target.value) })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-1">End Date & Time</label>
+                        <input
+                          type="datetime-local"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none"
+                          value={toDateTimeLocalString(form.end)}
+                          onChange={e => setForm({ ...form, end: parseDateTimeLocal(e.target.value) })}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-1">Service Type</label>
+                      <input
+                        type="text"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition"
+                        value={form.service_type || ''}
+                        onChange={e => setForm({ ...form, service_type: e.target.value })}
+                        placeholder="e.g. Roofing, Siding, Gutters, Repair, Inspection"
+                        list="suggested-services"
+                      />
+                      <datalist id="suggested-services">
+                        <option value="Roofing" />
+                        <option value="Siding" />
+                        <option value="Gutters" />
+                        <option value="Windows" />
+                        <option value="Repair" />
+                        <option value="Inspection" />
+                      </datalist>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-2">Event Color (Google Calendar Style)</label>
+                      <div className="flex flex-wrap gap-2 p-2 bg-slate-900/40 rounded-lg border border-slate-700/50">
+                        {PALETTE_COLORS.map(c => (
+                          <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() => setForm({ ...form, color: c.hex })}
+                            className={`w-7 h-7 rounded-full border-2 transition-all relative ${
+                              form.color === c.hex ? 'border-white scale-110 shadow-lg' : 'border-transparent hover:scale-105'
+                            }`}
+                            style={{ backgroundColor: c.hex }}
+                            title={c.label}
+                          >
+                            {form.color === c.hex && (
+                              <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold">✓</span>
+                            )}
+                          </button>
+                        ))}
+                        {form.color && (
+                          <button
+                            type="button"
+                            onClick={() => setForm({ ...form, color: '' })}
+                            className="text-xs text-slate-400 hover:text-white px-2 py-1 ml-auto font-medium"
+                          >
+                            Reset
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-1">Associate Client (CRM Lead)</label>
                       <select
@@ -524,11 +722,61 @@ export default function CalendarPage() {
                         onChange={e => setForm({ ...form, contact_id: e.target.value })}
                       >
                         <option value="">-- No Client --</option>
+                        <option value="new_customer" className="text-blue-400 font-bold">+ New Customer</option>
                         {contacts.map(c => (
                           <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
                         ))}
                       </select>
                     </div>
+
+                    {form.contact_id === 'new_customer' && (
+                      <div className="bg-slate-900/60 p-4 border border-slate-700 rounded-lg space-y-3 animation-fade-in">
+                        <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">New Client Details</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-slate-400 mb-1">First Name *</label>
+                            <input
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                              value={newCustomer.first_name || ''}
+                              onChange={e => setNewCustomer({ ...newCustomer, first_name: e.target.value })}
+                              required={form.contact_id === 'new_customer'}
+                              placeholder="John"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-400 mb-1">Last Name *</label>
+                            <input
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                              value={newCustomer.last_name || ''}
+                              onChange={e => setNewCustomer({ ...newCustomer, last_name: e.target.value })}
+                              required={form.contact_id === 'new_customer'}
+                              placeholder="Doe"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs text-slate-400 mb-1">Phone</label>
+                            <input
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                              value={newCustomer.phone || ''}
+                              onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                              placeholder="(502) 555-0100"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-slate-400 mb-1">Email</label>
+                            <input
+                              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:border-blue-500 outline-none"
+                              value={newCustomer.email || ''}
+                              onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                              placeholder="john@example.com"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-medium text-slate-400 mb-1">Notes</label>
                       <textarea
@@ -545,12 +793,13 @@ export default function CalendarPage() {
                       Cancel
                     </button>
                     <button type="submit" className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2" disabled={isSyncing}>
-                      {isSyncing ? 'Saving...' : 'Save & Sync'}
+                      {isSyncing ? 'Saving...' : (form.id ? 'Save Changes' : 'Save & Sync')}
                     </button>
                   </div>
                 </form>
               </>
             )}
+
           </div>
         </div>
       )}

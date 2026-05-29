@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X, Pencil } from 'lucide-react';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
@@ -38,6 +38,21 @@ export default function ProjectDetail({ projectId, onBack }) {
   const [savingPayment, setSavingPayment] = useState(false);
 
   const canEdit = role === 'admin' || role === 'supervisor';
+
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [updatingClient, setUpdatingClient]   = useState(false);
+  const [selectedContactId, setSelectedContactId] = useState('');
+  const [newCustomer, setNewCustomer]         = useState({ first_name: '', last_name: '', phone: '', email: '' });
+  const [contacts, setContacts]               = useState([]);
+
+  useEffect(() => {
+    if (showClientModal) {
+      supabase.from('contacts').select('id, first_name, last_name').order('first_name').then(({ data }) => setContacts(data || []));
+      setSelectedContactId(project?.contact_id || '');
+      setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
+    }
+  }, [showClientModal, project]);
+
 
   useEffect(() => {
     if (projectId) fetchAll();
@@ -93,7 +108,44 @@ export default function ProjectDetail({ projectId, onBack }) {
     }
   }
 
+  async function handleUpdateClient(e) {
+    e.preventDefault();
+    setUpdatingClient(true);
+    try {
+      let finalContactId = selectedContactId;
+      if (selectedContactId === 'new_customer') {
+        const { data: contactData, error: contactError } = await supabase
+          .from('contacts')
+          .insert({
+            first_name: newCustomer.first_name,
+            last_name: newCustomer.last_name,
+            phone: newCustomer.phone || null,
+            email: newCustomer.email || null,
+            pipeline_status: 'contacted',
+          })
+          .select()
+          .single();
+        if (contactError) throw contactError;
+        finalContactId = contactData.id;
+      }
+
+      const { error } = await supabase
+        .from('projects')
+        .update({ contact_id: finalContactId || null })
+        .eq('id', projectId);
+      
+      if (error) throw error;
+      setShowClientModal(false);
+      fetchAll();
+    } catch (err) {
+      alert("Error updating client: " + err.message);
+    } finally {
+      setUpdatingClient(false);
+    }
+  }
+
   if (loading) return (
+
     <div className="flex items-center justify-center py-20 text-[#555555]">
       <Loader2 size={28} className="animate-spin mr-3" />
       <span>Loading project...</span>
@@ -135,23 +187,39 @@ export default function ProjectDetail({ projectId, onBack }) {
       </div>
 
       {/* Info cards row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {project.contact && (
-          <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
+      <div className={`grid grid-cols-2 ${project.project_type === 'fix_flip' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-3`}>
+        <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center justify-between gap-3 relative group">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-violet-500/20 flex items-center justify-center flex-none">
               <User size={18} className="text-violet-400" />
             </div>
             <div className="min-w-0">
               <p className="text-[11px] text-[#555555] uppercase tracking-wider">Client</p>
-              <p className="text-sm font-bold text-[#f0f0f0] truncate">
-                {project.contact.first_name} {project.contact.last_name}
-              </p>
-              {project.contact.phone && (
-                <p className="text-xs text-[#888888]">{project.contact.phone}</p>
+              {project.contact ? (
+                <>
+                  <p className="text-sm font-bold text-[#f0f0f0] truncate">
+                    {project.contact.first_name} {project.contact.last_name}
+                  </p>
+                  {project.contact.phone && (
+                    <p className="text-xs text-[#888888] truncate">{project.contact.phone}</p>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm font-bold text-slate-500 italic">No client assigned</p>
               )}
             </div>
           </div>
-        )}
+          {canEdit && (
+            <button
+              onClick={() => setShowClientModal(true)}
+              className="p-1.5 rounded-lg bg-[#2a2a2a] hover:bg-[#3b82f6]/20 text-[#888888] hover:text-[#3b82f6] transition-all flex-none"
+              title="Change client"
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+        </div>
+
 
         {project.address && (
           <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
@@ -161,6 +229,18 @@ export default function ProjectDetail({ projectId, onBack }) {
             <div className="min-w-0">
               <p className="text-[11px] text-[#555555] uppercase tracking-wider">Address</p>
               <p className="text-sm font-bold text-[#f0f0f0] truncate">{project.address}</p>
+            </div>
+          </div>
+        )}
+
+        {project.project_type === 'fix_flip' && (
+          <div className="bg-[#1a1a1a]/50 border border-[#2a2a2a]/40 rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/20 flex items-center justify-center flex-none">
+              <DollarSign size={18} className="text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] text-[#555555] uppercase tracking-wider">Purchase Price</p>
+              <p className="text-sm font-bold text-amber-400">{formatCurrency(project.purchase_price || 0)}</p>
             </div>
           </div>
         )}
@@ -374,6 +454,91 @@ export default function ProjectDetail({ projectId, onBack }) {
           </div>
         </div>
       )}
+      {/* Client Modal */}
+      {showClientModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center p-5 border-b border-[#222]">
+              <h2 className="text-xl font-bold text-white">Assign/Change Client</h2>
+              <button onClick={() => setShowClientModal(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
+            </div>
+            
+            <form id="client-form" onSubmit={handleUpdateClient} className="p-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Select Client</label>
+                <select 
+                  value={selectedContactId} 
+                  onChange={e => setSelectedContactId(e.target.value)}
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-3 py-2 text-white focus:outline-none focus:border-[#3b82f6]"
+                >
+                  <option value="">-- No Client --</option>
+                  <option value="new_customer" className="text-blue-400 font-bold">+ New Customer</option>
+                  {contacts.map(c => (
+                    <option key={c.id} value={c.id}>{c.first_name} {c.last_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedContactId === 'new_customer' && (
+                <div className="bg-[#1a1a1a] p-4 border border-[#222] rounded-lg space-y-3">
+                  <h4 className="text-xs font-bold text-blue-400 uppercase tracking-wider">New Client Details</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-gray-400 mb-1">First Name *</label>
+                      <input
+                        required
+                        className="w-full bg-[#111] border border-[#333] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
+                        value={newCustomer.first_name}
+                        onChange={e => setNewCustomer({ ...newCustomer, first_name: e.target.value })}
+                        placeholder="John"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 mb-1">Last Name *</label>
+                      <input
+                        required
+                        className="w-full bg-[#111] border border-[#333] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
+                        value={newCustomer.last_name}
+                        onChange={e => setNewCustomer({ ...newCustomer, last_name: e.target.value })}
+                        placeholder="Doe"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] text-gray-400 mb-1">Phone</label>
+                      <input
+                        className="w-full bg-[#111] border border-[#333] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
+                        value={newCustomer.phone}
+                        onChange={e => setNewCustomer({ ...newCustomer, phone: e.target.value })}
+                        placeholder="(502) 555-0100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-gray-400 mb-1">Email</label>
+                      <input
+                        type="email"
+                        className="w-full bg-[#111] border border-[#333] rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-[#3b82f6]"
+                        value={newCustomer.email}
+                        onChange={e => setNewCustomer({ ...newCustomer, email: e.target.value })}
+                        placeholder="john@example.com"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </form>
+            
+            <div className="p-5 border-t border-[#222] flex gap-3">
+              <button type="button" onClick={() => setShowClientModal(false)} className="flex-1 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white font-bold transition-colors">Cancel</button>
+              <button form="client-form" type="submit" disabled={updatingClient} className="flex-1 py-2 rounded-lg bg-[#3b82f6] hover:bg-[#2563eb] text-white font-bold transition-colors disabled:opacity-50">
+                {updatingClient ? 'Saving...' : 'Save Client'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
