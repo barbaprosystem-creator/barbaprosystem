@@ -63,28 +63,59 @@ export default function ProjectsList() {
   }, []);
 
   async function fetchContacts() {
-    const { data } = await supabase.from('contacts').select('id, first_name, last_name').order('first_name');
-    setContacts(data || []);
+    try {
+      console.log("[ProjectsList] fetchContacts started...");
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('id, first_name, last_name')
+        .order('first_name');
+      if (error) {
+        console.error("[ProjectsList] fetchContacts error:", error);
+        throw error;
+      }
+      console.log("[ProjectsList] fetchContacts count:", data?.length || 0);
+      setContacts(data || []);
+    } catch (err) {
+      console.error("[ProjectsList] fetchContacts caught exception:", err);
+      setContacts([]);
+    }
   }
 
   async function fetchProjects() {
     setLoading(true);
-    const { data } = await supabase
-      .from('projects')
-      .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
-      .order('created_at', { ascending: false });
-    setProjects(data || []);
-    setLoading(false);
+    try {
+      console.log("[ProjectsList] fetchProjects started...");
+      const { data, error } = await supabase
+        .from('projects')
+        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
+        .order('created_at', { ascending: false });
+      if (error) {
+        console.error("[ProjectsList] fetchProjects error:", error);
+        throw error;
+      }
+      console.log("[ProjectsList] fetchProjects count:", data?.length || 0);
+      setProjects(data || []);
+    } catch (err) {
+      console.error("[ProjectsList] fetchProjects caught exception:", err);
+      alert('Error fetching projects: ' + err.message);
+      setProjects([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
 
   // ── CREATE ──────────────────────────────────────────
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
+    console.log("[ProjectsList] handleCreateSubmit started...");
     setSaving(true);
     try {
       let finalContactId = newProject.contact_id;
+      console.log("[ProjectsList] initial contact_id:", finalContactId);
+      
       if (newProject.contact_id === 'new_customer') {
+        console.log("[ProjectsList] creating new contact...", newCustomer);
         const { data: contactData, error: contactError } = await supabase
           .from('contacts')
           .insert({
@@ -96,27 +127,54 @@ export default function ProjectsList() {
           })
           .select()
           .single();
-        if (contactError) throw contactError;
+        if (contactError) {
+          console.error("[ProjectsList] contact creation error:", contactError);
+          throw contactError;
+        }
         finalContactId = contactData.id;
-        fetchContacts();
+        console.log("[ProjectsList] contact created successfully. ID:", finalContactId);
+        
+        try {
+          await fetchContacts();
+        } catch (cErr) {
+          console.error("[ProjectsList] fetchContacts error during customer creation:", cErr);
+        }
       }
 
-      const { error } = await supabase.from('projects').insert([{
+      const insertPayload = {
         title: newProject.title,
         address: newProject.address,
-        sold_price: Number(newProject.sold_price),
-        status: newProject.status,
+        sold_price: Number(newProject.sold_price) || 0,
+        status: newProject.status || 'pending',
         start_date: newProject.start_date || null,
         contact_id: finalContactId || null,
-        project_type: projectTypeFilter,
-        purchase_price: projectTypeFilter === 'fix_flip' ? Number(newProject.purchase_price) : 0,
-      }]);
-      if (error) throw error;
+        project_type: projectTypeFilter || 'standard',
+        purchase_price: projectTypeFilter === 'fix_flip' ? (Number(newProject.purchase_price) || 0) : 0,
+      };
+      
+      console.log("[ProjectsList] inserting project payload:", insertPayload);
+      
+      const { data: insertedData, error: insertError } = await supabase
+        .from('projects')
+        .insert([insertPayload])
+        .select();
+        
+      if (insertError) {
+        console.error("[ProjectsList] project insert error:", insertError);
+        throw insertError;
+      }
+      
+      console.log("[ProjectsList] project inserted successfully:", insertedData);
+      
       setCreateModalOpen(false);
       setNewProject(EMPTY_FORM);
       setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
-      fetchProjects();
+      
+      console.log("[ProjectsList] fetching projects after creation...");
+      await fetchProjects();
+      console.log("[ProjectsList] handleCreateSubmit finished successfully!");
     } catch (err) {
+      console.error("[ProjectsList] handleCreateSubmit caught error:", err);
       alert('Error creating project: ' + err.message);
     } finally {
       setSaving(false);
@@ -144,10 +202,14 @@ export default function ProjectsList() {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    console.log("[ProjectsList] handleEditSubmit started...");
     setEditSaving(true);
     try {
       let finalContactId = editProject.contact_id;
+      console.log("[ProjectsList] initial edit contact_id:", finalContactId);
+      
       if (editProject.contact_id === 'new_customer') {
+        console.log("[ProjectsList] creating new contact for edit...", newCustomer);
         const { data: contactData, error: contactError } = await supabase
           .from('contacts')
           .insert({
@@ -159,28 +221,55 @@ export default function ProjectsList() {
           })
           .select()
           .single();
-        if (contactError) throw contactError;
+        if (contactError) {
+          console.error("[ProjectsList] edit contact creation error:", contactError);
+          throw contactError;
+        }
         finalContactId = contactData.id;
-        fetchContacts();
+        console.log("[ProjectsList] edit contact created. ID:", finalContactId);
+        
+        try {
+          await fetchContacts();
+        } catch (cErr) {
+          console.error("[ProjectsList] fetchContacts error during edit customer creation:", cErr);
+        }
       }
 
-      const { error } = await supabase.from('projects').update({
+      const updatePayload = {
         title: editProject.title,
         address: editProject.address,
-        sold_price: Number(editProject.sold_price),
-        status: editProject.status,
+        sold_price: Number(editProject.sold_price) || 0,
+        status: editProject.status || 'pending',
         start_date: editProject.start_date || null,
-        progress_pct: Number(editProject.progress_pct),
+        progress_pct: Number(editProject.progress_pct) || 0,
         contact_id: finalContactId || null,
         project_type: editProject.project_type || 'standard',
-        purchase_price: editProject.project_type === 'fix_flip' ? Number(editProject.purchase_price) : 0,
-      }).eq('id', editProject.id);
-      if (error) throw error;
+        purchase_price: editProject.project_type === 'fix_flip' ? (Number(editProject.purchase_price) || 0) : 0,
+      };
+      
+      console.log("[ProjectsList] updating project ID:", editProject.id, "payload:", updatePayload);
+      
+      const { error: updateError } = await supabase
+        .from('projects')
+        .update(updatePayload)
+        .eq('id', editProject.id);
+        
+      if (updateError) {
+        console.error("[ProjectsList] project update error:", updateError);
+        throw updateError;
+      }
+      
+      console.log("[ProjectsList] project updated successfully.");
+      
       setEditModalOpen(false);
       setEditProject(null);
       setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
-      fetchProjects();
+      
+      console.log("[ProjectsList] fetching projects after edit...");
+      await fetchProjects();
+      console.log("[ProjectsList] handleEditSubmit finished successfully!");
     } catch (err) {
+      console.error("[ProjectsList] handleEditSubmit caught error:", err);
       alert('Error updating project: ' + err.message);
     } finally {
       setEditSaving(false);
@@ -197,13 +286,19 @@ export default function ProjectsList() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
+    console.log("[ProjectsList] handleDelete started. ID:", deleteTarget.id);
     setDeleteLoading(true);
     try {
       const { error } = await supabase.from('projects').delete().eq('id', deleteTarget.id);
-      if (error) throw error;
+      if (error) {
+        console.error("[ProjectsList] delete project error:", error);
+        throw error;
+      }
+      console.log("[ProjectsList] project deleted successfully.");
       setDeleteTarget(null);
-      fetchProjects();
+      await fetchProjects();
     } catch (err) {
+      console.error("[ProjectsList] handleDelete caught error:", err);
       alert('Error deleting project: ' + err.message);
     } finally {
       setDeleteLoading(false);
