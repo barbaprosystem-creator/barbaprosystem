@@ -47,8 +47,8 @@ export default async function handler(req, res) {
       // Obtener eventos
       const response = await calendar.events.list({
         calendarId: calendarId,
-        timeMin: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(), // Desde hace 1 mes
-        maxResults: 100,
+        timeMin: new Date(new Date().setMonth(new Date().getMonth() - 3)).toISOString(), // Desde hace 3 meses
+        maxResults: 1000, // Cargar hasta 1000 eventos (antes estaba limitado a 100)
         singleEvents: true,
         orderBy: 'startTime',
       });
