@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera, X, FileImage } from 'lucide-react';
+import { DollarSign, Upload, Receipt, Plus, Search, Loader2, AlertCircle, FileText, CheckCircle2, User, HardHat, Camera, X, FileImage, Pencil, Trash2 } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { extractReceiptData } from '../../lib/ai';
 
@@ -48,6 +48,7 @@ export default function ProjectAccountingTab({ projectId }) {
   const [aiLoading, setAiLoading]   = useState(false);
   const [aiStatus, setAiStatus]     = useState('');   // progress message
   const [form, setForm]             = useState({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+  const [editingExpense, setEditingExpense] = useState(null);
   const fileInputRef                = useRef(null);
 
   useEffect(() => { fetchExpenses(); }, [projectId]);
@@ -188,23 +189,84 @@ export default function ProjectAccountingTab({ projectId }) {
     });
   }
 
+  const handleNewExpenseClick = () => {
+    setForm({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+    setEditingExpense(null);
+    setShowModal(true);
+  };
+
+  const handleEditExpenseClick = (exp) => {
+    setEditingExpense(exp);
+    setForm({
+      type: exp.type,
+      amount: String(exp.amount),
+      vendor: exp.vendor,
+      date: exp.date,
+      description: exp.description || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleDeleteExpense = async (exp) => {
+    if (!confirm(`Are you sure you want to delete this expense of ${formatCurrency(exp.amount)} from ${exp.vendor}?`)) return;
+    
+    const isMock = projectId.startsWith('mock-') || String(exp.id).startsWith('exp-');
+    if (isMock) {
+      setExpenses(expenses.filter(e => e.id !== exp.id));
+      return;
+    }
+
+    const { error } = await supabase.from('project_expenses').delete().eq('id', exp.id);
+    if (error) {
+      alert('Error deleting expense: ' + error.message);
+    } else {
+      fetchExpenses();
+    }
+  };
+
   const submitExpense = async (e) => {
     e.preventDefault();
-    if (projectId.startsWith('mock-')) {
-      setExpenses([{ id: `exp-${Date.now()}`, ...form, amount: Number(form.amount) }, ...expenses]);
+    const isMock = projectId.startsWith('mock-') || (editingExpense && String(editingExpense.id).startsWith('exp-'));
+
+    if (isMock) {
+      if (editingExpense) {
+        setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, ...form, amount: Number(form.amount) } : e));
+      } else {
+        setExpenses([{ id: `exp-${Date.now()}`, ...form, amount: Number(form.amount) }, ...expenses]);
+      }
       setShowModal(false);
+      setEditingExpense(null);
       return;
     }
 
     const payload = { project_id: projectId, ...form, amount: Number(form.amount) };
-    const { error } = await supabase.from('project_expenses').insert(payload);
     
-    if (error) {
-      alert('Error saving expense. Make sure you have created the project_expenses table in Supabase.');
+    if (editingExpense) {
+      const { error } = await supabase.from('project_expenses').update({
+        type: form.type,
+        amount: Number(form.amount),
+        vendor: form.vendor,
+        date: form.date,
+        description: form.description
+      }).eq('id', editingExpense.id);
+
+      if (error) {
+        alert('Error updating expense: ' + error.message);
+      } else {
+        fetchExpenses();
+        setShowModal(false);
+        setEditingExpense(null);
+        setForm({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+      }
     } else {
-      fetchExpenses();
-      setShowModal(false);
-      setForm({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+      const { error } = await supabase.from('project_expenses').insert(payload);
+      if (error) {
+        alert('Error saving expense. Make sure you have created the project_expenses table in Supabase.');
+      } else {
+        fetchExpenses();
+        setShowModal(false);
+        setForm({ type: 'material', amount: '', vendor: '', date: new Date().toISOString().split('T')[0], description: '' });
+      }
     }
   };
 
@@ -247,7 +309,7 @@ export default function ProjectAccountingTab({ projectId }) {
 
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-bold text-white">Expense Log</h3>
-        <button onClick={() => setShowModal(true)} className="bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold py-2 px-4 rounded-lg flex items-center gap-2">
+        <button onClick={handleNewExpenseClick} className="bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold py-2 px-4 rounded-lg flex items-center gap-2">
           <Plus size={18} /> New Expense
         </button>
       </div>
@@ -262,6 +324,7 @@ export default function ProjectAccountingTab({ projectId }) {
               <th className="px-4 py-3">Vendor / Worker</th>
               <th className="px-4 py-3">Description</th>
               <th className="px-4 py-3 text-right">Amount</th>
+              <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#222]">
@@ -280,11 +343,29 @@ export default function ProjectAccountingTab({ projectId }) {
                 <td className="px-4 py-3 font-medium text-white">{exp.vendor}</td>
                 <td className="px-4 py-3 text-gray-400 max-w-[200px] truncate" title={exp.description}>{exp.description}</td>
                 <td className="px-4 py-3 text-right font-bold text-white">{formatCurrency(exp.amount)}</td>
+                <td className="px-4 py-3 text-right">
+                  <div className="flex justify-end gap-1">
+                    <button 
+                      onClick={() => handleEditExpenseClick(exp)}
+                      className="p-1 hover:bg-[#222] rounded text-gray-400 hover:text-white transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil size={15} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteExpense(exp)}
+                      className="p-1 hover:bg-red-500/10 rounded text-gray-400 hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {expenses.length === 0 && (
               <tr>
-                <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
                   <FileText size={32} className="mx-auto mb-2 opacity-50" />
                   No expenses recorded for this project.
                 </td>
@@ -299,7 +380,9 @@ export default function ProjectAccountingTab({ projectId }) {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
           <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div className="flex justify-between items-center p-5 border-b border-[#222]">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2"><DollarSign className="text-[#FACB00]"/> Record Expense</h2>
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <DollarSign className="text-[#FACB00]"/> {editingExpense ? 'Edit Expense' : 'Record Expense'}
+              </h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white"><X size={24} /></button>
             </div>
             
@@ -388,7 +471,9 @@ export default function ProjectAccountingTab({ projectId }) {
             
             <div className="p-5 border-t border-[#222] flex gap-3">
               <button onClick={() => setShowModal(false)} className="flex-1 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white font-bold transition-colors">Cancel</button>
-              <button form="expense-form" type="submit" className="flex-1 py-2 rounded-lg bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold transition-colors">Save Expense</button>
+              <button form="expense-form" type="submit" className="flex-1 py-2 rounded-lg bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold transition-colors">
+                {editingExpense ? 'Save Changes' : 'Save Expense'}
+              </button>
             </div>
           </div>
         </div>
