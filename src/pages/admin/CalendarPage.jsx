@@ -23,6 +23,35 @@ const PALETTE_COLORS = [
   { label: 'Teal', hex: '#14b8a6' },
 ];
 
+const GOOGLE_EVENT_COLORS = {
+  '1': '#7986cb',  // Lavender
+  '2': '#33b679',  // Sage
+  '3': '#8e24aa',  // Grape
+  '4': '#e67e22',  // Flamingo
+  '5': '#f6bf26',  // Banana
+  '6': '#f4511e',  // Tangerine
+  '7': '#039be5',  // Peacock
+  '8': '#616161',  // Graphite
+  '9': '#3f51b5',  // Blueberry
+  '10': '#0b8043', // Basil
+  '11': '#d50000', // Tomato
+};
+
+const getGoogleColorId = (hex) => {
+  if (!hex) return null;
+  const mapping = {
+    '#3b82f6': '7',  // Peacock
+    '#10b981': '10', // Basil
+    '#f59e0b': '5',  // Banana
+    '#ef4444': '11', // Tomato
+    '#8b5cf6': '3',  // Grape
+    '#ec4899': '4',  // Flamingo
+    '#6366f1': '1',  // Lavender
+    '#14b8a6': '2',  // Sage
+  };
+  return mapping[hex.toLowerCase()] || null;
+};
+
 const toDateTimeLocalString = (date) => {
   if (!date) return '';
   const d = new Date(date);
@@ -192,9 +221,11 @@ export default function CalendarPage() {
     if (!googleRefreshToken) return;
     setIsFetchingGoogle(true);
     try {
+      console.log("[CalendarPage] fetchGoogleEvents started...");
       const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(googleRefreshToken)}`);
       if (!res.ok) throw new Error('Could not connect to Google Calendar');
       const items = await res.json();
+      console.log("[CalendarPage] Google Calendar event items fetched count:", items?.length || 0);
 
       const mapped = (items || []).map(ev => {
         const startRaw = ev.start?.dateTime || ev.start?.date;
@@ -210,6 +241,9 @@ export default function CalendarPage() {
           desc:       ev.description || '',
           source:     'google',
           htmlLink:   ev.htmlLink,
+          color:      ev.colorId ? GOOGLE_EVENT_COLORS[ev.colorId] : null,
+          location:   ev.location || '',
+          creator:    ev.creator?.email || ev.creator?.displayName || '',
         };
       });
       setGoogleEvents(mapped);
@@ -357,6 +391,7 @@ export default function CalendarPage() {
                 description: form.description,
                 start:       { dateTime: form.start.toISOString() },
                 end:         { dateTime: form.end.toISOString() },
+                colorId:     getGoogleColorId(form.color),
                 user_refresh_token: targetToken,
               }),
             });
@@ -392,10 +427,10 @@ export default function CalendarPage() {
 
   const eventStyleGetter = (event) => {
     let color = '#6b7280';
-    if (event.source === 'google') {
-      color = '#4285f4'; // Google blue
-    } else if (event.color) {
+    if (event.color) {
       color = event.color;
+    } else if (event.source === 'google') {
+      color = '#4285f4'; // Fallback Google blue
     } else {
       color = tabConfig.eventTypes[event.event_type]?.color || '#6b7280';
     }
@@ -405,7 +440,7 @@ export default function CalendarPage() {
         borderRadius: '6px',
         opacity: 0.92,
         color: 'white',
-        border: event.source === 'google' ? '2px solid rgba(66,133,244,0.5)' : '0px',
+        border: event.source === 'google' ? '2px solid rgba(255,255,255,0.2)' : '0px',
         display: 'block',
         padding: '2px 6px',
         fontSize: '13px',
@@ -556,6 +591,18 @@ export default function CalendarPage() {
                 )}
                 {selectedEvent.desc && (
                   <p className="text-slate-300 mb-4 text-sm leading-relaxed">{selectedEvent.desc}</p>
+                )}
+                {selectedEvent.location && (
+                  <div className="mb-3 flex items-center gap-2 text-sm text-slate-300">
+                    <span className="font-semibold text-slate-400">📍 Location:</span>
+                    <span>{selectedEvent.location}</span>
+                  </div>
+                )}
+                {selectedEvent.creator && (
+                  <div className="mb-4 flex items-center gap-2 text-sm text-slate-300">
+                    <span className="font-semibold text-slate-400">👤 Organizer:</span>
+                    <span>{selectedEvent.creator}</span>
+                  </div>
                 )}
                 {selectedEvent.htmlLink && (
                   <a href={selectedEvent.htmlLink} target="_blank" rel="noreferrer"
