@@ -151,7 +151,7 @@ export default function CalendarPage() {
 
   const loginGoogle = useGoogleLogin({
     flow: 'auth-code',
-    scope: 'https://www.googleapis.com/auth/calendar.events',
+    scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks.readonly',
     onSuccess: async (codeResponse) => {
       try {
         const res = await fetch('/api/calendar-auth', {
@@ -232,18 +232,28 @@ export default function CalendarPage() {
         const endRaw   = ev.end?.dateTime   || ev.end?.date;
         const start    = startRaw ? new Date(startRaw) : new Date();
         const end      = endRaw   ? new Date(endRaw)   : new Date(start.getTime() + 3600000);
+
+        let title = ev.summary || '(No title)';
+        if (ev.isTask) {
+          title = `${ev.taskStatus === 'completed' ? '✔️' : '📝'} [Task] ${title}`;
+        }
+
         return {
           id:         ev.id,
-          title:      ev.summary || '(No title)',
+          title,
           start,
           end,
-          event_type: 'google',
+          event_type: ev.isTask ? 'google_task' : 'google',
           desc:       ev.description || '',
           source:     'google',
           htmlLink:   ev.htmlLink,
-          color:      ev.colorId ? GOOGLE_EVENT_COLORS[ev.colorId] : null,
+          color:      ev.isTask ? '#f59e0b' : (ev.colorId ? GOOGLE_EVENT_COLORS[ev.colorId] : ev.calendarColor || null),
           location:   ev.location || '',
           creator:    ev.creator?.email || ev.creator?.displayName || '',
+          isTask:     ev.isTask || false,
+          taskStatus: ev.taskStatus || null,
+          taskListName: ev.taskListName || null,
+          calendarName: ev.calendarName || null,
         };
       });
       setGoogleEvents(mapped);
@@ -520,9 +530,15 @@ export default function CalendarPage() {
         })}
         {/* Google legend */}
         {googleRefreshToken && (
-          <div className="ml-auto flex items-center gap-2 px-3 py-2 text-xs text-slate-500">
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: '#4285f4', display: 'inline-block' }} />
-            Google Calendar
+          <div className="ml-auto flex items-center gap-4 px-3 py-2 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: '#4285f4', display: 'inline-block' }} />
+              Google Calendar
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span style={{ width: 10, height: 10, borderRadius: 2, background: '#f59e0b', display: 'inline-block' }} />
+              Google Tasks
+            </span>
           </div>
         )}
       </div>
@@ -604,10 +620,34 @@ export default function CalendarPage() {
                     <span>{selectedEvent.creator}</span>
                   </div>
                 )}
+                {selectedEvent.calendarName && !selectedEvent.isTask && (
+                  <div className="mb-3 flex items-center gap-2 text-sm text-slate-300">
+                    <span className="font-semibold text-slate-400">📅 Google Calendar:</span>
+                    <span className="px-2 py-0.5 text-xs bg-blue-500/10 text-blue-300 rounded border border-blue-500/20">{selectedEvent.calendarName}</span>
+                  </div>
+                )}
+                {selectedEvent.isTask && (
+                  <>
+                    <div className="mb-3 flex items-center gap-2 text-sm text-slate-300">
+                      <span className="font-semibold text-slate-400">📋 Task List:</span>
+                      <span className="px-2 py-0.5 text-xs bg-yellow-500/10 text-yellow-300 rounded border border-yellow-500/20">{selectedEvent.taskListName || 'Tasks'}</span>
+                    </div>
+                    <div className="mb-4 flex items-center gap-2 text-sm text-slate-300">
+                      <span className="font-semibold text-slate-400">Status:</span>
+                      <span className={`px-2 py-0.5 text-xs rounded font-medium ${
+                        selectedEvent.taskStatus === 'completed' 
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }`}>
+                        {selectedEvent.taskStatus === 'completed' ? 'Completed' : 'Pending'}
+                      </span>
+                    </div>
+                  </>
+                )}
                 {selectedEvent.htmlLink && (
                   <a href={selectedEvent.htmlLink} target="_blank" rel="noreferrer"
                     className="text-blue-400 text-sm hover:underline block mb-4">
-                    View in Google Calendar ↗
+                    {selectedEvent.isTask ? 'View in Google Tasks ↗' : 'View in Google Calendar ↗'}
                   </a>
                 )}
                 <div className="flex justify-between gap-3 pt-4 border-t border-slate-700">
