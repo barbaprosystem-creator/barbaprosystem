@@ -39,7 +39,7 @@ export default function PrivacyPolicy() {
               All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties under any circumstances.
             </p>
             <p className="mt-3">
-              If you have opted in to receive SMS text messages from Barba Construction, we will only use your phone number to send you relevant information regarding your estimate, project status, or appointment reminders.
+              If you have opted in to receive SMS text messages from Barba Construction, we will only use your phone number to send you relevant information regarding your estimate, project status, or appointment reminders. <strong>Providing consent to receive SMS messages is strictly optional and is not a condition or requirement to purchase any estimates, services, or complete transactions with us.</strong>
             </p>
           </section>
 

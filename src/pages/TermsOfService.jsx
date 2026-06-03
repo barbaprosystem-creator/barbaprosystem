@@ -38,7 +38,7 @@ export default function TermsOfService() {
                 <strong>Carrier Liability:</strong> Carriers are not liable for delayed or undelivered messages.
               </p>
               <p>
-                <strong>Rates & Frequency:</strong> As always, <strong>message and data rates may apply</strong> for any messages sent to you from us and to us from you. Message frequency varies based on your active projects. If you have any questions about your text plan or data plan, it is best to contact your wireless provider.
+                <strong>Rates & Frequency:</strong> As always, <strong>message and data rates may apply</strong> for any messages sent to you from us and to us from you. Message frequency varies based on your active projects. If you have any questions about your text plan or data plan, it is best to contact your wireless provider. <strong>Consent to receive marketing or transactional text messages is not required as a condition of purchasing any goods or services.</strong>
               </p>
               <p>
                 <strong>Privacy:</strong> For all questions about privacy, please read our <a href="/privacy-policy" className="text-blue-600 underline">Privacy Policy</a>.
