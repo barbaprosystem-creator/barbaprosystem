@@ -25,6 +25,10 @@ export function AuthProvider({ children }) {
 
       if (error) {
         console.error('Error fetching profile:', error.message);
+        // Check for token invalidation / auth errors
+        if (error.status === 401 || error.message?.includes('JWT') || error.message?.includes('invalid') || error.code === 'PGRST301') {
+          return { isAuthError: true };
+        }
         return null;
       }
       return data;
@@ -38,63 +42,104 @@ export function AuthProvider({ children }) {
     let mounted = true;
 
     // STEP 1: Get the initial session immediately from Supabase's own cache.
-    // This is near-instant because it reads from localStorage — no network needed.
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
       if (!mounted) return;
       
-      setSession(s);
+      try {
+        if (s?.user) {
+          // Check if session is expired
+          const isExpired = s.expires_at ? s.expires_at * 1000 < Date.now() : false;
+          if (isExpired) {
+            console.warn('Cached session is expired, signing out to clear cache...');
+            await supabase.auth.signOut();
+            setSession(null);
+            setProfile(null);
+            return;
+          }
 
-      if (s?.user) {
-        const p = await fetchProfile(s.user.id);
-        if (!mounted) return;
-        if (p) {
-          setProfile(p);
+          const p = await fetchProfile(s.user.id);
+          if (!mounted) return;
+
+          if (p?.isAuthError) {
+            console.warn('Auth error fetching initial profile, signing out to clear cache...');
+            await supabase.auth.signOut();
+            setSession(null);
+            setProfile(null);
+            return;
+          }
+
+          setSession(s);
+          if (p) {
+            setProfile(p);
+          } else {
+            const meta = s.user.user_metadata || {};
+            setProfile({
+              id: s.user.id,
+              full_name: meta.full_name || s.user.email,
+              role: meta.role || 'salesperson',
+              is_active: true,
+            });
+          }
         } else {
-          const meta = s.user.user_metadata || {};
-          setProfile({
-            id: s.user.id,
-            full_name: meta.full_name || s.user.email,
-            role: meta.role || 'salesperson',
-            is_active: true,
-          });
+          setSession(null);
+          setProfile(null);
         }
+      } catch (err) {
+        console.error('getSession process error:', err);
+      } finally {
+        if (mounted) setLoading(false);
       }
-
-      if (mounted) setLoading(false);
     }).catch((err) => {
       console.error('getSession error:', err);
       if (mounted) setLoading(false);
     });
 
     // STEP 2: Subscribe to auth state changes (login, logout, token refresh).
-    // This fires automatically when the token refreshes in the background.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, s) => {
+      async (event, s) => {
         if (!mounted) return;
 
-        if (!s?.user) {
-          setSession(null);
-          setProfile(null);
-          setLoading(false);
-          return;
+        try {
+          if (!s?.user) {
+            setSession(null);
+            setProfile(null);
+            return;
+          }
+
+          if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setProfile(null);
+            return;
+          }
+
+          const p = await fetchProfile(s.user.id);
+          if (!mounted) return;
+
+          if (p?.isAuthError) {
+            console.warn('Auth error on state change, signing out to clear cache...');
+            await supabase.auth.signOut();
+            setSession(null);
+            setProfile(null);
+            return;
+          }
+
+          setSession(s);
+          const fallback = (() => {
+            const meta = s.user.user_metadata || {};
+            return {
+              id: s.user.id,
+              full_name: meta.full_name || s.user.email,
+              role: meta.role || 'salesperson',
+              is_active: true,
+            };
+          })();
+
+          setProfile(p || fallback);
+        } catch (err) {
+          console.error('onAuthStateChange process error:', err);
+        } finally {
+          if (mounted) setLoading(false);
         }
-
-        setSession(s);
-        const p = await fetchProfile(s.user.id);
-        if (!mounted) return;
-
-        const fallback = (() => {
-          const meta = s.user.user_metadata || {};
-          return {
-            id: s.user.id,
-            full_name: meta.full_name || s.user.email,
-            role: meta.role || 'salesperson',
-            is_active: true,
-          };
-        })();
-
-        setProfile(p || fallback);
-        setLoading(false);
       }
     );
 
