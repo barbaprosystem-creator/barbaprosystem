@@ -156,6 +156,17 @@ export default function LandingPage() {
               View Our Work
             </a>
           </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 1 }}
+            className="mt-6 flex justify-center gap-6 text-sm text-gray-400 font-semibold"
+          >
+            <Link to="/privacy-policy" className="hover:text-[#FACB00] transition-colors underline decoration-gray-600 hover:decoration-[#FACB00]">Privacy Policy</Link>
+            <span className="text-gray-700">|</span>
+            <Link to="/terms-of-service" className="hover:text-[#FACB00] transition-colors underline decoration-gray-600 hover:decoration-[#FACB00]">Terms of Service</Link>
+          </motion.div>
         </div>
       </section>
 
