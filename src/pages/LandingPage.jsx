@@ -28,6 +28,7 @@ const imageReveal = {
 export default function LandingPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [smsOptIn, setSmsOptIn] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -45,17 +46,25 @@ export default function LandingPage() {
       const firstName = nameParts[0];
       const lastName = nameParts.slice(1).join(' ') || '';
 
+      // Append SMS opt-in status to notes
+      const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const consentText = smsOptIn 
+        ? `\n\n[SMS Consent: Opted-In on ${timestamp} EST]`
+        : `\n\n[SMS Consent: Opted-Out / Not Provided on ${timestamp} EST]`;
+      const finalNotes = formData.notes + consentText;
+
       const { error } = await supabase.from('contacts').insert([{
         first_name: firstName,
         last_name: lastName,
         phone: formData.phone,
-        notes: formData.notes,
+        notes: finalNotes,
         source: 'web',
         pipeline_status: 'new'
       }]);
 
       if (error) throw error;
       setSubmitted(true);
+      setSmsOptIn(false);
     } catch (err) {
       alert('Error sending request: ' + err.message);
     } finally {
@@ -359,6 +368,8 @@ export default function LandingPage() {
                       <input 
                         type="checkbox" 
                         id="smsOptIn"
+                        checked={smsOptIn}
+                        onChange={(e) => setSmsOptIn(e.target.checked)}
                         className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FACB00] focus:ring-[#FACB00] bg-[#111]"
                       />
                       <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-normal">

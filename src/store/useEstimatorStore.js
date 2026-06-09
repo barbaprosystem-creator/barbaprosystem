@@ -186,30 +186,92 @@ export const useEstimatorStore = create((set, get) => ({
   },
 
   // Fences
-  fencesConfig: { type: 'vinyl_white', lf: '0' },
+  fencesConfig: { type: 'vinyl_white', lf: '0', singleGates: 0, doubleGates: 0 },
   setFencesField: (f, v) => set(s => ({ fencesConfig: { ...s.fencesConfig, [f]: v } })),
   fencesAppend: (d) => set(s => ({ fencesConfig: { ...s.fencesConfig, lf: numpadAppend(s.fencesConfig.lf, d) } })),
   fencesBackspace: () => set(s => ({ fencesConfig: { ...s.fencesConfig, lf: numpadBackspace(s.fencesConfig.lf) } })),
   fencesClear: () => set(s => ({ fencesConfig: { ...s.fencesConfig, lf: '0' } })),
   addFencesToReceipt: () => {
-    const { fencesConfig, addItem } = get();
+    const { fencesConfig, addItem, prices } = get();
     const lf = parseFloat(fencesConfig.lf) || 0;
-    if (lf <= 0) return;
+    const sg = parseInt(fencesConfig.singleGates) || 0;
+    const dg = parseInt(fencesConfig.doubleGates) || 0;
     
-    const typeLabels = { 
-      vinyl_white: 'Vinyl Fence (White, 6FT)', 
-      vinyl_other: 'Vinyl Fence (Other, 6FT)', 
-      wood_pine: 'Wood Fence (Pine, 6FT)', 
-      wood_cedar: 'Wood Fence (Cedar, 6FT)',
-      alum_black: 'Aluminum Fence (Black, 4FT)',
-      chain_galv: 'Chain Link (Galvanized, 4FT)'
-    };
-    const prices = { 
-      vinyl_white: 55, vinyl_other: 75, wood_pine: 35, wood_cedar: 55, alum_black: 45, chain_galv: 25
-    };
+    if (lf <= 0 && sg <= 0 && dg <= 0) return;
     
-    const unitPrice = prices[fencesConfig.type] || 55;
-    addItem({ service: 'fences', name: `Cerca - ${typeLabels[fencesConfig.type]}`, details: `${lf} LF @ $${unitPrice.toFixed(2)}/ft`, quantity: lf, unitPrice, total: lf * unitPrice });
+    if (lf > 0) {
+      const typeLabels = { 
+        vinyl_white: 'Vinyl Fence (White, 6FT)', 
+        vinyl_other: 'Vinyl Fence (Other, 6FT)', 
+        wood_pine: 'Wood Fence (Pine, 6FT)', 
+        wood_cedar: 'Wood Fence (Cedar, 6FT)',
+        alum_black: 'Aluminum Fence (Black, 4FT)',
+        chain_galv: 'Chain Link (Galvanized, 4FT)'
+      };
+      
+      const dbItemNameMap = {
+        vinyl_white: 'WHITE VINYL (6 FT)',
+        vinyl_other: 'SAND VINYL (6 FT)',
+        wood_pine: 'WOOD FENCE – DOG EAR (6 FT)',
+        wood_cedar: 'WOOD FENCE – DOG EAR (6 FT)',
+        alum_black: 'BLACK ALUMINUM (4 FT)',
+        chain_galv: 'CHAIN LINK – GALVANIZED (4 FT)'
+      };
+      
+      const dbItemName = dbItemNameMap[fencesConfig.type];
+      const dbPriceObj = prices.find(p => p.item_name.toUpperCase() === dbItemName?.toUpperCase());
+      
+      const hardcodedPrices = { 
+        vinyl_white: 55, vinyl_other: 75, wood_pine: 35, wood_cedar: 55, alum_black: 45, chain_galv: 25
+      };
+      
+      const unitPrice = dbPriceObj ? parseFloat(dbPriceObj.sell_price) : (hardcodedPrices[fencesConfig.type] || 55);
+      
+      addItem({ 
+        service: 'fences', 
+        name: `Cerca - ${typeLabels[fencesConfig.type]}`, 
+        details: `${lf} LF @ $${unitPrice.toFixed(2)}/ft`, 
+        quantity: lf, 
+        unitPrice, 
+        total: lf * unitPrice 
+      });
+    }
+    
+    if (sg > 0) {
+      const dbPriceObj = prices.find(p => p.item_name.toUpperCase() === 'SINGLE GATE');
+      const unitPrice = dbPriceObj ? parseFloat(dbPriceObj.sell_price) : 250.00;
+      addItem({
+        service: 'fences',
+        name: 'Cerca - Single Gate',
+        details: `${sg} ud(s) @ $${unitPrice.toFixed(2)}/ud`,
+        quantity: sg,
+        unitPrice,
+        total: sg * unitPrice
+      });
+    }
+    
+    if (dg > 0) {
+      const dbPriceObj = prices.find(p => p.item_name.toUpperCase() === 'DOUBLE GATE');
+      const unitPrice = dbPriceObj ? parseFloat(dbPriceObj.sell_price) : 400.00;
+      addItem({
+        service: 'fences',
+        name: 'Cerca - Double Gate',
+        details: `${dg} ud(s) @ $${unitPrice.toFixed(2)}/ud`,
+        quantity: dg,
+        unitPrice,
+        total: dg * unitPrice
+      });
+    }
+    
+    // Reset inputs
+    set(s => ({
+      fencesConfig: {
+        ...s.fencesConfig,
+        lf: '0',
+        singleGates: 0,
+        doubleGates: 0
+      }
+    }));
   },
 
   // HVAC
@@ -291,7 +353,7 @@ export const useEstimatorStore = create((set, get) => ({
         details: item.details,
         quantity: parseFloat(item.quantity) || 1,
         unitPrice: parseFloat(item.unit_price) || 0,
-        total: parseFloat(item.total) || 0
+        total: parseFloat(item.line_total) || 0
       }));
       
       set({

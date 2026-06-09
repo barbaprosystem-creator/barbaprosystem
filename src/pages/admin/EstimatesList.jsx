@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X } from 'lucide-react';
+import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X, Edit } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../i18n/LanguageContext';
+import { useEstimatorStore } from '../../store/useEstimatorStore';
 
 const STATUS_COLORS = {
   draft: '#6b7280',
@@ -29,6 +30,7 @@ function extractPhotosFromScope(scope) {
 export default function EstimatesList() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const { loadEstimate } = useEstimatorStore();
 
   const STATUS_MAP = {
     draft:    { label: t('status.draft'),     color: STATUS_COLORS.draft },
@@ -238,9 +240,25 @@ export default function EstimatesList() {
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
                   {(est.status==='draft' || est.status==='sent') && (
-                    <button className="icon-btn" title="Send by email" onClick={() => updateStatus(est.id,'sent')}>
-                      <Send size={15}/>
-                    </button>
+                    <>
+                      <button 
+                        className="icon-btn" 
+                        title="Edit Estimate" 
+                        onClick={async () => {
+                          try {
+                            await loadEstimate(est.id);
+                            navigate('/admin/estimator');
+                          } catch (err) {
+                            alert('Error loading estimate for editing: ' + err.message);
+                          }
+                        }}
+                      >
+                        <Edit size={15}/>
+                      </button>
+                      <button className="icon-btn" title="Send by email" onClick={() => updateStatus(est.id,'sent')}>
+                        <Send size={15}/>
+                      </button>
+                    </>
                   )}
                   {est.status==='sent' && <>
                     <button className="icon-btn success" title="Approve" onClick={() => updateStatus(est.id,'approved')}><CheckCircle size={15}/></button>

@@ -228,7 +228,6 @@ export default function Estimator() {
             details: item.details,
             quantity: item.quantity,
             unit_price: item.unitPrice,
-            total: item.total,
             service_type: item.service
           }))
         );
