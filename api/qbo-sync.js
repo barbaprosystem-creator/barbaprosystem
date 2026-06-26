@@ -41,6 +41,15 @@ async function refreshQboToken(supabase, settings, qboClientId, qboClientSecret)
   return tokens.access_token;
 }
 
+// Helper to log intuit_tid from QBO API response headers
+function logQboTid(response, label) {
+  const tid = response.headers.get('intuit_tid');
+  if (tid) {
+    console.log(`[QuickBooks TID] ${label}: ${tid}`);
+  }
+  return tid || 'N/A';
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -145,6 +154,7 @@ export default async function handler(req, res) {
           'Accept': 'application/json'
         }
       });
+      logQboTid(custCheckRes, 'Customer Check');
       if (custCheckRes.status === 404) {
         // Customer was deleted in QBO, force recreation
         qboCustomerId = null;
@@ -163,6 +173,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/text'
           }
         });
+        logQboTid(searchRes, 'Customer Search by Email');
         if (searchRes.ok) {
           const resJson = await searchRes.json();
           if (resJson.QueryResponse?.Customer?.length > 0) {
@@ -182,6 +193,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/text'
           }
         });
+        logQboTid(searchRes, 'Customer Search by Name');
         if (searchRes.ok) {
           const resJson = await searchRes.json();
           if (resJson.QueryResponse?.Customer?.length > 0) {
@@ -224,10 +236,11 @@ export default async function handler(req, res) {
           body: JSON.stringify(createPayload)
         });
 
+        const tid = logQboTid(createRes, 'Customer Create');
         const createJson = await createRes.json();
         if (!createRes.ok || !createJson.Customer) {
           console.error('Error creating Customer in QBO:', createJson);
-          throw new Error(`Failed to create Customer in QBO: ${createJson.Fault?.Error?.[0]?.Message || createRes.statusText}`);
+          throw new Error(`Failed to create Customer in QBO (TID: ${tid}): ${createJson.Fault?.Error?.[0]?.Message || createRes.statusText}`);
         }
 
         qboCustomerId = createJson.Customer.Id;
@@ -281,6 +294,7 @@ export default async function handler(req, res) {
       body: JSON.stringify(invoicePayload)
     });
 
+    let tid = logQboTid(invoiceRes, 'Invoice Create Try 1');
     let invoiceJson = await invoiceRes.json();
 
     // If duplicate DocNumber error occurs, retry without DocNumber
@@ -298,13 +312,15 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify(invoicePayload)
       });
+      tid = logQboTid(invoiceRes, 'Invoice Create Try 2');
       invoiceJson = await invoiceRes.json();
     }
 
     if (!invoiceRes.ok || !invoiceJson.Invoice) {
       console.error('Error creating Invoice in QBO:', invoiceJson);
-      throw new Error(`Failed to create Invoice in QBO: ${invoiceJson.Fault?.Error?.[0]?.Message || invoiceRes.statusText}`);
+      throw new Error(`Failed to create Invoice in QBO (TID: ${tid}): ${invoiceJson.Fault?.Error?.[0]?.Message || invoiceRes.statusText}`);
     }
+
 
     const qboInvoiceId = invoiceJson.Invoice.Id;
     const qboInvoiceNumber = invoiceJson.Invoice.DocNumber;
