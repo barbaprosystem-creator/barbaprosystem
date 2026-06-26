@@ -209,6 +209,7 @@ export default function CalendarPage() {
         source:      'crm',
         contact_id:  ev.contact_id,
         assigned_to: ev.assigned_to,
+        custom_assigned_to: ev.custom_assigned_to,
         color:       ev.color,
         service_type: ev.service_type,
       })));
@@ -276,7 +277,7 @@ export default function CalendarPage() {
   ];
 
   const handleSelectSlot = ({ start, end }) => {
-    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '', contact_id: '', color: '', service_type: '' });
+    setForm({ title: '', event_type: tabConfig.defaultType, description: '', start, end, assigned_to: profile?.id || '', custom_assigned_to: '', contact_id: '', color: '', service_type: '' });
     setNewCustomer({ first_name: '', last_name: '', phone: '', email: '' });
     setSelectedEvent(null);
     setShowForm(true);
@@ -289,6 +290,10 @@ export default function CalendarPage() {
 
   const handleEditClick = () => {
     if (!selectedEvent) return;
+    let assignedToValue = selectedEvent.assigned_to || '';
+    if (!selectedEvent.assigned_to && selectedEvent.custom_assigned_to) {
+      assignedToValue = 'custom';
+    }
     setForm({
       id:           selectedEvent.id,
       title:        selectedEvent.title,
@@ -296,7 +301,8 @@ export default function CalendarPage() {
       description:  selectedEvent.desc || '',
       start:        selectedEvent.start,
       end:          selectedEvent.end,
-      assigned_to:  selectedEvent.assigned_to || '',
+      assigned_to:  assignedToValue,
+      custom_assigned_to: selectedEvent.custom_assigned_to || '',
       contact_id:   selectedEvent.contact_id || '',
       color:        selectedEvent.color || '',
       service_type: selectedEvent.service_type || '',
@@ -332,6 +338,10 @@ export default function CalendarPage() {
         setContacts(newContacts || []);
       }
 
+      const isCustomAssigned = form.assigned_to === 'custom';
+      const assignedToId = isCustomAssigned ? null : (form.assigned_to || null);
+      const customAssignedName = isCustomAssigned ? (form.custom_assigned_to || '') : null;
+
       // If form has ID, we update, otherwise insert
       if (form.id) {
         const { error } = await supabase.from('calendar_events').update({
@@ -340,7 +350,8 @@ export default function CalendarPage() {
           description:   form.description,
           start_time:    form.start.toISOString(),
           end_time:      form.end.toISOString(),
-          assigned_to:   form.assigned_to || null,
+          assigned_to:   assignedToId,
+          custom_assigned_to: customAssignedName,
           contact_id:    finalContactId || null,
           color:         form.color || null,
           service_type:  form.service_type || null,
@@ -356,7 +367,8 @@ export default function CalendarPage() {
           all_day:       false,
           created_by:    user.id,
           calendar_type: tabConfig.calendarType,
-          assigned_to:   form.assigned_to || null,
+          assigned_to:   assignedToId,
+          custom_assigned_to: customAssignedName,
           contact_id:    finalContactId || null,
           color:         form.color || null,
           service_type:  form.service_type || null,
@@ -620,6 +632,16 @@ export default function CalendarPage() {
                     <span>{selectedEvent.creator}</span>
                   </div>
                 )}
+                {selectedEvent.source === 'crm' && (
+                  <div className="mb-4 flex items-center gap-2 text-sm text-slate-300">
+                    <span className="font-semibold text-slate-400">👤 Assigned:</span>
+                    <span>
+                      {selectedEvent.assigned_to
+                        ? (users.find(u => u.id === selectedEvent.assigned_to)?.full_name || 'Loading...')
+                        : (selectedEvent.custom_assigned_to || 'Unassigned')}
+                    </span>
+                  </div>
+                )}
                 {selectedEvent.calendarName && !selectedEvent.isTask && (
                   <div className="mb-3 flex items-center gap-2 text-sm text-slate-300">
                     <span className="font-semibold text-slate-400">📅 Google Calendar:</span>
@@ -720,12 +742,26 @@ export default function CalendarPage() {
                           onChange={e => setForm({ ...form, assigned_to: e.target.value })}
                         >
                           <option value="">-- Unassigned --</option>
+                          <option value="custom" className="text-blue-400 font-bold">+ Custom Name (External)</option>
                           {users
                             .filter(u => activeTab === 'sales' ? u.role === 'salesperson' : ['supervisor', 'admin', 'office'].includes(u.role))
                             .map(u => <option key={u.id} value={u.id}>{u.full_name}</option>)}
                         </select>
                       </div>
                     </div>
+
+                    {form.assigned_to === 'custom' && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-1">Custom Assigned Name *</label>
+                        <input
+                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition"
+                          value={form.custom_assigned_to || ''}
+                          onChange={e => setForm({ ...form, custom_assigned_to: e.target.value })}
+                          required={form.assigned_to === 'custom'}
+                          placeholder="Enter name"
+                        />
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>

@@ -314,12 +314,13 @@ export default function ProjectsList() {
     );
   }
 
-  const filtered = projects.filter(p => {
-    if (filterStatus !== 'all' && p.status !== filterStatus) return false;
-    
-    // Filter by project_type
+  const typeFilteredProjects = projects.filter(p => {
     const type = p.project_type || 'standard';
-    if (type !== projectTypeFilter) return false;
+    return type === projectTypeFilter;
+  });
+
+  const filtered = typeFilteredProjects.filter(p => {
+    if (filterStatus !== 'all' && p.status !== filterStatus) return false;
 
     if (!search) return true;
     const s = search.toLowerCase();
@@ -337,7 +338,7 @@ export default function ProjectsList() {
         <div className="crm-toolbar-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div>
             <h1>{t('projects.title')}</h1>
-            <span className="crm-count">{projects.length} {t('common.total_count')}</span>
+            <span className="crm-count">{typeFilteredProjects.length} {t('common.total_count')}</span>
           </div>
           
           {role === 'admin' && (
@@ -384,11 +385,11 @@ export default function ProjectsList() {
       {/* Status Tabs */}
       <div className="estimate-tabs">
         <button className={`estimate-tab ${filterStatus === 'all' ? 'active' : ''}`} onClick={() => setFilterStatus('all')}>
-          {t('common.all')} <span className="tab-count">{projects.length}</span>
+          {t('common.all')} <span className="tab-count">{typeFilteredProjects.length}</span>
         </button>
         {Object.entries(STATUS_MAP).map(([id, v]) => (
           <button key={id} className={`estimate-tab ${filterStatus === id ? 'active' : ''}`} onClick={() => setFilterStatus(id)}>
-            {v.label} <span className="tab-count">{projects.filter(p => p.status === id).length}</span>
+            {v.label} <span className="tab-count">{typeFilteredProjects.filter(p => p.status === id).length}</span>
           </button>
         ))}
       </div>

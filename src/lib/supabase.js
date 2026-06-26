@@ -18,10 +18,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
       return await fn();
     },
   },
+  global: {
+    headers: {
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
+  },
   realtime: {
     // Disable realtime to prevent WebSocket DNS resolution hanging on init
     params: { eventsPerSecond: 10 },
     timeout: 4000,
   },
 });
-
