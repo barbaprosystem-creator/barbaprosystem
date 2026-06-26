@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X, Edit } from 'lucide-react';
+import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X, Edit, RefreshCw } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -50,6 +50,9 @@ export default function EstimatesList() {
   const [activeGalleryPhotos, setActiveGalleryPhotos] = useState(null);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
 
+  // QuickBooks sync state
+  const [syncingId, setSyncingId] = useState(null);
+
   useEffect(() => { fetchEstimates(); }, []);
 
   async function fetchEstimates() {
@@ -59,6 +62,28 @@ export default function EstimatesList() {
       .order('created_at',{ascending:false});
     setEstimates(data||[]);
     setLoading(false);
+  }
+
+  async function syncToQuickBooks(estimateId) {
+    setSyncingId(estimateId);
+    try {
+      const res = await fetch('/api/qbo-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estimateId })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to sync');
+      }
+      alert(`Successfully synced to QuickBooks! Invoice ID: ${data.qboInvoiceNumber}`);
+      fetchEstimates();
+    } catch (err) {
+      console.error(err);
+      alert('Error syncing to QuickBooks: ' + err.message);
+    } finally {
+      setSyncingId(null);
+    }
   }
 
   async function updateStatus(id, status) {
@@ -265,9 +290,26 @@ export default function EstimatesList() {
                     <button className="icon-btn danger" title="Reject" onClick={() => updateStatus(est.id,'rejected')}><XCircle size={15}/></button>
                   </>}
                   {est.status==='approved' && (
-                    <button className="icon-btn" title="Generate Contract" onClick={() => navigate(`/admin/contract/${est.id}`)}>
-                      <FileSignature size={15}/>
-                    </button>
+                    <div className="flex items-center gap-2" style={{ display: 'inline-flex' }}>
+                      <button className="icon-btn" title="Generate Contract" onClick={() => navigate(`/admin/contract/${est.id}`)}>
+                        <FileSignature size={15}/>
+                      </button>
+                      {est.qbo_invoice_id ? (
+                        <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-bold" title={`Synced to QBO: Invoice #${est.qbo_invoice_number}`}>
+                          QBO #{est.qbo_invoice_number}
+                        </span>
+                      ) : (
+                        <button 
+                          className="icon-btn" 
+                          style={{ color: '#10b981' }} 
+                          title="Sync to QuickBooks" 
+                          onClick={() => syncToQuickBooks(est.id)}
+                          disabled={syncingId === est.id}
+                        >
+                          {syncingId === est.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                        </button>
+                      )}
+                    </div>
                   )}
                   <button className="icon-btn danger" title="Delete" onClick={() => deleteEstimate(est.id)}><Trash2 size={15}/></button>
                 </td>

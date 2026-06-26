@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Users, Plus, Trash2, Loader2, X, Shield, ShieldCheck, Eye, Pencil, Lock } from 'lucide-react';
+import { Users, Plus, Trash2, Loader2, X, Shield, ShieldCheck, Eye, Pencil, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../../i18n/LanguageContext';
 
 const ROLE_MAP = {
@@ -28,11 +28,106 @@ export default function SettingsPage({ role = 'admin' }) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
 
+  // QuickBooks Integration state
+  const [qboConnected, setQboConnected] = useState(false);
+  const [qboRealmId, setQboRealmId] = useState(null);
+  const [qboEnv, setQboEnv] = useState('sandbox');
+  const [loadingQbo, setLoadingQbo] = useState(true);
+  const [syncingQbo, setSyncingQbo] = useState(false);
+
   useEffect(() => {
     if (role === 'admin' || role === 'office') {
       fetchUsers();
+      fetchQboStatus();
     }
   }, [role]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const realmId = params.get('realmId');
+    const state = params.get('state');
+
+    if (code && realmId && state === 'qbo') {
+      handleQboCallback(code, realmId);
+    }
+  }, []);
+
+  async function fetchQboStatus() {
+    try {
+      const res = await fetch('/api/qbo-status');
+      if (res.ok) {
+        const data = await res.json();
+        setQboConnected(data.connected);
+        setQboRealmId(data.realmId);
+        setQboEnv(data.environment);
+      }
+    } catch (err) {
+      console.error('Error fetching QBO status:', err);
+    } finally {
+      setLoadingQbo(false);
+    }
+  }
+
+  async function handleQboCallback(code, realmId) {
+    setSyncingQbo(true);
+    try {
+      const res = await fetch('/api/qbo-callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code,
+          realmId,
+          redirectUri: window.location.origin + '/admin/settings'
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || 'Failed to connect');
+      }
+      alert('QuickBooks Online connected successfully!');
+      fetchQboStatus();
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to QuickBooks: ' + err.message);
+    } finally {
+      setSyncingQbo(false);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }
+
+  function connectQbo() {
+    const clientId = import.meta.env.VITE_QBO_CLIENT_ID;
+    if (!clientId) {
+      alert('QuickBooks Client ID is not configured. Please set VITE_QBO_CLIENT_ID in your environment variables.');
+      return;
+    }
+    const redirectUri = encodeURIComponent(window.location.origin + '/admin/settings');
+    const scope = 'com.intuit.quickbooks.accounting';
+    const state = 'qbo';
+    const authUrl = `https://appcenter.intuit.com/connect/oauth2?client_id=${clientId}&response_type=code&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`;
+    window.location.href = authUrl;
+  }
+
+  async function disconnectQbo() {
+    if (!confirm('Are you sure you want to disconnect QuickBooks?')) return;
+    setSyncingQbo(true);
+    try {
+      const res = await fetch('/api/qbo-disconnect', { method: 'POST' });
+      if (res.ok) {
+        alert('QuickBooks disconnected.');
+        setQboConnected(false);
+        setQboRealmId(null);
+      } else {
+        alert('Error disconnecting from QuickBooks.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error disconnecting: ' + err.message);
+    } finally {
+      setSyncingQbo(false);
+    }
+  }
 
   async function fetchUsers() {
     setLoading(true);
@@ -241,6 +336,58 @@ export default function SettingsPage({ role = 'admin' }) {
                   Servi Financial &rarr;
                 </a>
               </div>
+            </div>
+          </div>
+
+          {/* QuickBooks Integration Section */}
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <h2><RefreshCw size={20} className={syncingQbo ? 'animate-spin' : ''}/> QuickBooks Online Integration</h2>
+              <p>Connect QuickBooks to automatically sync customers and estimates</p>
+            </div>
+            
+            <div className="bg-[#1a1a1a] p-5 rounded-xl border border-[#333] max-w-lg mt-4 space-y-4">
+              {loadingQbo ? (
+                <div className="flex items-center gap-2 text-gray-400 py-2">
+                  <Loader2 className="animate-spin" size={18}/>
+                  <span>Checking connection status...</span>
+                </div>
+              ) : qboConnected ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-[#10b981] font-bold text-sm bg-[#10b981]/10 p-3 rounded-lg border border-[#10b981]/20">
+                    <ShieldCheck size={18} />
+                    <span>Connected to QuickBooks Online ({qboEnv === 'sandbox' ? 'Sandbox' : 'Production'})</span>
+                  </div>
+                  <div className="text-sm text-gray-300 space-y-1">
+                    <p><strong className="text-gray-400">Company ID (Realm ID):</strong> {qboRealmId}</p>
+                  </div>
+                  <button
+                    onClick={disconnectQbo}
+                    disabled={syncingQbo}
+                    className="btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-red-600/10 text-red-400 border border-red-500/20 hover:bg-red-600/20 transition text-sm cursor-pointer"
+                  >
+                    Disconnect QuickBooks
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-gray-400 text-sm bg-gray-500/5 p-3 rounded-lg border border-gray-500/10">
+                    <AlertCircle size={18} />
+                    <span>QuickBooks is not connected</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    Connecting QuickBooks allows the CRM to automatically sync your clients and create invoices when estimates are approved.
+                  </p>
+                  <button
+                    onClick={connectQbo}
+                    disabled={syncingQbo}
+                    className="btn-primary w-full flex items-center justify-center gap-2 cursor-pointer font-bold py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white"
+                  >
+                    <RefreshCw size={16} className={syncingQbo ? 'animate-spin' : ''} />
+                    Connect QuickBooks
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

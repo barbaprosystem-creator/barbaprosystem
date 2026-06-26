@@ -123,26 +123,98 @@ function AddPaymentModal({ projects, contacts, onSave, onClose }) {
 function ReminderModal({ payment, onClose }) {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
-  const [method, setMethod] = useState('both');
+  
+  const clientPhone = payment.contact?.phone;
+  const clientEmail = payment.contact?.email;
+  const hasPhone = !!clientPhone;
+  const hasEmail = !!clientEmail;
+  const canSendAny = hasPhone || hasEmail;
+
+  const [method, setMethod] = useState(() => {
+    if (hasPhone && hasEmail) return 'both';
+    if (hasPhone) return 'sms';
+    if (hasEmail) return 'email';
+    return 'both';
+  });
 
   const handleSend = async () => {
+    if (!canSendAny) {
+      alert("Error: Client does not have any contact information (phone or email) on file.");
+      return;
+    }
+    if ((method === 'sms' || method === 'both') && !hasPhone) {
+      alert("Error: Client does not have a phone number on file.");
+      return;
+    }
+    if ((method === 'email' || method === 'both') && !hasEmail) {
+      alert("Error: Client does not have an email address on file.");
+      return;
+    }
+
     setSending(true);
-    // Log the reminder in payment_reminders_log
+
+    const amountStr = formatCurrency(payment.amount);
+    const dueDateStr = formatDate(payment.due_date);
+    const projNumStr = payment.project?.project_number ? `PRJ-${String(payment.project.project_number).padStart(4, '0')}` : '';
+    const projTitle = payment.project?.title || '';
+    const projectInfo = projNumStr ? `${projNumStr} (${projTitle})` : 'your project';
+    const messageText = `Hi ${payment.contact?.first_name || 'Client'}, this is a friendly reminder from Barba Construction. Your payment of ${amountStr} for ${projectInfo} is due on ${dueDateStr}. Thank you!`;
+
     try {
+      // 1. Send live SMS if chosen
+      if (method === 'sms' || method === 'both') {
+        const smsRes = await fetch('/api/send-message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: clientPhone,
+            body: messageText,
+            canal: 'sms'
+          })
+        });
+        if (!smsRes.ok) {
+          const errData = await smsRes.json().catch(() => ({}));
+          throw new Error(`SMS failed: ${errData.error || smsRes.statusText}`);
+        }
+      }
+
+      // 2. Send live Email if chosen
+      if (method === 'email' || method === 'both') {
+        const emailRes = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: clientEmail,
+            subject: `Payment Reminder - Barba Construction`,
+            text: messageText
+          })
+        });
+        if (!emailRes.ok) {
+          const errData = await emailRes.json().catch(() => ({}));
+          throw new Error(`Email failed: ${errData.error || emailRes.statusText}`);
+        }
+      }
+
+      // 3. Log the reminder in payment_reminders_log
       await supabase.from('payment_reminders_log').insert({
         payment_id: payment.id,
         reminder_type: 'manual',
         channel: method,
         sent_at: new Date().toISOString(),
-        message_body: `Payment reminder: ${formatCurrency(payment.amount)} due on ${formatDate(payment.due_date)}`,
+        message_body: messageText,
       });
-      // Update reminder flags
+
+      // 4. Update payment flags
       const updates = {};
       if (method === 'sms' || method === 'both') updates.reminder_sent_5d = true;
       await supabase.from('payments').update(updates).eq('id', payment.id);
+      
       setSent(true);
-    } catch (err) { alert('Error: ' + err.message); }
-    finally { setSending(false); }
+    } catch (err) { 
+      alert('Error: ' + err.message); 
+    } finally { 
+      setSending(false); 
+    }
   };
 
   return (
@@ -166,9 +238,9 @@ function ReminderModal({ payment, onClose }) {
         {sent ? (
           <div style={{ textAlign: 'center' }}>
             <div style={{ color: '#10b981', fontSize: '40px', marginBottom: '12px' }}>✓</div>
-            <p style={{ color: '#10b981', fontWeight: '600' }}>Reminder logged</p>
+            <p style={{ color: '#10b981', fontWeight: '600' }}>Reminder Sent Successfully</p>
             <p style={{ color: '#6b7280', fontSize: '13px', marginTop: '4px' }}>
-              Once Twilio/Resend is configured, it will be sent automatically.
+              The payment reminder has been delivered to the client and logged in their file.
             </p>
             <button className="btn-primary" onClick={onClose} style={{ marginTop: '20px', width: '100%' }}>Close</button>
           </div>
@@ -176,31 +248,56 @@ function ReminderModal({ payment, onClose }) {
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
               {[
-                { id: 'sms',   label: 'SMS',          desc: 'Text message via Twilio' },
-                { id: 'email', label: 'Email',         desc: 'Email via Resend' },
-                { id: 'both',  label: 'SMS + Email',      desc: 'Both channels (recommended)' },
-              ].map(opt => (
-                <button
-                  key={opt.id}
-                  onClick={() => setMethod(opt.id)}
-                  style={{
-                    padding: '14px 16px', borderRadius: '10px', textAlign: 'left',
-                    border: `2px solid ${method === opt.id ? '#f97316' : '#374151'}`,
-                    background: method === opt.id ? '#f9731611' : '#1e293b',
-                    cursor: 'pointer', transition: 'all 0.15s',
-                  }}
-                >
-                  <div style={{ fontWeight: '600', color: method === opt.id ? '#f97316' : '#e2e8f0', fontSize: '14px' }}>{opt.label}</div>
-                  <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px' }}>{opt.desc}</div>
-                </button>
-              ))}
+                { id: 'sms',   label: 'SMS',          desc: 'Text message via Twilio', disabled: !hasPhone, warning: !hasPhone && 'No phone number' },
+                { id: 'email', label: 'Email',         desc: 'Email via Resend', disabled: !hasEmail, warning: !hasEmail && 'No email address' },
+                { id: 'both',  label: 'SMS + Email',      desc: 'Both channels (recommended)', disabled: !hasPhone || !hasEmail, warning: (!hasPhone || !hasEmail) && 'Requires both details' },
+              ].map(opt => {
+                const isSelected = method === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => { if (!opt.disabled) setMethod(opt.id); }}
+                    disabled={opt.disabled}
+                    style={{
+                      padding: '14px 16px', borderRadius: '10px', textAlign: 'left',
+                      border: `2px solid ${isSelected ? '#f97316' : '#374151'}`,
+                      background: isSelected ? '#f9731611' : opt.disabled ? '#1e293b50' : '#1e293b',
+                      cursor: opt.disabled ? 'not-allowed' : 'pointer',
+                      opacity: opt.disabled ? 0.5 : 1,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <div style={{ fontWeight: '600', color: isSelected ? '#f97316' : '#e2e8f0', fontSize: '14px' }}>{opt.label}</div>
+                      {opt.warning && (
+                        <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 'bold' }}>{opt.warning}</div>
+                      )}
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: '12px', marginTop: '2px' }}>{opt.desc}</div>
+                  </button>
+                );
+              })}
             </div>
-            <div style={{ background: '#1e293b', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '12px', color: '#9ca3af' }}>
-              <strong style={{ color: '#f59e0b' }}>Configuration pending:</strong> Twilio and Resend must be configured for live sending. For now, the attempt is logged.
-            </div>
+            
+            {!canSendAny ? (
+              <div style={{ background: '#450a0a', border: '1px solid #ef4444', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '12px', color: '#fca5a5' }}>
+                <strong>No Contact Info:</strong> The client has neither a phone number nor an email address. Cannot send reminders.
+              </div>
+            ) : (
+              <div style={{ background: '#1e293b', borderRadius: '8px', padding: '12px', marginBottom: '20px', fontSize: '12px', color: '#9ca3af' }}>
+                <strong style={{ color: '#10b981' }}>Live Mode:</strong> Reminders will be sent immediately to the client via Twilio / Resend.
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: '12px' }}>
               <button className="btn-secondary" onClick={onClose} style={{ flex: 1 }}>Cancel</button>
-              <button className="btn-primary" onClick={handleSend} disabled={sending} style={{ flex: 2 }}>
+              <button 
+                className="btn-primary" 
+                onClick={handleSend} 
+                disabled={sending || !canSendAny} 
+                style={{ flex: 2 }}
+              >
                 {sending ? <Loader2 size={16} className="spin" /> : <Bell size={16} />}
                 Send Reminder
               </button>
@@ -235,7 +332,7 @@ export default function PaymentTracker() {
     setLoading(true);
     const [pRes, prRes] = await Promise.all([
       supabase.from('payments')
-        .select('*, project:projects!payments_project_id_fkey(title,project_number,contact_id), contact:contacts!payments_contact_id_fkey(first_name,last_name,phone)')
+        .select('*, project:projects!payments_project_id_fkey(title,project_number,contact_id), contact:contacts!payments_contact_id_fkey(first_name,last_name,phone,email)')
         .order('due_date', { ascending: true }),
       supabase.from('projects')
         .select('id,title,project_number,contact_id')

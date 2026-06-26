@@ -1,13 +1,53 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HardHat, Send, CheckCircle2 } from 'lucide-react';
+import { HardHat, Send, CheckCircle2, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 export default function ContactUs() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [smsOptIn, setSmsOptIn] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    notes: ''
+  });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    
+    try {
+      // split name into first and last
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      // Append SMS opt-in status to notes
+      const timestamp = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+      const consentText = smsOptIn 
+        ? `\n\n[SMS Consent: Opted-In on ${timestamp} EST]`
+        : `\n\n[SMS Consent: Opted-Out / Not Provided on ${timestamp} EST]`;
+      const finalNotes = formData.notes + consentText;
+
+      const { error } = await supabase.from('contacts').insert([{
+        first_name: firstName,
+        last_name: lastName,
+        phone: formData.phone,
+        notes: finalNotes,
+        source: 'web',
+        pipeline_status: 'new'
+      }]);
+
+      if (error) throw error;
+      setSubmitted(true);
+      setSmsOptIn(false);
+    } catch (err) {
+      alert('Error sending request: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -31,7 +71,10 @@ export default function ContactUs() {
               Thank you for contacting us. We will get back to you shortly to discuss your project.
             </p>
             <button 
-              onClick={() => setSubmitted(false)}
+              onClick={() => {
+                setSubmitted(false);
+                setFormData({ name: '', phone: '', notes: '' });
+              }}
               className="mt-6 text-[#FACB00] hover:underline text-sm font-medium"
             >
               Submit another request
@@ -44,6 +87,9 @@ export default function ContactUs() {
               <input 
                 required
                 type="text" 
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                disabled={loading}
                 className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-3 focus:outline-none focus:border-[#FACB00] transition-colors"
                 placeholder="John Doe"
               />
@@ -54,8 +100,11 @@ export default function ContactUs() {
               <input 
                 required
                 type="tel" 
+                value={formData.phone}
+                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                disabled={loading}
                 className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-3 focus:outline-none focus:border-[#FACB00] transition-colors mb-2"
-                placeholder="(555) 123-4567"
+                placeholder="(502) 123-4567"
               />
               
               {/* TWILIO COMPLIANCE TEXT - OPTIONAL CHECKBOX */}
@@ -63,6 +112,9 @@ export default function ContactUs() {
                 <input 
                   type="checkbox" 
                   id="smsOptIn"
+                  checked={smsOptIn}
+                  onChange={(e) => setSmsOptIn(e.target.checked)}
+                  disabled={loading}
                   className="mt-1 w-4 h-4 rounded border-gray-300 text-[#FACB00] focus:ring-[#FACB00] bg-[#0a0a0a]"
                 />
                 <label htmlFor="smsOptIn" className="text-xs text-gray-400 leading-normal">
@@ -75,6 +127,9 @@ export default function ContactUs() {
               <label className="block text-sm font-medium text-gray-400 mb-1">Project Description</label>
               <textarea 
                 required
+                value={formData.notes}
+                onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                disabled={loading}
                 className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-3 focus:outline-none focus:border-[#FACB00] transition-colors min-h-[100px]"
                 placeholder="I need a new roof installed..."
               />
@@ -82,10 +137,11 @@ export default function ContactUs() {
 
             <button 
               type="submit"
-              className="w-full bg-[#FACB00] text-black font-bold text-lg py-3 rounded-lg hover:bg-[#e0b600] transition-all flex justify-center items-center gap-2 mt-4 shadow-lg hover:shadow-[#FACB00]/20"
+              disabled={loading}
+              className="w-full bg-[#FACB00] text-black font-bold text-lg py-3 rounded-lg hover:bg-[#e0b600] transition-all flex justify-center items-center gap-2 mt-4 shadow-lg hover:shadow-[#FACB00]/20 disabled:opacity-50"
             >
-              <Send size={20} />
-              Submit Request
+              {loading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+              {loading ? 'Sending...' : 'Submit Request'}
             </button>
           </form>
         )}
