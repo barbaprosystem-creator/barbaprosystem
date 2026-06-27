@@ -25,7 +25,6 @@ async function refreshQboToken(supabase, settings, qboClientId, qboClientSecret)
 
   const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
 
-  // Save new tokens
   const upsertRows = [
     { key: 'qbo_access_token', value: tokens.access_token, updated_at: new Date().toISOString() },
     { key: 'qbo_refresh_token', value: tokens.refresh_token, updated_at: new Date().toISOString() },
@@ -81,7 +80,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
   const expiresAt = settings.qbo_expires_at ? new Date(settings.qbo_expires_at).getTime() : 0;
   const now = Date.now();
 
-  // Refresh if expired or expiring in less than 2 minutes
   if (!accessToken || expiresAt - now < 120000) {
     console.log('QBO token expired or near expiration. Refreshing...');
     accessToken = await refreshQboToken(supabase, settings, qboClientId, qboClientSecret);
@@ -121,7 +119,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
 
   // 4. Resolve Customer in QuickBooks
   if (qboCustomerId) {
-    // Verify if customer exists in QBO
     const custCheckRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/customer/${qboCustomerId}?minorversion=65`, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -130,13 +127,11 @@ export async function syncEstimateToQBO(supabase, estimateId) {
     });
     logQboTid(custCheckRes, 'Customer Check');
     if (custCheckRes.status === 404) {
-      // Customer was deleted in QBO, force recreation
       qboCustomerId = null;
     }
   }
 
   if (!qboCustomerId) {
-    // Search by Email first, then by DisplayName
     let searchData = null;
     if (contact.email) {
       const query = `SELECT * FROM Customer WHERE PrimaryEmailAddr = '${contact.email.replace(/'/g, "\\'")}'`;
@@ -157,7 +152,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
     }
 
     if (!searchData) {
-      // Search by DisplayName
       const displayName = `${contact.first_name} ${contact.last_name}`.trim();
       const query = `SELECT * FROM Customer WHERE DisplayName = '${displayName.replace(/'/g, "\\'")}'`;
       const searchRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(query)}&minorversion=65`, {
@@ -178,13 +172,11 @@ export async function syncEstimateToQBO(supabase, estimateId) {
 
     if (searchData) {
       qboCustomerId = searchData.Id;
-      // Update contact locally
       await supabase
         .from('contacts')
         .update({ qbo_customer_id: qboCustomerId })
         .eq('id', contact.id);
     } else {
-      // Create new Customer in QBO
       const displayName = `${contact.first_name} ${contact.last_name}`.trim();
       const createPayload = {
         GivenName: contact.first_name,
@@ -218,7 +210,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
       }
 
       qboCustomerId = createJson.Customer.Id;
-      // Update contact locally
       await supabase
         .from('contacts')
         .update({ qbo_customer_id: qboCustomerId })
@@ -258,7 +249,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
     }
   };
 
-  // First try: Create invoice with CRM's estimate number as DocNumber
   let invoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/invoice?minorversion=65`, {
     method: 'POST',
     headers: {
@@ -272,7 +262,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
   let tid = logQboTid(invoiceRes, 'Invoice Create Try 1');
   let invoiceJson = await invoiceRes.json();
 
-  // If duplicate DocNumber error occurs, retry without DocNumber
   const isDuplicateError = invoiceJson.Fault?.Error?.some(e => e.Message?.includes('Duplicate') || e.code === '6140');
   if (!invoiceRes.ok && isDuplicateError) {
     console.warn(`DocNumber ${invoiceNum} already exists in QBO. Retrying without DocNumber...`);
@@ -299,7 +288,6 @@ export async function syncEstimateToQBO(supabase, estimateId) {
   const qboInvoiceId = invoiceJson.Invoice.Id;
   const qboInvoiceNumber = invoiceJson.Invoice.DocNumber;
 
-  // 6. Update estimate in Supabase
   const { error: finalUpdateError } = await supabase
     .from('estimates')
     .update({
@@ -323,20 +311,17 @@ export async function syncEstimateToQBO(supabase, estimateId) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
+  const action = req.query.action || req.body.action;
 
-  const { estimateId } = req.body;
-  if (!estimateId) {
-    return res.status(400).json({ error: 'Missing estimateId in request body' });
+  if (!action) {
+    return res.status(400).json({ error: 'Missing action parameter' });
   }
 
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -349,10 +334,244 @@ export default async function handler(req, res) {
   const supabase = createClient(supabaseUrl, serviceKey);
 
   try {
-    const result = await syncEstimateToQBO(supabase, estimateId);
-    return res.status(200).json(result);
+    switch (action) {
+      case 'status': {
+        if (req.method !== 'GET') return res.status(405).json({ error: 'Method Not Allowed' });
+        
+        const { data, error } = await supabase
+          .from('system_settings')
+          .select('key, value')
+          .in('key', ['qbo_refresh_token', 'qbo_realm_id', 'qbo_environment']);
+
+        if (error) throw error;
+
+        const settings = {};
+        (data || []).forEach(row => {
+          settings[row.key] = row.value;
+        });
+
+        return res.status(200).json({
+          connected: !!settings.qbo_refresh_token,
+          realmId: settings.qbo_realm_id || null,
+          environment: settings.qbo_environment || 'sandbox'
+        });
+      }
+
+      case 'callback': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+        const { code, realmId, redirectUri } = req.body;
+        const qboClientId = process.env.QBO_CLIENT_ID;
+        const qboClientSecret = process.env.QBO_CLIENT_SECRET;
+        const qboEnv = process.env.QBO_ENVIRONMENT || 'sandbox';
+
+        if (!code || !realmId || !redirectUri) {
+          return res.status(400).json({ error: 'Missing code, realmId, or redirectUri in request body' });
+        }
+        if (!qboClientId || !qboClientSecret) {
+          return res.status(500).json({ error: 'QuickBooks Client ID or Secret not configured' });
+        }
+
+        const basicAuth = Buffer.from(`${qboClientId}:${qboClientSecret}`).toString('base64');
+        const tokenResponse = await fetch('https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${basicAuth}`,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: redirectUri
+          }).toString()
+        });
+
+        const tokens = await tokenResponse.json();
+        if (!tokenResponse.ok || tokens.error) {
+          console.error('Error exchanging QBO code for tokens:', tokens);
+          return res.status(tokenResponse.status).json({
+            error: 'Failed to exchange QuickBooks tokens',
+            details: tokens.error_description || tokens.error
+          });
+        }
+
+        const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+        const upsertRows = [
+          { key: 'qbo_access_token', value: tokens.access_token, updated_at: new Date().toISOString() },
+          { key: 'qbo_refresh_token', value: tokens.refresh_token, updated_at: new Date().toISOString() },
+          { key: 'qbo_expires_at', value: expiresAt, updated_at: new Date().toISOString() },
+          { key: 'qbo_realm_id', value: realmId, updated_at: new Date().toISOString() },
+          { key: 'qbo_environment', value: qboEnv, updated_at: new Date().toISOString() }
+        ];
+
+        const { error: dbError } = await supabase.from('system_settings').upsert(upsertRows);
+        if (dbError) throw dbError;
+
+        return res.status(200).json({ success: true });
+      }
+
+      case 'disconnect': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+        const qboKeys = ['qbo_access_token', 'qbo_refresh_token', 'qbo_expires_at', 'qbo_realm_id', 'qbo_environment'];
+        const { error } = await supabase.from('system_settings').delete().in('key', qboKeys);
+        if (error) throw error;
+        return res.status(200).json({ success: true });
+      }
+
+      case 'sync': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+        const { estimateId } = req.body;
+        if (!estimateId) return res.status(400).json({ error: 'Missing estimateId in request body' });
+        const result = await syncEstimateToQBO(supabase, estimateId);
+        return res.status(200).json(result);
+      }
+
+      case 'bulk-import': {
+        if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+        
+        // 1. Fetch QBO settings
+        const { data: settingsData, error: settingsError } = await supabase
+          .from('system_settings')
+          .select('key, value')
+          .in('key', ['qbo_access_token', 'qbo_refresh_token', 'qbo_expires_at', 'qbo_realm_id', 'qbo_environment']);
+
+        if (settingsError) throw settingsError;
+
+        const settings = {};
+        (settingsData || []).forEach(row => { settings[row.key] = row.value; });
+
+        if (!settings.qbo_refresh_token) {
+          return res.status(400).json({ error: 'QuickBooks is not connected.' });
+        }
+
+        let accessToken = settings.qbo_access_token;
+        const expiresAt = settings.qbo_expires_at ? new Date(settings.qbo_expires_at).getTime() : 0;
+        if (!accessToken || expiresAt - Date.now() < 120000) {
+          const qboClientId = process.env.QBO_CLIENT_ID;
+          const qboClientSecret = process.env.QBO_CLIENT_SECRET;
+          accessToken = await refreshQboToken(supabase, settings, qboClientId, qboClientSecret);
+        }
+
+        const realmId = settings.qbo_realm_id;
+        const qboEnv = settings.qbo_environment || 'sandbox';
+        const qboBaseUrl = qboEnv === 'production' ? 'https://quickbooks.api.intuit.com' : 'https://sandbox-quickbooks.api.intuit.com';
+
+        // Fetch local contacts & estimates
+        const [{ data: localContacts }, { data: localEstimates }] = await Promise.all([
+          supabase.from('contacts').select('*'),
+          supabase.from('estimates').select('*')
+        ]);
+
+        // Fetch Customers from QBO (Created in 2026)
+        const customerQuery = `SELECT * FROM Customer WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
+        const customerRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(customerQuery)}&minorversion=65`, {
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+        });
+        if (!customerRes.ok) throw new Error(`QBO Customers fetch failed: ${customerRes.statusText}`);
+        const customerJson = await customerRes.json();
+        const qboCustomers = customerJson.QueryResponse?.Customer || [];
+
+        let customersMatched = 0;
+        let customersCreated = 0;
+
+        for (const qboCust of qboCustomers) {
+          const qboId = qboCust.Id;
+          const email = qboCust.PrimaryEmailAddr?.Address || '';
+          const phone = qboCust.PrimaryPhone?.FreeFormNumber || '';
+          const displayName = qboCust.DisplayName || '';
+          const firstName = qboCust.GivenName || displayName.split(' ')[0] || 'Client';
+          const lastName = qboCust.FamilyName || displayName.split(' ').slice(1).join(' ') || '';
+          
+          const billAddr = qboCust.BillAddr || {};
+          const address = billAddr.Line1 || '';
+          const city = billAddr.City || '';
+          const state = billAddr.CountrySubDivisionCode || '';
+          const zip = billAddr.PostalCode || '';
+
+          let matchedContact = localContacts.find(c => c.qbo_customer_id === qboId);
+          if (!matchedContact && email) {
+            matchedContact = localContacts.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+          }
+          if (!matchedContact && displayName) {
+            matchedContact = localContacts.find(c => {
+              const localFullName = `${c.first_name || ''} ${c.last_name || ''}`.trim().toLowerCase();
+              return localFullName === displayName.trim().toLowerCase();
+            });
+          }
+
+          if (matchedContact) {
+            const updates = { qbo_customer_id: qboId };
+            if (!matchedContact.phone && phone) updates.phone = phone;
+            if (!matchedContact.address && address) updates.address = address;
+            if (!matchedContact.city && city) updates.city = city;
+            if (!matchedContact.state && state) updates.state = state;
+            if (!matchedContact.zip && zip) updates.zip = zip;
+
+            await supabase.from('contacts').update(updates).eq('id', matchedContact.id);
+            customersMatched++;
+          } else {
+            await supabase.from('contacts').insert({
+              first_name: firstName,
+              last_name: lastName,
+              email: email || null,
+              phone: phone || null,
+              address: address || null,
+              city: city || null,
+              state: state || null,
+              zip: zip || null,
+              qbo_customer_id: qboId
+            });
+            customersCreated++;
+          }
+        }
+
+        // Fetch Invoices from QBO
+        const invoiceQuery = `SELECT * FROM Invoice WHERE TxnDate >= '2026-01-01' STARTPOSITION 1 MAXRESULTS 1000`;
+        const invoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(invoiceQuery)}&minorversion=65`, {
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+        });
+        if (!invoiceRes.ok) throw new Error(`QBO Invoices fetch failed: ${invoiceRes.statusText}`);
+        const invoiceJson = await invoiceRes.json();
+        const qboInvoices = invoiceJson.QueryResponse?.Invoice || [];
+
+        let invoicesMatched = 0;
+
+        for (const qboInv of qboInvoices) {
+          const invId = qboInv.Id;
+          const docNum = qboInv.DocNumber || '';
+          
+          let matchedEst = localEstimates.find(e => e.qbo_invoice_id === invId);
+          if (!matchedEst && docNum) {
+            const parsedNum = parseInt(docNum.replace(/\D/g, ''), 10);
+            if (!isNaN(parsedNum)) {
+              matchedEst = localEstimates.find(e => e.estimate_number === parsedNum);
+            }
+          }
+
+          if (matchedEst) {
+            const updates = { qbo_invoice_id: invId, qbo_invoice_number: docNum };
+            if (matchedEst.status !== 'approved') updates.status = 'approved';
+            await supabase.from('estimates').update(updates).eq('id', matchedEst.id);
+            invoicesMatched++;
+          }
+        }
+
+        return res.status(200).json({
+          success: true,
+          customersProcessed: qboCustomers.length,
+          customersMatched,
+          customersCreated,
+          invoicesProcessed: qboInvoices.length,
+          invoicesMatched
+        });
+      }
+
+      default: {
+        return res.status(400).json({ error: `Unsupported action: ${action}` });
+      }
+    }
   } catch (err) {
-    console.error('QBO Sync API error:', err);
+    console.error(`QBO API [action=${action}] error:`, err);
     return res.status(500).json({ error: err.message || 'Internal Server Error' });
   }
 }

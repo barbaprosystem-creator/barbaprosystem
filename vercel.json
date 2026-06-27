@@ -1,5 +1,11 @@
 {
   "rewrites": [
+    { "source": "/api/qbo-status", "destination": "/api/qbo.js?action=status" },
+    { "source": "/api/qbo-callback", "destination": "/api/qbo.js?action=callback" },
+    { "source": "/api/qbo-disconnect", "destination": "/api/qbo.js?action=disconnect" },
+    { "source": "/api/qbo-sync", "destination": "/api/qbo.js?action=sync" },
+    { "source": "/api/qbo-bulk-import", "destination": "/api/qbo.js?action=bulk-import" },
+    { "source": "/api/send-estimate-email", "destination": "/api/send-email.js?action=estimate" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
