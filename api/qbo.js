@@ -49,6 +49,39 @@ function logQboTid(response, label) {
   return tid || 'N/A';
 }
 
+// Helper to detect work type from QBO line items
+function detectWorkType(lines) {
+  let hasRoof = false;
+  let hasSiding = false;
+  let hasGutter = false;
+  let hasWindow = false;
+
+  for (const line of lines || []) {
+    const desc = (line.Description || '').toLowerCase();
+    if (desc.includes('roof') || desc.includes('shingle') || desc.includes('underlayment') || desc.includes('tear off')) {
+      hasRoof = true;
+    }
+    if (desc.includes('siding') || desc.includes('hardie') || desc.includes('soffit') || desc.includes('fascia')) {
+      hasSiding = true;
+    }
+    if (desc.includes('gutter') || desc.includes('downspout')) {
+      hasGutter = true;
+    }
+    if (desc.includes('window') || desc.includes('double hung')) {
+      hasWindow = true;
+    }
+  }
+
+  const types = [];
+  if (hasRoof) types.push('Roofing');
+  if (hasSiding) types.push('Siding');
+  if (hasGutter) types.push('Gutters');
+  if (hasWindow) types.push('Windows');
+
+  if (types.length === 0) return 'General';
+  return types.join(' & ');
+}
+
 // Core helper to sync an estimate to QBO
 export async function syncEstimateToQBO(supabase, estimateId) {
   const qboClientId = process.env.QBO_CLIENT_ID;
@@ -462,6 +495,13 @@ export default async function handler(req, res) {
           supabase.from('estimates').select('*')
         ]);
 
+        const qboCustomerIdToSupabaseId = {};
+        (localContacts || []).forEach(c => {
+          if (c.qbo_customer_id) {
+            qboCustomerIdToSupabaseId[c.qbo_customer_id] = c.id;
+          }
+        });
+
         // Fetch Customers from QBO (Created in 2026)
         const customerQuery = `SELECT * FROM Customer WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
         const customerRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(customerQuery)}&minorversion=65`, {
@@ -509,8 +549,9 @@ export default async function handler(req, res) {
 
             await supabase.from('contacts').update(updates).eq('id', matchedContact.id);
             customersMatched++;
+            qboCustomerIdToSupabaseId[qboId] = matchedContact.id;
           } else {
-            await supabase.from('contacts').insert({
+            const { data: newContactData, error: insertContactError } = await supabase.from('contacts').insert({
               first_name: firstName,
               last_name: lastName,
               email: email || null,
@@ -520,7 +561,12 @@ export default async function handler(req, res) {
               state: state || null,
               zip: zip || null,
               qbo_customer_id: qboId
-            });
+            }).select();
+
+            if (insertContactError) throw insertContactError;
+            if (newContactData && newContactData.length > 0) {
+              qboCustomerIdToSupabaseId[qboId] = newContactData[0].id;
+            }
             customersCreated++;
           }
         }
@@ -535,6 +581,7 @@ export default async function handler(req, res) {
         const qboInvoices = invoiceJson.QueryResponse?.Invoice || [];
 
         let invoicesMatched = 0;
+        let invoicesCreated = 0;
 
         for (const qboInv of qboInvoices) {
           const invId = qboInv.Id;
@@ -553,6 +600,151 @@ export default async function handler(req, res) {
             if (matchedEst.status !== 'approved') updates.status = 'approved';
             await supabase.from('estimates').update(updates).eq('id', matchedEst.id);
             invoicesMatched++;
+          } else {
+            const qboCustId = qboInv.CustomerRef.value;
+            let contactId = qboCustomerIdToSupabaseId[qboCustId];
+            
+            if (!contactId) {
+              const { data: dbCont } = await supabase.from('contacts').select('id').eq('qbo_customer_id', qboCustId).single();
+              if (dbCont) {
+                contactId = dbCont.id;
+                qboCustomerIdToSupabaseId[qboCustId] = contactId;
+              }
+            }
+
+            if (!contactId) {
+              console.log(`Contact not found in local DB/map. Fetching Customer ${qboCustId} from QBO on-the-fly...`);
+              try {
+                const custRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/customer/${qboCustId}?minorversion=65`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+                });
+                if (custRes.ok) {
+                  const custJson = await custRes.json();
+                  const qboCust = custJson.Customer;
+                  if (qboCust) {
+                    const email = qboCust.PrimaryEmailAddr?.Address || '';
+                    const phone = qboCust.PrimaryPhone?.FreeFormNumber || '';
+                    const displayName = qboCust.DisplayName || '';
+                    const firstName = qboCust.GivenName || displayName.split(' ')[0] || 'Client';
+                    const lastName = qboCust.FamilyName || displayName.split(' ').slice(1).join(' ') || '';
+                    
+                    const billAddr = qboCust.BillAddr || {};
+                    const address = billAddr.Line1 || '';
+                    const city = billAddr.City || '';
+                    const state = billAddr.CountrySubDivisionCode || '';
+                    const zip = billAddr.PostalCode || '';
+
+                    const { data: newContactData, error: insertContactError } = await supabase.from('contacts').insert({
+                      first_name: firstName,
+                      last_name: lastName,
+                      email: email || null,
+                      phone: phone || null,
+                      address: address || null,
+                      city: city || null,
+                      state: state || null,
+                      zip: zip || null,
+                      qbo_customer_id: qboCustId
+                    }).select();
+
+                    if (!insertContactError && newContactData && newContactData.length > 0) {
+                      contactId = newContactData[0].id;
+                      qboCustomerIdToSupabaseId[qboCustId] = contactId;
+                      customersCreated++;
+                    }
+                  }
+                }
+              } catch (custErr) {
+                console.error(`Failed to fetch QBO customer ${qboCustId} on-the-fly:`, custErr);
+              }
+            }
+
+            if (contactId) {
+              const lines = qboInv.Line || [];
+              const workType = detectWorkType(lines);
+              const subtotal = parseFloat(qboInv.TotalAmt || 0);
+              const grandTotal = parseFloat(qboInv.TotalAmt || 0);
+              const notes = qboInv.CustomerMemo?.value || 'Imported from QuickBooks Online';
+              const createdAt = qboInv.Metadata?.CreateTime || new Date().toISOString();
+              const updatedAt = qboInv.Metadata?.LastUpdatedTime || new Date().toISOString();
+
+              const { data: newEstData, error: newEstErr } = await supabase
+                .from('estimates')
+                .insert({
+                  contact_id: contactId,
+                  status: 'approved',
+                  work_type: workType,
+                  subtotal: subtotal,
+                  grand_total: grandTotal,
+                  notes: notes,
+                  scope_of_work: 'Imported from QuickBooks Online',
+                  qbo_invoice_id: invId,
+                  qbo_invoice_number: docNum,
+                  created_at: createdAt,
+                  updated_at: updatedAt
+                })
+                .select();
+
+              if (newEstErr) {
+                console.error(`Error inserting estimate for QBO Invoice ${invId}:`, newEstErr);
+                continue;
+              }
+
+              if (newEstData && newEstData.length > 0) {
+                const newEst = newEstData[0];
+                
+                const { data: contactObj } = await supabase
+                  .from('contacts')
+                  .select('first_name, last_name, address')
+                  .eq('id', contactId)
+                  .single();
+                
+                const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
+                const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
+
+                const { error: projErr } = await supabase
+                  .from('projects')
+                  .insert({
+                    estimate_id: newEst.id,
+                    contact_id: contactId,
+                    title: `${clientName} - ${workType}`,
+                    status: qboInv.Balance === 0 ? 'completed' : 'in_progress',
+                    sold_price: grandTotal,
+                    address: projectAddress,
+                    created_at: createdAt
+                  });
+
+                if (projErr) {
+                  console.error(`Error inserting project for QBO Invoice ${invId}:`, projErr);
+                }
+
+                const itemsToInsert = [];
+                for (const line of lines) {
+                  if (line.DetailType === 'SalesItemLineDetail') {
+                    const detail = line.SalesItemLineDetail || {};
+                    itemsToInsert.push({
+                      estimate_id: newEst.id,
+                      description: line.Description || detail.ItemRef?.name || 'Services',
+                      quantity: parseFloat(detail.Qty || 1),
+                      unit_price: parseFloat(detail.UnitPrice || line.Amount || 0),
+                      created_at: createdAt
+                    });
+                  }
+                }
+
+                if (itemsToInsert.length > 0) {
+                  const { error: itemsErr } = await supabase
+                    .from('estimate_items')
+                    .insert(itemsToInsert);
+                  if (itemsErr) {
+                    console.error(`Error inserting items for QBO Invoice ${invId}:`, itemsErr);
+                  }
+                }
+
+                invoicesCreated++;
+              }
+            } else {
+              console.warn(`Could not find contact for QBO Customer ID: ${qboCustId} matching Invoice ${invId}`);
+            }
           }
         }
 
@@ -562,7 +754,8 @@ export default async function handler(req, res) {
           customersMatched,
           customersCreated,
           invoicesProcessed: qboInvoices.length,
-          invoicesMatched
+          invoicesMatched,
+          invoicesCreated
         });
       }
 

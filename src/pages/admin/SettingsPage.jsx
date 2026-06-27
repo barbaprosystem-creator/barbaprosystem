@@ -142,7 +142,8 @@ export default function SettingsPage({ role = 'admin' }) {
             `Clientes vinculados (CRM): ${data.customersMatched}\n` +
             `Clientes nuevos creados: ${data.customersCreated}\n` +
             `Facturas procesadas: ${data.invoicesProcessed}\n` +
-            `Facturas vinculadas (CRM): ${data.invoicesMatched}`);
+            `Facturas vinculadas (CRM): ${data.invoicesMatched}\n` +
+            `Facturas y Proyectos creados: ${data.invoicesCreated || 0}`);
     } catch (err) {
       console.error(err);
       alert('Error en la sincronización en bloque: ' + err.message);
