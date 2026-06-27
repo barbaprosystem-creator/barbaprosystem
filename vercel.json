@@ -7,7 +7,7 @@
     { "source": "/api/qbo-bulk-import", "destination": "/api/qbo.js?action=bulk-import" },
     { "source": "/api/send-estimate-email", "destination": "/api/send-email.js?action=estimate" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|api/|favicon\\.svg|logo-barba\\.png|icons\\.svg|landing/|apple-touch-icon\\.png).*)", "destination": "/index.html" }
   ],
   "headers": [
     {

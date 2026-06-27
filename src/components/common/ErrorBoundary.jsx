@@ -12,11 +12,34 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('App Error Boundary caught:', error, info);
+
+    // Auto-reload on ChunkLoadError or dynamically imported module fetch errors (common after new deployments)
+    const isChunkError = 
+      error?.name === 'ChunkLoadError' || 
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('error loading dynamically imported module') ||
+      error?.message?.includes('ChunkLoadError');
+      
+    if (isChunkError) {
+      try {
+        const hasRefreshed = sessionStorage.getItem('chunk-error-refreshed') === 'true';
+        if (!hasRefreshed) {
+          sessionStorage.setItem('chunk-error-refreshed', 'true');
+          console.warn('ChunkLoadError detected. Reloading page to fetch the latest application version...');
+          window.location.reload();
+        }
+      } catch (e) {
+        console.error('Failed to handle ChunkLoadError auto-reload:', e);
+      }
+    }
   }
 
   handleReload = () => {
     // Reset state and reload — do NOT clear localStorage/session
     this.setState({ hasError: false, error: null });
+    try {
+      sessionStorage.setItem('chunk-error-refreshed', 'false');
+    } catch (e) {}
     window.location.reload();
   };
 
