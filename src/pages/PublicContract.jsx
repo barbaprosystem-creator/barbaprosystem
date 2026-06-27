@@ -215,6 +215,27 @@ export default function PublicContract() {
         console.error("Error generating/uploading PDF: ", pdfErr);
       }
 
+      // Sync to QuickBooks Online in the background
+      try {
+        fetch('/api/qbo-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estimateId: id })
+        }).then(res => {
+          if (!res.ok) {
+            res.json().then(data => {
+              console.error("Background QBO Sync failed:", data.error);
+            });
+          } else {
+            console.log("Background QBO Sync succeeded");
+          }
+        }).catch(err => {
+          console.error("Background QBO Sync fetch error:", err);
+        });
+      } catch (qboErr) {
+        console.error("Background QBO Sync block error:", qboErr);
+      }
+
       alert("Contract signed and accepted successfully!");
       
     } catch (err) {

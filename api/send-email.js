@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     }
     
     const resend = new Resend(apiKey);
-    const { to, subject, html, text, fromName = 'Barba Construction' } = req.body;
+    const { to, subject, html, text, fromName = 'Barba Construction', attachments } = req.body;
 
     if (!to || !subject) {
       return res.status(400).json({ error: 'Faltan campos obligatorios: to, subject' });
@@ -65,15 +65,24 @@ export default async function handler(req, res) {
       `;
     }
 
-    // Usamos el dominio verificado barbaprosystem.com
-    const { data, error } = await resend.emails.send({
+    const sendPayload = {
       from: `${fromName} <info@barbaprosystem.com>`,
       to: [to],
       subject: subject,
       html: finalHtml || '',
       text: text || '',
       reply_to: 'info@barbaprosystem.com'
-    });
+    };
+
+    if (attachments && Array.isArray(attachments)) {
+      sendPayload.attachments = attachments.map(att => ({
+        filename: att.filename,
+        content: Buffer.from(att.content, 'base64')
+      }));
+    }
+
+    // Usamos el dominio verificado barbaprosystem.com
+    const { data, error } = await resend.emails.send(sendPayload);
 
     if (error) {
       console.error('Error de Resend API:', error);

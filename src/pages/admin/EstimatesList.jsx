@@ -85,98 +85,38 @@ export default function EstimatesList() {
       setSyncingId(null);
     }
   }
-
-  async function updateStatus(id, status) {
+  async function updateStatus(id, status) {
     const est = estimates.find(e => e.id === id);
     if (!est) return;
 
-    await supabase.from('estimates').update({status,updated_at:new Date().toISOString()}).eq('id',id);
-    
-    // Enviar correo si el estado cambia a 'sent'
-    if (status === 'sent' && est.contact?.email) {
+    if (status === 'sent') {
+      if (!est.contact?.email) {
+        alert('Estimate marked as sent. (The client does not have a registered email to notify)');
+        await supabase.from('estimates').update({status, updated_at: new Date().toISOString()}).eq('id', id);
+        fetchEstimates();
+        return;
+      }
       try {
-        const { data: items } = await supabase.from('estimate_items').select('*').eq('estimate_id', id);
-        const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-        
-        const response = await fetch('/api/send-email', {
+        const response = await fetch('/api/send-estimate-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: est.contact.email,
-            subject: `Project Proposal EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-                <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
-                  <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
-                  <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
-                </div>
-                
-                <div style="padding: 40px 30px;">
-                  <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${est.contact.first_name},</h2>
-                  <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
-                  
-                  <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                    ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
-                  </div>
-                  
-                  <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
-                  <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                    ${(items || []).map(item => `
-                      <tr>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
-                          <strong style="color: #111111;">${item.description}</strong><br/>
-                          <span style="font-size: 13px; color: #888888;">Quantity: ${item.quantity}</span>
-                        </td>
-                        <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
-                          ${formatMoney(item.total)}
-                        </td>
-                      </tr>
-                    `).join('')}
-                  </table>
-                  
-                  <div style="text-align: right; padding-top: 10px;">
-                    <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${formatMoney(est.subtotal || 0)}</p>
-                    <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Estimated Total: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
-                  </div>
-
-                  <div style="text-align: center; margin: 40px 0;">
-                    <a href="https://barbaprosystem.com/p/${est.id}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
-                      View Estimate, Sign and Authorize
-                    </a>
-                    <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Click the button to view the official PDF, sign it, and approve the project.</p>
-                  </div>
-
-                  <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
-                  
-                  <p style="color: #444444; line-height: 1.6; font-size: 14px;">I remain at your entire disposal for any questions or clarifications you may need regarding this proposal.</p>
-                  <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
-                    Sincerely,<br/>
-                    <strong>Sales Team</strong><br/>
-                    <span style="color: #666666;">Barba Construction</span>
-                  </p>
-                </div>
-                <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
-                  © ${new Date().getFullYear()} Barba Construction. All rights reserved.
-                </div>
-              </div>
-            `
-          })
+          body: JSON.stringify({ estimateId: id })
         });
-        
         const result = await response.json();
         if (!response.ok) {
-          throw new Error(result.error || 'Error desconocido al enviar el correo');
+          throw new Error(result.error || 'Error al enviar el correo');
         }
-        
-        alert('Estimate sent by email successfully.');
+        alert('Estimate and QuickBooks Invoice sent by email successfully.');
+        fetchEstimates();
       } catch (err) {
         console.error('Error sending email:', err);
-        alert(`Resend Error: ${err.message}\n\nNote: If you are in Resend test mode, you can only send emails to your own verified address.`);
+        alert(`Resend Error: ${err.message}`);
       }
-    } else if (status === 'sent') {
-      alert('Estimate marked as sent. (The client does not have a registered email to notify)');
+      return;
     }
 
+    await supabase.from('estimates').update({status,updated_at:new Date().toISOString()}).eq('id',id);
+    
     // Automation: Create project if estimate is approved
     if (status === 'approved') {
       await supabase.from('projects').insert([{
@@ -187,6 +127,8 @@ export default function EstimatesList() {
         sold_price: est.total || est.grand_total,
         address: est.contact?.address || 'To be confirmed'
       }]);
+      // Automate QBO sync
+      syncToQuickBooks(id).catch(console.error);
     }
     
     fetchEstimates();
@@ -255,7 +197,14 @@ export default function EstimatesList() {
           <tbody>
             {filtered.map(est => (
               <tr key={est.id} className="crm-list-row">
-                <td className="est-number">EST-{String(est.estimate_number).padStart(4,'0')}</td>
+                <td className="est-number">
+                  <div>EST-{String(est.estimate_number).padStart(4,'0')}</div>
+                  {est.qbo_invoice_number && (
+                    <div className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                      QBO #{est.qbo_invoice_number}
+                    </div>
+                  )}
+                </td>
                 <td className="lead-name-cell">{est.contact?.first_name} {est.contact?.last_name}</td>
                 <td>{est.contact?.address||'-'}</td>
                 <td>{renderPhotosCell(est)}</td>

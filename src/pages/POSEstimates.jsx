@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Search, Loader2, Send, CheckCircle, XCircle, FileText, Edit, BarChart2, X, Image as ImageIcon } from 'lucide-react';
+import { Search, Loader2, Send, CheckCircle, XCircle, FileText, Edit, BarChart2, X, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import { formatCurrency, formatDate } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -46,6 +46,29 @@ export default function POSEstimates() {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sendingEmailId, setSendingEmailId] = useState(null);
+  const [syncingId, setSyncingId] = useState(null);
+
+  async function syncToQuickBooks(estimateId) {
+    setSyncingId(estimateId);
+    try {
+      const res = await fetch('/api/qbo-sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estimateId })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to sync');
+      }
+      alert(`Successfully synced to QuickBooks! Invoice ID: ${data.qboInvoiceNumber}`);
+      fetchEstimates();
+    } catch (err) {
+      console.error(err);
+      alert('Error syncing to QuickBooks: ' + err.message);
+    } finally {
+      setSyncingId(null);
+    }
+  }
 
   // Gallery Modal state
   const [activeGalleryPhotos, setActiveGalleryPhotos] = useState(null);
@@ -90,72 +113,10 @@ export default function POSEstimates() {
     }
     setSendingEmailId(est.id);
     try {
-      const { data: items } = await supabase.from('estimate_items').select('*').eq('estimate_id', est.id);
-      const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-      
-      const response = await fetch('/api/send-email', {
+      const response = await fetch('/api/send-estimate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: est.contact.email,
-          subject: `Resend: Project Proposal EST-${String(est.estimate_number).padStart(4,'0')} - Barba Construction`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
-              <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
-                <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
-                <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
-              </div>
-              
-              <div style="padding: 40px 30px;">
-                <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${est.contact.first_name},</h2>
-                <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the detailed proposal for your project. We want to thank you for giving us the opportunity to transform your home.</p>
-                
-                <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #F5C518; color: #333333; font-style: italic; font-size: 15px; line-height: 1.6;">
-                  ${est.notes ? est.notes.replace(/\n/g, '<br/>') : 'Find the details of the services below.'}
-                </div>
-                
-                <h3 style="color: #111111; border-bottom: 1px solid #eeeeee; padding-bottom: 10px; margin-top: 35px;">Investment Summary</h3>
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                  ${(items || []).map(item => `
-                    <tr>
-                      <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; color: #444444;">
-                        <strong style="color: #111111;">${item.description}</strong><br/>
-                        <span style="font-size: 13px; color: #888888;">Quantity: ${item.quantity}</span>
-                      </td>
-                      <td style="padding: 12px 0; border-bottom: 1px solid #eeeeee; text-align: right; color: #111111; font-weight: bold;">
-                        ${formatMoney(item.total)}
-                      </td>
-                    </tr>
-                  `).join('')}
-                </table>
-                
-                <div style="text-align: right; padding-top: 10px;">
-                  <p style="margin: 5px 0; color: #666666; font-size: 15px;">Subtotal: ${formatMoney(est.subtotal || 0)}</p>
-                  <p style="margin: 5px 0; color: #111111; font-size: 20px; font-weight: 900;">Estimated Total: <span style="color: #e65100;">${formatMoney(est.grand_total || est.total || 0)}</span></p>
-                </div>
-
-                <div style="text-align: center; margin: 40px 0;">
-                  <a href="https://barbaprosystem.com/p/${est.id}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
-                    View Estimate, Sign and Authorize
-                  </a>
-                  <p style="font-size: 12px; color: #888888; margin-top: 15px;">* Click the button to view the official PDF, sign it, and approve the project.</p>
-                </div>
-
-                <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
-                
-                <p style="color: #444444; line-height: 1.6; font-size: 14px;">I remain at your entire disposal for any questions or clarifications you may need regarding this proposal.</p>
-                <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
-                  Sincerely,<br/>
-                  <strong>${profile?.full_name || 'Sales Team'}</strong><br/>
-                  <span style="color: #666666;">Barba Construction</span>
-                </p>
-              </div>
-              <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
-                © ${new Date().getFullYear()} Barba Construction. All rights reserved.
-              </div>
-            </div>
-          `
-        })
+        body: JSON.stringify({ estimateId: est.id })
       });
       
       const result = await response.json();
@@ -163,12 +124,8 @@ export default function POSEstimates() {
         throw new Error(result.error || 'Error resending email');
       }
       
-      // Update estimate status to sent if it was draft
-      if (est.status === 'draft') {
-        await supabase.from('estimates').update({ status: 'sent', updated_at: new Date().toISOString() }).eq('id', est.id);
-        fetchEstimates();
-      }
-      alert('Estimate successfully resent by email.');
+      alert('Estimate and QuickBooks Invoice successfully resent by email.');
+      fetchEstimates();
     } catch (err) {
       console.error('Error resending email:', err);
       alert(`Resend Error: ${err.message}`);
@@ -276,7 +233,12 @@ export default function POSEstimates() {
               {filtered.map(est => (
                 <tr key={est.id} className="hover:bg-[#111]/30 transition-colors">
                   <td className="px-6 py-4 font-mono font-bold text-[#f97316]">
-                    EST-{String(est.estimate_number).padStart(4, '0')}
+                    <div>EST-{String(est.estimate_number).padStart(4, '0')}</div>
+                    {est.qbo_invoice_number && (
+                      <div className="text-[10px] text-emerald-400 font-bold mt-0.5">
+                        QBO #{est.qbo_invoice_number}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4 font-semibold text-white">
                     {est.contact?.first_name} {est.contact?.last_name}
@@ -331,6 +293,24 @@ export default function POSEstimates() {
                           >
                             {sendingEmailId === est.id ? <Loader2 size={15} className="spin" /> : <Send size={15} />}
                           </button>
+                        </>
+                      )}
+                      {est.status === 'approved' && (
+                        <>
+                          {est.qbo_invoice_id ? (
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-bold flex items-center justify-center" title={`Synced to QBO: Invoice #${est.qbo_invoice_number}`}>
+                              QBO #{est.qbo_invoice_number}
+                            </span>
+                          ) : (
+                            <button 
+                              className="p-1.5 text-emerald-400 hover:text-emerald-300 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#2a2a2a] rounded-lg transition-colors"
+                              title="Sync to QuickBooks" 
+                              onClick={() => syncToQuickBooks(est.id)}
+                              disabled={syncingId === est.id}
+                            >
+                              {syncingId === est.id ? <Loader2 size={15} className="spin" /> : <RefreshCw size={15} />}
+                            </button>
+                          )}
                         </>
                       )}
                     </div>

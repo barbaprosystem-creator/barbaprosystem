@@ -35,3 +35,6 @@ out/
 
 # Scripts with credentials
 scripts/
+
+# Temporary scratch files
+scratch/

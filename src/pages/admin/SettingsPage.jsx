@@ -129,6 +129,29 @@ export default function SettingsPage({ role = 'admin' }) {
     }
   }
 
+  async function syncQbo2026Data() {
+    setSyncingQbo(true);
+    try {
+      const res = await fetch('/api/qbo-bulk-import', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to import/sync data');
+      }
+      alert(`Sincronización de QuickBooks completada!\n\n` +
+            `Clientes procesados: ${data.customersProcessed}\n` +
+            `Clientes vinculados (CRM): ${data.customersMatched}\n` +
+            `Clientes nuevos creados: ${data.customersCreated}\n` +
+            `Facturas procesadas: ${data.invoicesProcessed}\n` +
+            `Facturas vinculadas (CRM): ${data.invoicesMatched}`);
+    } catch (err) {
+      console.error(err);
+      alert('Error en la sincronización en bloque: ' + err.message);
+    } finally {
+      setSyncingQbo(false);
+    }
+  }
+
+
   async function fetchUsers() {
     setLoading(true);
     const { data } = await supabase.from('profiles').select('*').order('created_at');
@@ -361,13 +384,23 @@ export default function SettingsPage({ role = 'admin' }) {
                   <div className="text-sm text-gray-300 space-y-1">
                     <p><strong className="text-gray-400">Company ID (Realm ID):</strong> {qboRealmId}</p>
                   </div>
-                  <button
-                    onClick={disconnectQbo}
-                    disabled={syncingQbo}
-                    className="btn flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-red-600/10 text-red-400 border border-red-500/20 hover:bg-red-600/20 transition text-sm cursor-pointer"
-                  >
-                    Disconnect QuickBooks
-                  </button>
+                  <div className="flex flex-col gap-2 pt-2">
+                    <button
+                      onClick={syncQbo2026Data}
+                      disabled={syncingQbo}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-bold bg-indigo-600 hover:bg-indigo-500 text-white transition text-sm cursor-pointer"
+                    >
+                      <RefreshCw size={16} className={syncingQbo ? 'animate-spin' : ''} />
+                      Cargar / Actualizar Datos 2026
+                    </button>
+                    <button
+                      onClick={disconnectQbo}
+                      disabled={syncingQbo}
+                      className="btn flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium bg-red-600/10 text-red-400 border border-red-500/20 hover:bg-red-600/20 transition text-sm cursor-pointer"
+                    >
+                      Disconnect QuickBooks
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
