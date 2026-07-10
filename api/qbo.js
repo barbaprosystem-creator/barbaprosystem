@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-// QuickBooks Online CRM Integration Endpoints & Webhooks
+// QuickBooks Online CRM Integration Endpoints & Webhooks - Sync Build 1.0.4
 
 
 // Helper to refresh QBO access token
