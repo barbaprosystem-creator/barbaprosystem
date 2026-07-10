@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home } from 'lucide-react';
+import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home, RefreshCw } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -56,6 +56,28 @@ export default function ProjectsList() {
   // Delete confirmation
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [syncingQbo, setSyncingQbo] = useState(false);
+
+  async function syncRecentQboData() {
+    setSyncingQbo(true);
+    try {
+      const res = await fetch('/api/qbo-pull-recent', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to import recent QBO updates');
+      }
+      alert(`Sincronización de QuickBooks completada!\n\n` +
+            `Facturas procesadas: ${data.invoicesProcessed}\n` +
+            `Proyectos creados desde QBO: ${data.invoicesCreated || 0}\n` +
+            `Clientes nuevos agregados: ${data.customersCreated || 0}`);
+      await fetchProjects();
+    } catch (err) {
+      console.error(err);
+      alert('Error en la sincronización de QuickBooks: ' + err.message);
+    } finally {
+      setSyncingQbo(false);
+    }
+  }
 
   useEffect(() => {
     fetchProjects();
@@ -386,6 +408,14 @@ export default function ProjectsList() {
             <Search size={16} />
             <input placeholder={t('projects.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
           </div>
+          <button 
+            disabled={syncingQbo}
+            className="bg-[#10b981] hover:bg-[#059669] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors disabled:opacity-50"
+            onClick={syncRecentQboData}
+          >
+            <RefreshCw size={16} className={syncingQbo ? 'animate-spin' : ''}/>
+            <span>{syncingQbo ? 'Syncing QBO...' : 'Sync QBO'}</span>
+          </button>
           <button className="btn-primary" onClick={() => setCreateModalOpen(true)}>
             <Plus size={18} /><span>{t('projects.newProject')}</span>
           </button>

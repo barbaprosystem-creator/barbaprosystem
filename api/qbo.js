@@ -763,6 +763,44 @@ export default async function handler(req, res) {
           }
         }
 
+        // Autofill missing projects for all approved estimates
+        let autoCreatedProjectsCount = 0;
+        try {
+          const { data: approvedEstimates } = await supabase
+            .from('estimates')
+            .select('*, contact:contacts(first_name, last_name, address)')
+            .eq('status', 'approved');
+
+          const { data: existingProjects } = await supabase
+            .from('projects')
+            .select('estimate_id');
+
+          const projectEstimateIds = new Set((existingProjects || []).map(p => p.estimate_id).filter(Boolean));
+          const missingProjects = (approvedEstimates || []).filter(e => !projectEstimateIds.has(e.id));
+
+          if (missingProjects.length > 0) {
+            const projectsToInsert = missingProjects.map(e => ({
+              estimate_id: e.id,
+              contact_id: e.contact_id,
+              title: `Project for ${e.contact?.first_name || 'Client'} - EST-${String(e.estimate_number).padStart(4, '0')}`,
+              status: 'pending',
+              sold_price: e.grand_total || e.subtotal || 0,
+              address: e.contact?.address || 'To be confirmed',
+              created_at: e.created_at
+            }));
+
+            const { error: insertProjErr } = await supabase.from('projects').insert(projectsToInsert);
+            if (insertProjErr) {
+              console.error('Error inserting missing projects:', insertProjErr);
+            } else {
+              autoCreatedProjectsCount = projectsToInsert.length;
+              console.log(`[QBO Sync] Automatically created ${autoCreatedProjectsCount} projects for approved estimates.`);
+            }
+          }
+        } catch (projCheckErr) {
+          console.error('Error in missing projects check:', projCheckErr);
+        }
+
         return res.status(200).json({
           success: true,
           customersProcessed: qboCustomers.length,
@@ -770,7 +808,7 @@ export default async function handler(req, res) {
           customersCreated,
           invoicesProcessed: qboInvoices.length,
           invoicesMatched,
-          invoicesCreated
+          invoicesCreated: invoicesCreated + autoCreatedProjectsCount
         });
       }
 
