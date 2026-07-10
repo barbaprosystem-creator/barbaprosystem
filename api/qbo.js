@@ -487,7 +487,17 @@ export default async function handler(req, res) {
         console.log("[QBO Webhook] Received webhook notification from QuickBooks.");
         try {
           const signature = req.headers['intuit-signature'];
-          const verifierToken = process.env.QBO_VERIFIER_TOKEN;
+          
+          // Fetch settings to check for the verifier token
+          const { data: settingsData } = await supabase
+            .from('system_settings')
+            .select('key, value')
+            .in('key', ['qbo_verifier_token']);
+            
+          const settings = {};
+          (settingsData || []).forEach(row => { settings[row.key] = row.value; });
+          
+          const verifierToken = settings.qbo_verifier_token || process.env.QBO_VERIFIER_TOKEN;
           
           if (verifierToken && signature) {
             const crypto = await import('crypto');
