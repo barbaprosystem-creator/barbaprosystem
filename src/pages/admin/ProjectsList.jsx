@@ -67,8 +67,10 @@ export default function ProjectsList() {
         throw new Error(data.error || 'Failed to import recent QBO updates');
       }
       alert(`Sincronización de QuickBooks completada!\n\n` +
-            `Facturas procesadas: ${data.invoicesProcessed}\n` +
-            `Proyectos creados desde QBO: ${data.invoicesCreated || 0}\n` +
+            `Estimados de QuickBooks procesados: ${data.estimatesProcessed || 0}\n` +
+            `Nuevos estimados cargados: ${data.estimatesCreated || 0}\n` +
+            `Facturas procesadas: ${data.invoicesProcessed || 0}\n` +
+            `Nuevos proyectos/facturas cargadas: ${data.invoicesCreated || 0}\n` +
             `Clientes nuevos agregados: ${data.customersCreated || 0}`);
       await fetchProjects();
     } catch (err) {
@@ -87,8 +89,8 @@ export default function ProjectsList() {
     fetch('/api/qbo-pull-recent', { method: 'POST' })
       .then(res => res.json())
       .then(data => {
-        if (data && (data.invoicesCreated > 0 || data.customersCreated > 0)) {
-          console.log(`[QBO Projects Sync] Loaded ${data.invoicesCreated} new invoices/projects.`);
+        if (data && (data.invoicesCreated > 0 || data.customersCreated > 0 || data.estimatesCreated > 0)) {
+          console.log(`[QBO Projects Sync] Loaded ${data.invoicesCreated} invoices, ${data.estimatesCreated} estimates.`);
           fetchProjects();
         }
       })

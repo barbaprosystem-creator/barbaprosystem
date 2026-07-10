@@ -82,6 +82,30 @@ function detectWorkType(lines) {
   return types.join(' & ');
 }
 
+// Helper to resolve profile ID based on custom fields in QuickBooks
+function resolveCreatorFromQbo(qboEntity, profiles) {
+  const customFields = qboEntity.CustomField || [];
+  const salesRepField = customFields.find(f => {
+    const name = (f.Name || '').toLowerCase();
+    return name.includes('sales') || name.includes('vendedor') || name.includes('rep') || name.includes('hecho') || name.includes('estimador');
+  });
+  if (salesRepField?.StringValue) {
+    const repName = salesRepField.StringValue.trim().toLowerCase();
+    const matchedProfile = (profiles || []).find(p => (p.full_name || '').toLowerCase() === repName);
+    if (matchedProfile) return matchedProfile.id;
+  }
+  return null;
+}
+
+// Helper to map QBO estimate status to CRM estimate status
+function mapQboEstimateStatus(qboStatus) {
+  const s = (qboStatus || '').toLowerCase();
+  if (s === 'accepted' || s === 'closed') return 'approved';
+  if (s === 'rejected') return 'rejected';
+  if (s === 'sent') return 'sent';
+  return 'draft';
+}
+
 // Core helper to sync an estimate to QBO
 export async function syncEstimateToQBO(supabase, estimateId) {
   const qboClientId = process.env.QBO_CLIENT_ID;
@@ -490,10 +514,11 @@ export default async function handler(req, res) {
         const qboEnv = settings.qbo_environment || 'sandbox';
         const qboBaseUrl = qboEnv === 'production' ? 'https://quickbooks.api.intuit.com' : 'https://sandbox-quickbooks.api.intuit.com';
 
-        // Fetch local contacts & estimates
-        const [{ data: localContacts }, { data: localEstimates }] = await Promise.all([
+        // Fetch local contacts & estimates & profiles
+        const [{ data: localContacts }, { data: localEstimates }, { data: allProfiles }] = await Promise.all([
           supabase.from('contacts').select('*'),
-          supabase.from('estimates').select('*')
+          supabase.from('estimates').select('*'),
+          supabase.from('profiles').select('id, full_name')
         ]);
 
         const qboCustomerIdToSupabaseId = {};
@@ -506,6 +531,7 @@ export default async function handler(req, res) {
         // Define queries based on action
         let customerQuery = '';
         let invoiceQuery = '';
+        let estimateQuery = '';
 
         if (action === 'pull-recent') {
           // Sync last 7 days of changes to be safe and cover recent activities
@@ -513,10 +539,12 @@ export default async function handler(req, res) {
           const sinceTimeStr = sevenDaysAgo.toISOString().split('.')[0] + 'Z';
           customerQuery = `SELECT * FROM Customer WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
           invoiceQuery = `SELECT * FROM Invoice WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
+          estimateQuery = `SELECT * FROM Estimate WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
         } else {
           // Bulk Import (everything since 2026-01-01)
           customerQuery = `SELECT * FROM Customer WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
           invoiceQuery = `SELECT * FROM Invoice WHERE TxnDate >= '2026-01-01' STARTPOSITION 1 MAXRESULTS 1000`;
+          estimateQuery = `SELECT * FROM Estimate WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
         }
 
         // Fetch Customers from QBO
@@ -587,6 +615,118 @@ export default async function handler(req, res) {
           }
         }
 
+        // Fetch Estimates from QBO (estimateQuery defined above)
+        const estimateRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(estimateQuery)}&minorversion=65`, {
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
+        });
+        if (!estimateRes.ok) throw new Error(`QBO Estimates fetch failed: ${estimateRes.statusText}`);
+        const estimateJson = await estimateRes.json();
+        const qboEstimates = estimateJson.QueryResponse?.Estimate || [];
+
+        let estimatesMatched = 0;
+        let estimatesCreated = 0;
+
+        for (const qboEst of qboEstimates) {
+          const estId = qboEst.Id;
+          const docNum = qboEst.DocNumber || '';
+          
+          let matchedEst = localEstimates.find(e => e.qbo_estimate_id === estId);
+          if (!matchedEst && docNum) {
+            const parsedNum = parseInt(docNum.replace(/\D/g, ''), 10);
+            if (!isNaN(parsedNum)) {
+              matchedEst = localEstimates.find(e => e.estimate_number === parsedNum);
+            }
+          }
+
+          const resolvedCreatorId = resolveCreatorFromQbo(qboEst, allProfiles);
+          const mappedStatus = mapQboEstimateStatus(qboEst.TxnStatus);
+
+          if (matchedEst) {
+            const updates = { 
+              qbo_estimate_id: estId, 
+              status: mappedStatus,
+              updated_at: qboEst.Metadata?.LastUpdatedTime || new Date().toISOString()
+            };
+            if (resolvedCreatorId && !matchedEst.created_by) {
+              updates.created_by = resolvedCreatorId;
+            }
+            await supabase.from('estimates').update(updates).eq('id', matchedEst.id);
+            estimatesMatched++;
+          } else {
+            const qboCustId = qboEst.CustomerRef.value;
+            let contactId = qboCustomerIdToSupabaseId[qboCustId];
+            
+            if (!contactId) {
+              const { data: dbCont } = await supabase.from('contacts').select('id').eq('qbo_customer_id', qboCustId).single();
+              if (dbCont) {
+                contactId = dbCont.id;
+                qboCustomerIdToSupabaseId[qboCustId] = contactId;
+              }
+            }
+
+            if (contactId) {
+              const lines = qboEst.Line || [];
+              const workType = detectWorkType(lines);
+              const subtotal = parseFloat(qboEst.TotalAmt || 0);
+              const grandTotal = parseFloat(qboEst.TotalAmt || 0);
+              const notes = qboEst.CustomerMemo?.value || 'Imported from QuickBooks Online Estimate';
+              const createdAt = qboEst.Metadata?.CreateTime || new Date().toISOString();
+              const updatedAt = qboEst.Metadata?.LastUpdatedTime || new Date().toISOString();
+
+              const { data: newEstData, error: newEstErr } = await supabase
+                .from('estimates')
+                .insert({
+                  contact_id: contactId,
+                  status: mappedStatus,
+                  work_type: workType,
+                  subtotal: subtotal,
+                  grand_total: grandTotal,
+                  notes: notes,
+                  scope_of_work: 'Imported from QuickBooks Online Estimate',
+                  qbo_estimate_id: estId,
+                  created_by: resolvedCreatorId || null,
+                  created_at: createdAt,
+                  updated_at: updatedAt
+                })
+                .select();
+
+              if (newEstErr) {
+                console.error(`Error inserting estimate for QBO Estimate ${estId}:`, newEstErr);
+                continue;
+              }
+
+              if (newEstData && newEstData.length > 0) {
+                const newEst = newEstData[0];
+                
+                const itemsToInsert = [];
+                for (const line of lines) {
+                  if (line.DetailType === 'SalesItemLineDetail') {
+                    const detail = line.SalesItemLineDetail || {};
+                    itemsToInsert.push({
+                      estimate_id: newEst.id,
+                      description: line.Description || detail.ItemRef?.name || 'Services',
+                      quantity: parseFloat(detail.Qty || 1),
+                      unit_price: parseFloat(detail.UnitPrice || line.Amount || 0),
+                      created_at: createdAt
+                    });
+                  }
+                }
+
+                if (itemsToInsert.length > 0) {
+                  const { error: itemsErr } = await supabase
+                    .from('estimate_items')
+                    .insert(itemsToInsert);
+                  if (itemsErr) {
+                    console.error(`Error inserting items for QBO Estimate ${estId}:`, itemsErr);
+                  }
+                }
+
+                estimatesCreated++;
+              }
+            }
+          }
+        }
+
         // Fetch Invoices from QBO (invoiceQuery defined above)
         const invoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(invoiceQuery)}&minorversion=65`, {
           headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
@@ -611,8 +751,12 @@ export default async function handler(req, res) {
           }
 
           if (matchedEst) {
+            const resolvedCreatorId = resolveCreatorFromQbo(qboInv, allProfiles);
             const updates = { qbo_invoice_id: invId, qbo_invoice_number: docNum };
             if (matchedEst.status !== 'approved') updates.status = 'approved';
+            if (resolvedCreatorId && !matchedEst.created_by) {
+              updates.created_by = resolvedCreatorId;
+            }
             await supabase.from('estimates').update(updates).eq('id', matchedEst.id);
             invoicesMatched++;
 
@@ -721,6 +865,7 @@ export default async function handler(req, res) {
               const createdAt = qboInv.Metadata?.CreateTime || new Date().toISOString();
               const updatedAt = qboInv.Metadata?.LastUpdatedTime || new Date().toISOString();
 
+              const resolvedCreatorId = resolveCreatorFromQbo(qboInv, allProfiles);
               const { data: newEstData, error: newEstErr } = await supabase
                 .from('estimates')
                 .insert({
@@ -733,6 +878,7 @@ export default async function handler(req, res) {
                   scope_of_work: 'Imported from QuickBooks Online',
                   qbo_invoice_id: invId,
                   qbo_invoice_number: docNum,
+                  created_by: resolvedCreatorId || null,
                   created_at: createdAt,
                   updated_at: updatedAt
                 })
@@ -810,6 +956,9 @@ export default async function handler(req, res) {
           customersProcessed: qboCustomers.length,
           customersMatched,
           customersCreated,
+          estimatesProcessed: qboEstimates.length,
+          estimatesMatched,
+          estimatesCreated,
           invoicesProcessed: qboInvoices.length,
           invoicesMatched,
           invoicesCreated
