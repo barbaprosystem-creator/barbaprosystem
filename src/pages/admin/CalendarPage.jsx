@@ -177,8 +177,9 @@ export default function CalendarPage() {
         const tokens = await res.json();
         if (tokens.refresh_token) {
           const { data: { user } } = await supabase.auth.getUser();
-          await supabase.auth.updateUser({ data: { google_refresh_token: tokens.refresh_token } });
+          // Update the profiles database table first, so when the auth state change triggers, the new token is fetched
           await supabase.from('profiles').update({ google_refresh_token: tokens.refresh_token }).eq('id', user.id);
+          await supabase.auth.updateUser({ data: { google_refresh_token: tokens.refresh_token } });
           setGoogleRefreshToken(tokens.refresh_token);
           alert('Google Calendar connected! Importing events...');
         } else {
@@ -202,15 +203,15 @@ export default function CalendarPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // 1. Delete refresh token from Supabase Auth user metadata
-        await supabase.auth.updateUser({ 
-          data: { google_refresh_token: null } 
-        });
-        
-        // 2. Delete refresh token from public profiles table
+        // 1. Delete refresh token from public profiles table first, so when the auth state triggers, it fetches null
         await supabase.from('profiles')
           .update({ google_refresh_token: null })
           .eq('id', user.id);
+
+        // 2. Delete refresh token from Supabase Auth user metadata, triggering onAuthStateChange
+        await supabase.auth.updateUser({ 
+          data: { google_refresh_token: null } 
+        });
       }
       
       // 3. Clear local states
