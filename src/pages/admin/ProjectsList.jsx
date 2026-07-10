@@ -57,6 +57,7 @@ export default function ProjectsList() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [syncingQbo, setSyncingQbo] = useState(false);
+  const [sortBy, setSortBy] = useState('date-desc');
 
   async function syncRecentQboData() {
     setSyncingQbo(true);
@@ -364,6 +365,37 @@ export default function ProjectsList() {
       p.address?.toLowerCase().includes(s);
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'date-desc') {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    if (sortBy === 'date-asc') {
+      return new Date(a.created_at) - new Date(b.created_at);
+    }
+    if (sortBy === 'price-desc') {
+      return (b.sold_price || 0) - (a.sold_price || 0);
+    }
+    if (sortBy === 'price-asc') {
+      return (a.sold_price || 0) - (b.sold_price || 0);
+    }
+    if (sortBy === 'number-desc') {
+      return (b.project_number || 0) - (a.project_number || 0);
+    }
+    if (sortBy === 'number-asc') {
+      return (a.project_number || 0) - (b.project_number || 0);
+    }
+    if (sortBy === 'client-asc') {
+      const nameA = `${a.contact?.first_name || ''} ${a.contact?.last_name || ''}`.trim();
+      const nameB = `${b.contact?.first_name || ''} ${b.contact?.last_name || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    }
+    if (sortBy === 'client-desc') {
+      const nameA = `${a.contact?.first_name || ''} ${a.contact?.last_name || ''}`.trim();
+      const nameB = `${b.contact?.first_name || ''} ${b.contact?.last_name || ''}`.trim();
+      return nameB.localeCompare(nameA);
+    }
+    return 0;
+  });
 
   if (loading) return <div className="page-loading"><Loader2 size={32} className="spin" /><p>{t('actions.loading')}</p></div>;
 
@@ -406,6 +438,23 @@ export default function ProjectsList() {
           )}
         </div>
         <div className="crm-toolbar-right">
+          <div className="flex items-center gap-1 bg-[#1a1a1a] border border-[#333] rounded-lg px-2 text-sm text-gray-400">
+            <span className="text-xs whitespace-nowrap">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent border-0 text-white py-1 focus:outline-none cursor-pointer font-bold text-xs"
+            >
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="price-desc">Sold Price (High-Low)</option>
+              <option value="price-asc">Sold Price (Low-High)</option>
+              <option value="number-desc">Project # (High-Low)</option>
+              <option value="number-asc">Project # (Low-High)</option>
+              <option value="client-asc">Client Name (A-Z)</option>
+              <option value="client-desc">Client Name (Z-A)</option>
+            </select>
+          </div>
           <div className="crm-search">
             <Search size={16} />
             <input placeholder={t('projects.searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} />
@@ -439,7 +488,7 @@ export default function ProjectsList() {
 
       {/* Project Cards Grid */}
       <div className="projects-grid">
-        {filtered.map(project => (
+        {sorted.map(project => (
           <div
             key={project.id}
             className="project-card"

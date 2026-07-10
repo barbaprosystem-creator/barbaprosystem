@@ -45,6 +45,8 @@ export default function EstimatesList() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [summaryPeriod, setSummaryPeriod] = useState('all'); // all, week, month, year
+  const [profiles, setProfiles] = useState([]);
+  const [sortBy, setSortBy] = useState('date-desc');
 
   // Gallery Modal state
   const [activeGalleryPhotos, setActiveGalleryPhotos] = useState(null);
@@ -56,6 +58,7 @@ export default function EstimatesList() {
 
   useEffect(() => { 
     fetchEstimates();
+    fetchProfiles();
     // Run incremental background sync from QBO quietly on mount
     fetch('/api/qbo-pull-recent', { method: 'POST' })
       .then(res => res.json())
@@ -67,6 +70,35 @@ export default function EstimatesList() {
       })
       .catch(err => console.error('[QBO Background Sync Error]', err));
   }, []);
+
+  async function fetchProfiles() {
+    const { data } = await supabase.from('profiles').select('id, full_name').order('full_name');
+    setProfiles(data || []);
+  }
+
+  async function updateCreator(estimateId, creatorId) {
+    const val = creatorId === '' ? null : creatorId;
+    const { error } = await supabase
+      .from('estimates')
+      .update({ created_by: val })
+      .eq('id', estimateId);
+
+    if (error) {
+      alert("Error updating creator: " + error.message);
+    } else {
+      setEstimates(prev => prev.map(est => {
+        if (est.id === estimateId) {
+          const profile = profiles.find(p => p.id === val);
+          return {
+            ...est,
+            created_by: val,
+            creator: profile ? { full_name: profile.full_name } : null
+          };
+        }
+        return est;
+      }));
+    }
+  }
 
   async function syncRecentQboData() {
     setSyncingQbo(true);
@@ -206,6 +238,38 @@ export default function EstimatesList() {
     return `${e.contact?.first_name||''} ${e.contact?.last_name||''}`.toLowerCase().includes(s) || String(e.estimate_number).includes(s);
   });
 
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === 'date-desc') {
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+    if (sortBy === 'date-asc') {
+      return new Date(a.created_at) - new Date(b.created_at);
+    }
+    if (sortBy === 'number-desc') {
+      return (b.estimate_number || 0) - (a.estimate_number || 0);
+    }
+    if (sortBy === 'number-asc') {
+      return (a.estimate_number || 0) - (b.estimate_number || 0);
+    }
+    if (sortBy === 'amount-desc') {
+      return (b.grand_total || 0) - (a.grand_total || 0);
+    }
+    if (sortBy === 'amount-asc') {
+      return (a.grand_total || 0) - (b.grand_total || 0);
+    }
+    if (sortBy === 'client-asc') {
+      const nameA = `${a.contact?.first_name || ''} ${a.contact?.last_name || ''}`.trim();
+      const nameB = `${b.contact?.first_name || ''} ${b.contact?.last_name || ''}`.trim();
+      return nameA.localeCompare(nameB);
+    }
+    if (sortBy === 'client-desc') {
+      const nameA = `${a.contact?.first_name || ''} ${a.contact?.last_name || ''}`.trim();
+      const nameB = `${b.contact?.first_name || ''} ${b.contact?.last_name || ''}`.trim();
+      return nameB.localeCompare(nameA);
+    }
+    return 0;
+  });
+
   if(loading) return <div className="page-loading"><Loader2 size={32} className="spin"/><p>{t('actions.loading')}</p></div>;
 
   return (
@@ -213,6 +277,23 @@ export default function EstimatesList() {
       <div className="crm-toolbar">
         <div className="crm-toolbar-left"><h1>{t('estimates.title')}</h1><span className="crm-count">{estimates.length} {t('common.total_count')}</span></div>
         <div className="crm-toolbar-right">
+          <div className="flex items-center gap-1 bg-[#1a1a1a] border border-[#333] rounded-lg px-2 text-sm text-gray-400">
+            <span className="text-xs whitespace-nowrap">Sort:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-transparent border-0 text-white py-1 focus:outline-none cursor-pointer font-bold text-xs"
+            >
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="number-desc">Estimate # (High-Low)</option>
+              <option value="number-asc">Estimate # (Low-High)</option>
+              <option value="amount-desc">Total Amount (High-Low)</option>
+              <option value="amount-asc">Total Amount (Low-High)</option>
+              <option value="client-asc">Client Name (A-Z)</option>
+              <option value="client-desc">Client Name (Z-A)</option>
+            </select>
+          </div>
           <div className="crm-search"><Search size={16}/><input placeholder={t('actions.search') + '...'} value={search} onChange={e => setSearch(e.target.value)}/></div>
           <button className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#333] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors" onClick={() => setShowSummaryModal(true)}>
             <BarChart2 size={16}/><span>{t('estimates.salesSummary')}</span>
@@ -239,7 +320,7 @@ export default function EstimatesList() {
         <table>
           <thead><tr><th>#</th><th>{t('estimates.client')}</th><th>{t('common.address')}</th><th>Photos</th><th>{t('estimates.total')}</th><th>{t('estimates.status')}</th><th>Created by</th><th>{t('estimates.date')}</th><th>{t('estimates.actions')}</th></tr></thead>
           <tbody>
-            {filtered.map(est => (
+            {sorted.map(est => (
               <tr key={est.id} className="crm-list-row">
                 <td className="est-number">
                   <div>EST-{String(est.estimate_number).padStart(4,'0')}</div>
@@ -254,7 +335,18 @@ export default function EstimatesList() {
                 <td>{renderPhotosCell(est)}</td>
                 <td className="est-total">{formatCurrency(est.grand_total)}</td>
                 <td><span className="stage-badge" style={{background:STATUS_MAP[est.status]?.color}}>{STATUS_MAP[est.status]?.label}</span></td>
-                <td>{est.creator?.full_name||'-'}</td>
+                <td>
+                  <select
+                    value={est.created_by || ''}
+                    onChange={(e) => updateCreator(est.id, e.target.value)}
+                    className="bg-[#111] text-xs border border-[#333] text-gray-300 rounded px-1 py-0.5 focus:outline-none focus:border-emerald-500 cursor-pointer max-w-[120px]"
+                  >
+                    <option value="">-</option>
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.id}>{p.full_name}</option>
+                    ))}
+                  </select>
+                </td>
                 <td>{formatDate(est.created_at)}</td>
                 <td className="est-actions">
                   {(est.status==='draft' || est.status==='sent') && (
