@@ -733,7 +733,7 @@ export default async function handler(req, res) {
               const subtotal = parseFloat(qboEst.TotalAmt || 0);
               const grandTotal = parseFloat(qboEst.TotalAmt || 0);
               const notes = qboEst.CustomerMemo?.value || 'Imported from QuickBooks Online Estimate';
-              const createdAt = qboEst.Metadata?.CreateTime || new Date().toISOString();
+              const createdAt = qboEst.TxnDate ? (qboEst.TxnDate + 'T12:00:00Z') : (qboEst.Metadata?.CreateTime || new Date().toISOString());
               const updatedAt = qboEst.Metadata?.LastUpdatedTime || new Date().toISOString();
 
               const { data: doubleCheck } = await supabase
@@ -894,8 +894,8 @@ export default async function handler(req, res) {
                   status: balance === 0 ? 'completed' : 'in_progress',
                   sold_price: grandTotal,
                   address: contactObj?.address || 'To be confirmed',
-                  created_at: qboInv.Metadata?.CreateTime || new Date().toISOString(),
-                  start_date: (qboInv.Metadata?.CreateTime || new Date().toISOString()).split('T')[0]
+                  created_at: qboInv.TxnDate ? (qboInv.TxnDate + 'T12:00:00Z') : (qboInv.Metadata?.CreateTime || new Date().toISOString()),
+                  start_date: qboInv.TxnDate || (qboInv.Metadata?.CreateTime || new Date().toISOString()).split('T')[0]
                 });
                 invoicesCreated++;
               }
@@ -965,7 +965,7 @@ export default async function handler(req, res) {
               const grandTotal = parseFloat(qboInv.TotalAmt || 0);
               const balance = parseFloat(qboInv.Balance || 0);
               const notes = qboInv.CustomerMemo?.value || 'Imported from QuickBooks Online';
-              const createdAt = qboInv.Metadata?.CreateTime || new Date().toISOString();
+              const createdAt = qboInv.TxnDate ? (qboInv.TxnDate + 'T12:00:00Z') : (qboInv.Metadata?.CreateTime || new Date().toISOString());
               const updatedAt = qboInv.Metadata?.LastUpdatedTime || new Date().toISOString();
 
               const resolvedCreatorId = resolveCreatorFromQbo(qboInv, allProfiles);
