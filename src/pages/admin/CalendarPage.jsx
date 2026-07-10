@@ -129,29 +129,36 @@ export default function CalendarPage() {
 
   // Load stored Google refresh token
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.user_metadata?.google_refresh_token) {
-        const token = user.user_metadata.google_refresh_token;
-        setGoogleRefreshToken(token);
-        // Ensure the public profile also has this token stored
-        supabase.from('profiles')
-          .update({ google_refresh_token: token })
-          .eq('id', user.id)
-          .then(({ error }) => {
-            if (error) console.error('Error ensuring google token in profile:', error);
-          });
-      }
-    });
-  }, []);
+    if (profile?.google_refresh_token) {
+      setGoogleRefreshToken(profile.google_refresh_token);
+    } else {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.user_metadata?.google_refresh_token) {
+          const token = user.user_metadata.google_refresh_token;
+          setGoogleRefreshToken(token);
+          // Ensure the public profile also has this token stored
+          supabase.from('profiles')
+            .update({ google_refresh_token: token })
+            .eq('id', user.id)
+            .then(({ error }) => {
+              if (error) console.error('Error ensuring google token in profile:', error);
+            });
+        }
+      });
+    }
+  }, [profile]);
 
-  // Whenever we have a token, fetch Google events
+  // Fetch Google events whenever the profile is loaded or the current user's token changes
   useEffect(() => {
-    if (googleRefreshToken) fetchGoogleEvents();
-  }, [googleRefreshToken]);
+    if (profile?.id) {
+      fetchGoogleEvents();
+    }
+  }, [profile, googleRefreshToken]);
 
   const loginGoogle = useGoogleLogin({
     flow: 'auth-code',
     scope: 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks.readonly',
+    prompt: 'consent',
     onSuccess: async (codeResponse) => {
       try {
         const res = await fetch('/api/calendar-auth', {
@@ -219,45 +226,95 @@ export default function CalendarPage() {
 
   // ── Fetch events from Google Calendar ──────────────────────
   async function fetchGoogleEvents() {
-    if (!googleRefreshToken) return;
     setIsFetchingGoogle(true);
     try {
       console.log("[CalendarPage] fetchGoogleEvents started...");
-      const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(googleRefreshToken)}`);
-      if (!res.ok) throw new Error('Could not connect to Google Calendar');
-      const items = await res.json();
-      console.log("[CalendarPage] Google Calendar event items fetched count:", items?.length || 0);
+      
+      const isPowerUser = role === 'admin' || role === 'office';
+      let tokensToFetch = [];
 
-      const mapped = (items || []).map(ev => {
-        const startRaw = ev.start?.dateTime || ev.start?.date;
-        const endRaw   = ev.end?.dateTime   || ev.end?.date;
-        const start    = startRaw ? new Date(startRaw) : new Date();
-        const end      = endRaw   ? new Date(endRaw)   : new Date(start.getTime() + 3600000);
+      if (isPowerUser) {
+        // Fetch all profiles that have a refresh token
+        const { data: profilesWithTokens, error } = await supabase
+          .from('profiles')
+          .select('id, full_name, google_refresh_token')
+          .not('google_refresh_token', 'is', null);
 
-        let title = ev.summary || '(No title)';
-        if (ev.isTask) {
-          title = `${ev.taskStatus === 'completed' ? '✔️' : '📝'} [Task] ${title}`;
+        if (error) {
+          console.error("Error fetching profiles with google tokens:", error);
+        } else {
+          tokensToFetch = (profilesWithTokens || []).map(p => ({
+            userId: p.id,
+            userName: p.full_name,
+            token: p.google_refresh_token
+          }));
         }
+      }
 
-        return {
-          id:         ev.id,
-          title,
-          start,
-          end,
-          event_type: ev.isTask ? 'google_task' : 'google',
-          desc:       ev.description || '',
-          source:     'google',
-          htmlLink:   ev.htmlLink,
-          color:      ev.isTask ? '#f59e0b' : (ev.colorId ? GOOGLE_EVENT_COLORS[ev.colorId] : ev.calendarColor || null),
-          location:   ev.location || '',
-          creator:    ev.creator?.email || ev.creator?.displayName || '',
-          isTask:     ev.isTask || false,
-          taskStatus: ev.taskStatus || null,
-          taskListName: ev.taskListName || null,
-          calendarName: ev.calendarName || null,
-        };
+      // Always include current user's token if not already in the list
+      if (googleRefreshToken && !tokensToFetch.some(t => t.userId === profile?.id)) {
+        tokensToFetch.push({
+          userId: profile?.id,
+          userName: profile?.full_name || 'Me',
+          token: googleRefreshToken
+        });
+      }
+
+      if (tokensToFetch.length === 0) {
+        setGoogleEvents([]);
+        setIsFetchingGoogle(false);
+        return;
+      }
+
+      const allFetchedEvents = [];
+      const fetchPromises = tokensToFetch.map(async ({ userId, userName, token }) => {
+        try {
+          const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(token)}`);
+          if (!res.ok) throw new Error(`Could not connect to Google Calendar for ${userName}`);
+          const items = await res.json();
+          console.log(`[CalendarPage] Google Calendar event items fetched for ${userName}:`, items?.length || 0);
+
+          const mapped = (items || []).map(ev => {
+            const startRaw = ev.start?.dateTime || ev.start?.date;
+            const endRaw   = ev.end?.dateTime   || ev.end?.date;
+            const start    = startRaw ? new Date(startRaw) : new Date();
+            const end      = endRaw   ? new Date(endRaw)   : new Date(start.getTime() + 3600000);
+
+            let title = ev.summary || '(No title)';
+            if (ev.isTask) {
+              title = `${ev.taskStatus === 'completed' ? '✔️' : '📝'} [Task] ${title}`;
+            }
+
+            // Prefix the title with the salesperson's name for admin/office
+            const prefix = isPowerUser && userId !== profile?.id ? `[${userName}] ` : '';
+
+            return {
+              id:         ev.id,
+              title:      prefix + title,
+              start,
+              end,
+              event_type: ev.isTask ? 'google_task' : 'google',
+              desc:       ev.description || '',
+              source:     'google',
+              htmlLink:   ev.htmlLink,
+              color:      ev.isTask ? '#f59e0b' : (ev.colorId ? GOOGLE_EVENT_COLORS[ev.colorId] : ev.calendarColor || null),
+              location:   ev.location || '',
+              creator:    ev.creator?.email || ev.creator?.displayName || '',
+              isTask:     ev.isTask || false,
+              taskStatus: ev.taskStatus || null,
+              taskListName: ev.taskListName || null,
+              calendarName: ev.calendarName || null,
+              assigned_to: userId, // associate it with the owner
+            };
+          });
+          allFetchedEvents.push(...mapped);
+        } catch (err) {
+          console.warn(`Could not load Google events for ${userName}:`, err.message);
+        }
       });
-      setGoogleEvents(mapped);
+
+      await Promise.all(fetchPromises);
+      setGoogleEvents(allFetchedEvents);
     } catch (err) {
       console.warn('Could not load Google events:', err.message);
     } finally {
@@ -427,7 +484,7 @@ export default function CalendarPage() {
 
       setShowForm(false);
       fetchCrmEvents();
-      if (googleRefreshToken) fetchGoogleEvents();
+      fetchGoogleEvents();
     } catch (err) {
       console.error(err);
       alert('Error saving event.');
@@ -474,7 +531,7 @@ export default function CalendarPage() {
   const isViewingEvent = selectedEvent !== null;
   const syncStatus = isFetchingGoogle
     ? 'Syncing Google...'
-    : googleRefreshToken
+    : googleEvents.length > 0
       ? `${googleEvents.length} Google events`
       : 'No Google Calendar';
 

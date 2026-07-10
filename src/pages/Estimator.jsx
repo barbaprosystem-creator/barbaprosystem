@@ -132,12 +132,17 @@ export default function Estimator() {
   const [saved, setSaved] = useState(false);
   const [estimateNum, setEstimateNum] = useState(null);
   const [activeTab, setActiveTab] = useState('ai'); // 'ai' or 'manual'
+  const [scans, setScans] = useState([]);
+  const [showScanImporter, setShowScanImporter] = useState(false);
+
+  const store = useEstimatorStore();
 
   useEffect(() => { fetchPrices(); }, [fetchPrices]);
 
   useEffect(() => {
     if (!selectedContactId) {
       setContact(null);
+      setScans([]);
       return;
     }
     supabase.from('contacts')
@@ -147,7 +152,53 @@ export default function Estimator() {
       .then(({ data }) => {
         if (data) setContact(data);
       });
+
+    // Fetch mobile scans for client
+    supabase.from('jobsite_scans')
+      .select('*')
+      .eq('contact_id', selectedContactId)
+      .order('created_at', { ascending: false })
+      .then(({ data, error }) => {
+        if (!error && data) {
+          setScans(data);
+        }
+      });
   }, [selectedContactId]);
+
+  const handleImportScanValue = (scan, type) => {
+    if (type === 'siding') {
+      store.setSidingField('sqft', String(scan.wall_area_sqft));
+      alert(`Imported ${scan.wall_area_sqft} sqft into Siding!`);
+    } else if (type === 'gutters') {
+      store.setGutterField('feet', String(scan.perimeter_ft));
+      alert(`Imported ${scan.perimeter_ft} LF into Gutters!`);
+    } else if (type === 'fences') {
+      store.setFencesField('lf', String(scan.perimeter_ft));
+      alert(`Imported ${scan.perimeter_ft} LF into Fences!`);
+    } else if (type === 'windows') {
+      store.setWindowsField('quantity', String(scan.window_count));
+      alert(`Imported ${scan.window_count} windows into Windows!`);
+    } else if (type === 'doors') {
+      store.setDoorsField('quantity', String(scan.door_count));
+      alert(`Imported ${scan.door_count} doors into Doors!`);
+    } else if (type === 'roofing') {
+      const sq = Math.round(scan.floor_area_sqft / 100);
+      store.setRoofingField('squares', String(sq));
+      alert(`Imported ${sq} SQ (calculated from ${scan.floor_area_sqft} sqft floor area) into Roofing!`);
+    }
+  };
+
+  const handleImportAll = (scan) => {
+    store.setSidingField('sqft', String(scan.wall_area_sqft || 0));
+    store.setGutterField('feet', String(scan.perimeter_ft || 0));
+    store.setFencesField('lf', String(scan.perimeter_ft || 0));
+    store.setWindowsField('quantity', String(scan.window_count || 0));
+    store.setDoorsField('quantity', String(scan.door_count || 0));
+    const sq = Math.round((scan.floor_area_sqft || 0) / 100);
+    store.setRoofingField('squares', String(sq));
+    alert('All mobile measurements imported to configurators!');
+    setShowScanImporter(false);
+  };
 
   const handleSave = async () => {
     if (!receiptItems.length) { alert('Add at least one service to the estimate.'); return; }
@@ -282,8 +333,8 @@ export default function Estimator() {
       </div>
 
       {/* Client Selector */}
-      <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-6">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+      <div className="bg-[var(--bg-card)] border border-[#2a2a2a]/60 rounded-2xl p-6 space-y-4">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
           <User size={18} color="#f97316" />
           <h2 style={{ margin: 0, fontSize: '15px', fontWeight: '700' }}>Client (optional)</h2>
         </div>
@@ -292,6 +343,26 @@ export default function Estimator() {
           onSelect={(c) => setSelectedContactId(c.id)}
           onClear={() => setSelectedContactId('')}
         />
+
+        {scans.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-[#f97316]/10 border border-[#f97316]/30 rounded-xl mt-3 animation-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <div>
+                <p className="text-sm font-bold text-[#e2e8f0]">LiDAR Mobile Scan Detected</p>
+                <p className="text-xs text-slate-400">
+                  {scans.length} scan(s) available. Last scan on {new Date(scans[0].created_at).toLocaleDateString()}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowScanImporter(true)}
+              className="px-4 py-2 text-xs font-bold text-black bg-[#f97316] rounded-lg hover:bg-[#e06612] transition-colors"
+            >
+              Import Measurements
+            </button>
+          </div>
+        )}
       </div>
 
       <JobsitePhotos photos={photos} setPhotos={setPhotos} />
@@ -344,6 +415,123 @@ export default function Estimator() {
           )}
         </div>
       </div>
+
+      {/* Scan Importer Modal */}
+      {showScanImporter && scans.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-4 mb-4">
+              <div>
+                <h3 className="text-lg font-bold text-[#e2e8f0]">Import LiDAR Measurements</h3>
+                <p className="text-xs text-slate-400">Select which measurement to load into the configurator</p>
+              </div>
+              <button 
+                onClick={() => setShowScanImporter(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {scans.map((scan, idx) => (
+                <div key={scan.id} className="bg-slate-950/60 p-4 border border-slate-800 rounded-xl space-y-3">
+                  <div className="flex justify-between items-center text-xs text-slate-500 font-bold border-b border-slate-800/50 pb-2">
+                    <span>SCAN #{scans.length - idx} ({scan.scan_type.toUpperCase()})</span>
+                    <span>{new Date(scan.created_at).toLocaleString()}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                      <div>
+                        <p className="text-xs text-slate-500">Wall Area</p>
+                        <p className="font-bold text-[#e2e8f0]">{scan.wall_area_sqft} sqft</p>
+                      </div>
+                      <button
+                        onClick={() => handleImportScanValue(scan, 'siding')}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-[#10b981]/20 text-[#10b981] hover:bg-[#10b981]/30 rounded transition"
+                      >
+                        To Siding
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                      <div>
+                        <p className="text-xs text-slate-500">Floor Area</p>
+                        <p className="font-bold text-[#e2e8f0]">{scan.floor_area_sqft} sqft</p>
+                      </div>
+                      <button
+                        onClick={() => handleImportScanValue(scan, 'roofing')}
+                        className="px-2.5 py-1 text-[11px] font-bold bg-[#f59e0b]/20 text-[#f59e0b] hover:bg-[#f59e0b]/30 rounded transition"
+                      >
+                        To Roof
+                      </button>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                      <div>
+                        <p className="text-xs text-slate-500">Perimeter</p>
+                        <p className="font-bold text-[#e2e8f0]">{scan.perimeter_ft} LF</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => handleImportScanValue(scan, 'gutters')}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-[#3b82f6]/20 text-[#3b82f6] hover:bg-[#3b82f6]/30 rounded transition"
+                        >
+                          To Gutters
+                        </button>
+                        <button
+                          onClick={() => handleImportScanValue(scan, 'fences')}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-[#34d399]/20 text-[#34d399] hover:bg-[#34d399]/30 rounded transition"
+                        >
+                          To Fences
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
+                      <div>
+                        <p className="text-xs text-slate-500">Windows & Doors</p>
+                        <p className="font-bold text-[#e2e8f0]">W: {scan.window_count} | D: {scan.door_count}</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <button
+                          onClick={() => handleImportScanValue(scan, 'windows')}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-[#8b5cf6]/20 text-[#8b5cf6] hover:bg-[#8b5cf6]/30 rounded transition"
+                        >
+                          W
+                        </button>
+                        <button
+                          onClick={() => handleImportScanValue(scan, 'doors')}
+                          className="px-2 py-0.5 text-[10px] font-bold bg-[#fb7185]/20 text-[#fb7185] hover:bg-[#fb7185]/30 rounded transition"
+                        >
+                          D
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleImportAll(scan)}
+                    className="w-full mt-3 py-2 bg-[#f97316] text-black font-bold text-xs rounded-lg hover:bg-[#e06612] transition-colors"
+                  >
+                    Import All Measurements to Configurator
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setShowScanImporter(false)}
+                className="px-5 py-2 text-sm font-semibold text-slate-300 hover:bg-slate-800 rounded-lg transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
