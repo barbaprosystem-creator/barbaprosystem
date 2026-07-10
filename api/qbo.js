@@ -615,6 +615,40 @@ export default async function handler(req, res) {
             if (matchedEst.status !== 'approved') updates.status = 'approved';
             await supabase.from('estimates').update(updates).eq('id', matchedEst.id);
             invoicesMatched++;
+
+            // Resolve contact and details
+            const contactObj = localContacts.find(c => c.id === matchedEst.contact_id);
+            const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
+            const workType = detectWorkType(qboInv.Line);
+            const grandTotal = parseFloat(qboInv.TotalAmt || 0);
+
+            // Fetch matched project if it exists
+            const { data: matchedProj } = await supabase
+              .from('projects')
+              .select('*')
+              .eq('estimate_id', matchedEst.id)
+              .maybeSingle();
+
+            if (matchedProj) {
+              const projUpdates = {
+                sold_price: grandTotal,
+                // Update status based on QuickBooks balance
+                status: qboInv.Balance === 0 ? 'completed' : matchedProj.status
+              };
+              await supabase.from('projects').update(projUpdates).eq('id', matchedProj.id);
+            } else {
+              // Create project since it does not exist for this approved estimate
+              await supabase.from('projects').insert({
+                estimate_id: matchedEst.id,
+                contact_id: matchedEst.contact_id,
+                title: `${clientName} - ${workType}`,
+                status: qboInv.Balance === 0 ? 'completed' : 'in_progress',
+                sold_price: grandTotal,
+                address: contactObj?.address || 'To be confirmed',
+                created_at: qboInv.Metadata?.CreateTime || new Date().toISOString()
+              });
+              invoicesCreated++;
+            }
           } else {
             const qboCustId = qboInv.CustomerRef.value;
             let contactId = qboCustomerIdToSupabaseId[qboCustId];
