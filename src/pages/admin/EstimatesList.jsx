@@ -265,10 +265,14 @@ export default function EstimatesList() {
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'date-desc') {
-      return new Date(b.created_at) - new Date(a.created_at);
+      const timeA = new Date(a.created_at || 0).getTime() || 0;
+      const timeB = new Date(b.created_at || 0).getTime() || 0;
+      return timeB - timeA;
     }
     if (sortBy === 'date-asc') {
-      return new Date(a.created_at) - new Date(b.created_at);
+      const timeA = new Date(a.created_at || 0).getTime() || 0;
+      const timeB = new Date(b.created_at || 0).getTime() || 0;
+      return timeA - timeB;
     }
     if (sortBy === 'number-desc') {
       return (b.estimate_number || 0) - (a.estimate_number || 0);

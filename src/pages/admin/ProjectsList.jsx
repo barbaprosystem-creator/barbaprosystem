@@ -398,10 +398,18 @@ export default function ProjectsList() {
 
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy === 'date-desc') {
-      return new Date(b.created_at) - new Date(a.created_at);
+      const dateA = a.start_date || a.created_at || 0;
+      const dateB = b.start_date || b.created_at || 0;
+      const timeA = new Date(dateA).getTime() || 0;
+      const timeB = new Date(dateB).getTime() || 0;
+      return timeB - timeA;
     }
     if (sortBy === 'date-asc') {
-      return new Date(a.created_at) - new Date(b.created_at);
+      const dateA = a.start_date || a.created_at || 0;
+      const dateB = b.start_date || b.created_at || 0;
+      const timeA = new Date(dateA).getTime() || 0;
+      const timeB = new Date(dateB).getTime() || 0;
+      return timeA - timeB;
     }
     if (sortBy === 'price-desc') {
       return (b.sold_price || 0) - (a.sold_price || 0);
