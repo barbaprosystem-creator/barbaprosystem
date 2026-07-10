@@ -483,6 +483,38 @@ export default async function handler(req, res) {
         return res.status(200).json(result);
       }
 
+      case 'webhook': {
+        console.log("[QBO Webhook] Received webhook notification from QuickBooks.");
+        try {
+          const signature = req.headers['intuit-signature'];
+          const verifierToken = process.env.QBO_VERIFIER_TOKEN;
+          
+          if (verifierToken && signature) {
+            const crypto = await import('crypto');
+            const payloadStr = JSON.stringify(req.body);
+            const hash = crypto
+              .createHmac('sha256', verifierToken)
+              .update(payloadStr, 'utf8')
+              .digest('base64');
+              
+            const verified = crypto.timingSafeEqual(
+              Buffer.from(hash, 'base64'),
+              Buffer.from(signature, 'base64')
+            );
+            
+            if (!verified) {
+              console.warn("[QBO Webhook] Signature verification failed. Webhook ignored.");
+              return res.status(401).send('Invalid signature');
+            }
+            console.log("[QBO Webhook] Signature verified successfully.");
+          }
+        } catch (err) {
+          console.error("[QBO Webhook] Error verifying signature:", err);
+          return res.status(500).json({ error: 'Signature verification error' });
+        }
+        // Fall through to pull-recent sync
+      }
+
       case 'pull-recent':
       case 'bulk-import': {
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
@@ -533,7 +565,7 @@ export default async function handler(req, res) {
         let invoiceQuery = '';
         let estimateQuery = '';
 
-        if (action === 'pull-recent') {
+        if (action === 'pull-recent' || action === 'webhook') {
           // Sync last 60 days of changes to be safe and cover recent activities
           const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000);
           const sinceTimeStr = sixtyDaysAgo.toISOString().split('.')[0] + 'Z';
