@@ -638,7 +638,8 @@ export default async function handler(req, res) {
             }
           }
 
-          const resolvedCreatorId = resolveCreatorFromQbo(qboEst, allProfiles);
+          const activeContact = localContacts.find(c => c.id === (matchedEst ? matchedEst.contact_id : null));
+          const resolvedCreatorId = resolveCreatorFromQbo(qboEst, allProfiles) || activeContact?.assigned_to || null;
           const mappedStatus = mapQboEstimateStatus(qboEst.TxnStatus);
 
           if (matchedEst) {
@@ -657,12 +658,15 @@ export default async function handler(req, res) {
             let contactId = qboCustomerIdToSupabaseId[qboCustId];
             
             if (!contactId) {
-              const { data: dbCont } = await supabase.from('contacts').select('id').eq('qbo_customer_id', qboCustId).single();
+              const { data: dbCont } = await supabase.from('contacts').select('id, assigned_to').eq('qbo_customer_id', qboCustId).single();
               if (dbCont) {
                 contactId = dbCont.id;
                 qboCustomerIdToSupabaseId[qboCustId] = contactId;
               }
             }
+
+            const activeContactForNew = localContacts.find(c => c.id === contactId);
+            const creatorId = resolveCreatorFromQbo(qboEst, allProfiles) || activeContactForNew?.assigned_to || null;
 
             if (contactId) {
               const lines = qboEst.Line || [];
@@ -684,7 +688,7 @@ export default async function handler(req, res) {
                   notes: notes,
                   scope_of_work: 'Imported from QuickBooks Online Estimate',
                   qbo_estimate_id: estId,
-                  created_by: resolvedCreatorId || null,
+                  created_by: creatorId,
                   created_at: createdAt,
                   updated_at: updatedAt
                 })
