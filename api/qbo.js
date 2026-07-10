@@ -1,5 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
+// QuickBooks Online CRM Integration Endpoints & Webhooks
+
+
 // Helper to refresh QBO access token
 async function refreshQboToken(supabase, settings, qboClientId, qboClientSecret) {
   const basicAuth = Buffer.from(`${qboClientId}:${qboClientSecret}`).toString('base64');
