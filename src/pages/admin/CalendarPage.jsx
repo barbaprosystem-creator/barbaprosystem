@@ -116,6 +116,7 @@ export default function CalendarPage() {
   const [contacts, setContacts]             = useState([]);
   const [selectedEvent, setSelectedEvent]   = useState(null);
   const [googleRefreshToken, setGoogleRefreshToken] = useState(null);
+  const [hasLoadedToken, setHasLoadedToken] = useState(false);
 
   // Load users
   useEffect(() => {
@@ -129,13 +130,17 @@ export default function CalendarPage() {
 
   // Load stored Google refresh token
   useEffect(() => {
+    if (hasLoadedToken) return;
+
     if (profile?.google_refresh_token) {
       setGoogleRefreshToken(profile.google_refresh_token);
-    } else {
+      setHasLoadedToken(true);
+    } else if (profile) {
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user?.user_metadata?.google_refresh_token) {
           const token = user.user_metadata.google_refresh_token;
           setGoogleRefreshToken(token);
+          setHasLoadedToken(true);
           // Ensure the public profile also has this token stored
           supabase.from('profiles')
             .update({ google_refresh_token: token })
@@ -143,10 +148,12 @@ export default function CalendarPage() {
             .then(({ error }) => {
               if (error) console.error('Error ensuring google token in profile:', error);
             });
+        } else {
+          setHasLoadedToken(true);
         }
       });
     }
-  }, [profile]);
+  }, [profile, hasLoadedToken]);
 
   // Fetch Google events whenever the profile is loaded or the current user's token changes
   useEffect(() => {
