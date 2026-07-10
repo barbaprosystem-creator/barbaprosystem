@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { CreditCard, Car, Plus, ExternalLink, Copy, Eye, EyeOff, Save, X, Loader2, DollarSign, Image as ImageIcon } from 'lucide-react';
+import { CreditCard, Car, Plus, ExternalLink, Copy, Eye, EyeOff, Save, X, Loader2, DollarSign, Image as ImageIcon, Pencil } from 'lucide-react';
 
 export default function BillsPage() {
   const [bills, setBills] = useState([]);
@@ -64,12 +64,32 @@ export default function BillsPage() {
 
   const handleSaveBill = async (e) => {
     e.preventDefault();
-    const { error } = await supabase.from('office_bills').insert([billForm]);
-    if (error) alert("Error saving: " + error.message);
-    else {
-      setShowBillModal(false);
-      setBillForm({ name: '', address: '', amount: 0, payment_url: '', login_user: '', login_password: '' });
-      fetchData();
+    
+    const payload = {
+      name: billForm.name,
+      address: billForm.address,
+      amount: Number(billForm.amount || 0),
+      payment_url: billForm.payment_url,
+      login_user: billForm.login_user,
+      login_password: billForm.login_password
+    };
+
+    if (billForm.id) {
+      // Update
+      const { error } = await supabase.from('office_bills').update(payload).eq('id', billForm.id);
+      if (error) alert("Error updating: " + error.message);
+      else {
+        closeBillModal();
+        fetchData();
+      }
+    } else {
+      // Insert
+      const { error } = await supabase.from('office_bills').insert([payload]);
+      if (error) alert("Error saving: " + error.message);
+      else {
+        closeBillModal();
+        fetchData();
+      }
     }
   };
 
@@ -78,40 +98,108 @@ export default function BillsPage() {
     setUploadingPhoto(true);
 
     const { insuranceFile, ...autoData } = autoForm;
-    let finalPhotoUrl = null;
-
-    // Insert first to get an ID
-    const { data: newAuto, error } = await supabase.from('company_autos').insert([autoData]).select().single();
     
-    if (error) {
-      alert("Error saving auto: " + error.message);
-      setUploadingPhoto(false);
-      return;
-    }
+    const payload = {
+      make: autoData.make,
+      vin: autoData.vin,
+      insurance_number: autoData.insurance_number,
+      insurance_amount: Number(autoData.insurance_amount || 0)
+    };
 
-    // If file present, upload it
-    if (insuranceFile) {
-      try {
-        const fileExt = insuranceFile.name.split('.').pop();
-        const fileName = `autos/seguro-${newAuto.id}-${Date.now()}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage.from('project-documents').upload(fileName, insuranceFile);
-        if (uploadError) throw uploadError;
-        
-        const { data: { publicUrl } } = supabase.storage.from('project-documents').getPublicUrl(fileName);
-        finalPhotoUrl = publicUrl;
-
-        // Update auto with URL
-        await supabase.from('company_autos').update({ insurance_photo_url: publicUrl }).eq('id', newAuto.id);
-      } catch (err) {
-        alert("Auto saved, but there was an error uploading the photo: " + err.message);
+    if (autoForm.id) {
+      // Update
+      const { error } = await supabase.from('company_autos').update(payload).eq('id', autoForm.id);
+      if (error) {
+        alert("Error updating auto: " + error.message);
+        setUploadingPhoto(false);
+        return;
       }
-    }
 
-    setUploadingPhoto(false);
+      if (insuranceFile) {
+        try {
+          const fileExt = insuranceFile.name.split('.').pop();
+          const fileName = `autos/seguro-${autoForm.id}-${Date.now()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage.from('project-documents').upload(fileName, insuranceFile);
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage.from('project-documents').getPublicUrl(fileName);
+          
+          await supabase.from('company_autos').update({ insurance_photo_url: publicUrl }).eq('id', autoForm.id);
+        } catch (err) {
+          alert("Auto updated, but there was an error uploading the photo: " + err.message);
+        }
+      }
+
+      setUploadingPhoto(false);
+      closeAutoModal();
+      fetchData();
+    } else {
+      // Insert
+      const { data: newAuto, error } = await supabase.from('company_autos').insert([payload]).select().single();
+      
+      if (error) {
+        alert("Error saving auto: " + error.message);
+        setUploadingPhoto(false);
+        return;
+      }
+
+      if (insuranceFile) {
+        try {
+          const fileExt = insuranceFile.name.split('.').pop();
+          const fileName = `autos/seguro-${newAuto.id}-${Date.now()}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage.from('project-documents').upload(fileName, insuranceFile);
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage.from('project-documents').getPublicUrl(fileName);
+          
+          await supabase.from('company_autos').update({ insurance_photo_url: publicUrl }).eq('id', newAuto.id);
+        } catch (err) {
+          alert("Auto saved, but there was an error uploading the photo: " + err.message);
+        }
+      }
+
+      setUploadingPhoto(false);
+      closeAutoModal();
+      fetchData();
+    }
+  };
+
+  const handleEditBill = (bill) => {
+    setBillForm({
+      id: bill.id,
+      name: bill.name || '',
+      address: bill.address || '',
+      amount: bill.amount || 0,
+      payment_url: bill.payment_url || '',
+      login_user: bill.login_user || '',
+      login_password: bill.login_password || ''
+    });
+    setShowBillModal(true);
+  };
+
+  const closeBillModal = () => {
+    setShowBillModal(false);
+    setBillForm({ name: '', address: '', amount: 0, payment_url: '', login_user: '', login_password: '' });
+  };
+
+  const handleEditAuto = (auto) => {
+    setAutoForm({
+      id: auto.id,
+      make: auto.make || '',
+      vin: auto.vin || '',
+      insurance_number: auto.insurance_number || '',
+      insurance_amount: auto.insurance_amount || 0,
+      insurance_photo_url: auto.insurance_photo_url || null,
+      insuranceFile: null
+    });
+    setShowAutoModal(true);
+  };
+
+  const closeAutoModal = () => {
     setShowAutoModal(false);
     setAutoForm({ make: '', vin: '', insurance_number: '', insurance_amount: 0, insuranceFile: null });
-    fetchData();
   };
 
   const handleSavePayment = async (e) => {
@@ -244,9 +332,14 @@ export default function BillsPage() {
                   </td>
                   <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(bill.total_paid)}</td>
                   <td className="px-4 py-3 text-center">
-                    <button onClick={() => openPaymentModal('bill', bill.id, bill.amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1 mx-auto">
-                      <DollarSign size={14} /> Pay
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => openPaymentModal('bill', bill.id, bill.amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                        <DollarSign size={14} /> Pay
+                      </button>
+                      <button onClick={() => handleEditBill(bill)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                        <Pencil size={14} /> Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -309,9 +402,14 @@ export default function BillsPage() {
                   <td className="px-4 py-3 text-blue-400 font-bold">{formatCurrency(auto.insurance_amount)}</td>
                   <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(auto.total_paid)}</td>
                   <td className="px-4 py-3 text-center">
-                    <button onClick={() => openPaymentModal('auto', auto.id, auto.insurance_amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1 mx-auto">
-                      <DollarSign size={14} /> Pay
-                    </button>
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => openPaymentModal('auto', auto.id, auto.insurance_amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                        <DollarSign size={14} /> Pay
+                      </button>
+                      <button onClick={() => handleEditAuto(auto)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                        <Pencil size={14} /> Edit
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -330,13 +428,13 @@ export default function BillsPage() {
 
       {/* MODALES */}
 
-      {/* Modal Add Bill */}
+      {/* Modal Add/Edit Bill */}
       {showBillModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-white">Add Bill</h3>
-              <button onClick={() => setShowBillModal(false)}><X className="text-gray-400 hover:text-white" /></button>
+              <h3 className="text-xl font-bold text-white">{billForm.id ? 'Edit Bill' : 'Add Bill'}</h3>
+              <button onClick={closeBillModal}><X className="text-gray-400 hover:text-white" /></button>
             </div>
             <form onSubmit={handleSaveBill} className="space-y-4">
               <div><label className="block text-xs text-gray-400 mb-1">Name</label><input required className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={billForm.name} onChange={e => setBillForm({...billForm, name: e.target.value})} placeholder="e.g. Spectrum Internet" /></div>
@@ -345,19 +443,19 @@ export default function BillsPage() {
               <div><label className="block text-xs text-gray-400 mb-1">Payment Link</label><input type="url" className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={billForm.payment_url} onChange={e => setBillForm({...billForm, payment_url: e.target.value})} /></div>
               <div><label className="block text-xs text-gray-400 mb-1">Username / Email</label><input className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={billForm.login_user} onChange={e => setBillForm({...billForm, login_user: e.target.value})} /></div>
               <div><label className="block text-xs text-gray-400 mb-1">Password</label><input type="text" className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={billForm.login_password} onChange={e => setBillForm({...billForm, login_password: e.target.value})} /></div>
-              <button type="submit" className="w-full bg-[#FACB00] text-black font-bold py-2 rounded mt-2">Save Bill</button>
+              <button type="submit" className="w-full bg-[#FACB00] text-black font-bold py-2 rounded mt-2">{billForm.id ? 'Update Bill' : 'Save Bill'}</button>
             </form>
           </div>
         </div>
       )}
 
-      {/* Modal Add Auto */}
+      {/* Modal Add/Edit Auto */}
       {showAutoModal && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
           <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-white">Add Auto</h3>
-              <button onClick={() => setShowAutoModal(false)}><X className="text-gray-400 hover:text-white" /></button>
+              <h3 className="text-xl font-bold text-white">{autoForm.id ? 'Edit Auto' : 'Add Auto'}</h3>
+              <button onClick={closeAutoModal}><X className="text-gray-400 hover:text-white" /></button>
             </div>
             <form onSubmit={handleSaveAuto} className="space-y-4">
               <div><label className="block text-xs text-gray-400 mb-1">Make / Model</label><input required className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white" value={autoForm.make} onChange={e => setAutoForm({...autoForm, make: e.target.value})} placeholder="e.g. Ford F-150 2020" /></div>
@@ -369,7 +467,7 @@ export default function BillsPage() {
                 <input type="file" accept="image/*,.pdf" className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-white text-sm" onChange={e => setAutoForm({...autoForm, insuranceFile: e.target.files[0]})} />
               </div>
               <button type="submit" disabled={uploadingPhoto} className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded mt-2 disabled:opacity-50">
-                {uploadingPhoto ? 'Saving...' : 'Save Auto'}
+                {uploadingPhoto ? 'Saving...' : autoForm.id ? 'Update Auto' : 'Save Auto'}
               </button>
             </form>
           </div>
