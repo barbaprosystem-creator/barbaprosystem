@@ -187,6 +187,36 @@ export default function CalendarPage() {
     onError: err => console.error('Error Google Login', err),
   });
 
+  const handleDisconnectGoogle = async () => {
+    if (!window.confirm("Are you sure you want to disconnect Google Calendar? This will stop syncing your events.")) {
+      return;
+    }
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // 1. Delete refresh token from Supabase Auth user metadata
+        await supabase.auth.updateUser({ 
+          data: { google_refresh_token: null } 
+        });
+        
+        // 2. Delete refresh token from public profiles table
+        await supabase.from('profiles')
+          .update({ google_refresh_token: null })
+          .eq('id', user.id);
+      }
+      
+      // 3. Clear local states
+      setGoogleRefreshToken(null);
+      setGoogleEvents([]);
+      
+      alert("Google Calendar disconnected successfully.");
+    } catch (err) {
+      console.error("Error disconnecting Google:", err);
+      alert("Failed to disconnect Google Calendar: " + err.message);
+    }
+  };
+
   const tabConfig = TAB_CONFIGS[activeTab];
   const canAccessProjects = role === 'admin' || role === 'office';
 
@@ -566,6 +596,17 @@ export default function CalendarPage() {
               : <><LinkIcon size={16} /> <span className="hidden md:inline">Connect Google</span></>
             }
           </button>
+
+          {googleRefreshToken && (
+            <button
+              onClick={handleDisconnectGoogle}
+              title="Disconnect Google Calendar"
+              className="btn flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-red-500/10 text-red-400 border border-red-500/20 hover:bg-red-500/20 transition"
+            >
+              <Trash2 size={16} />
+              <span className="hidden md:inline">Disconnect</span>
+            </button>
+          )}
 
           <button
             className="btn-primary flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg"
