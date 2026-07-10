@@ -677,21 +677,41 @@ export default async function handler(req, res) {
               const createdAt = qboEst.Metadata?.CreateTime || new Date().toISOString();
               const updatedAt = qboEst.Metadata?.LastUpdatedTime || new Date().toISOString();
 
+              const { data: doubleCheck } = await supabase
+                .from('estimates')
+                .select('id')
+                .eq('qbo_estimate_id', estId)
+                .maybeSingle();
+
+              if (doubleCheck) {
+                console.log(`[QBO Sync] Prevented duplicate insertion for QBO Estimate ${estId} in real-time.`);
+                continue;
+              }
+
+              const insertPayload = {
+                contact_id: contactId,
+                status: mappedStatus,
+                work_type: workType,
+                subtotal: subtotal,
+                grand_total: grandTotal,
+                notes: notes,
+                scope_of_work: 'Imported from QuickBooks Online Estimate',
+                qbo_estimate_id: estId,
+                created_by: creatorId,
+                created_at: createdAt,
+                updated_at: updatedAt
+              };
+
+              if (docNum) {
+                const parsedNum = parseInt(docNum.replace(/\D/g, ''), 10);
+                if (!isNaN(parsedNum)) {
+                  insertPayload.estimate_number = parsedNum;
+                }
+              }
+
               const { data: newEstData, error: newEstErr } = await supabase
                 .from('estimates')
-                .insert({
-                  contact_id: contactId,
-                  status: mappedStatus,
-                  work_type: workType,
-                  subtotal: subtotal,
-                  grand_total: grandTotal,
-                  notes: notes,
-                  scope_of_work: 'Imported from QuickBooks Online Estimate',
-                  qbo_estimate_id: estId,
-                  created_by: creatorId,
-                  created_at: createdAt,
-                  updated_at: updatedAt
-                })
+                .insert(insertPayload)
                 .select();
 
               if (newEstErr) {
@@ -892,23 +912,43 @@ export default async function handler(req, res) {
               const linkedTxns = qboInv.LinkedTxn || [];
               const estimateLink = linkedTxns.find(lt => lt.TxnType === 'Estimate');
 
+              const { data: doubleCheckInv } = await supabase
+                .from('estimates')
+                .select('id')
+                .eq('qbo_invoice_id', invId)
+                .maybeSingle();
+
+              if (doubleCheckInv) {
+                console.log(`[QBO Sync] Prevented duplicate insertion for QBO Invoice ${invId} in real-time.`);
+                continue;
+              }
+
+              const insertPayload = {
+                contact_id: contactId,
+                status: 'approved',
+                work_type: workType,
+                subtotal: subtotal,
+                grand_total: grandTotal,
+                notes: notes,
+                scope_of_work: 'Imported from QuickBooks Online',
+                qbo_invoice_id: invId,
+                qbo_invoice_number: docNum,
+                qbo_estimate_id: estimateLink ? estimateLink.TxnId : null,
+                created_by: resolvedCreatorId || null,
+                created_at: createdAt,
+                updated_at: updatedAt
+              };
+
+              if (docNum) {
+                const parsedNum = parseInt(docNum.replace(/\D/g, ''), 10);
+                if (!isNaN(parsedNum)) {
+                  insertPayload.estimate_number = parsedNum;
+                }
+              }
+
               const { data: newEstData, error: newEstErr } = await supabase
                 .from('estimates')
-                .insert({
-                  contact_id: contactId,
-                  status: 'approved',
-                  work_type: workType,
-                  subtotal: subtotal,
-                  grand_total: grandTotal,
-                  notes: notes,
-                  scope_of_work: 'Imported from QuickBooks Online',
-                  qbo_invoice_id: invId,
-                  qbo_invoice_number: docNum,
-                  qbo_estimate_id: estimateLink ? estimateLink.TxnId : null,
-                  created_by: resolvedCreatorId || null,
-                  created_at: createdAt,
-                  updated_at: updatedAt
-                })
+                .insert(insertPayload)
                 .select();
 
               if (newEstErr) {
