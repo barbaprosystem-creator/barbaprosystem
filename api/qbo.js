@@ -534,9 +534,9 @@ export default async function handler(req, res) {
         let estimateQuery = '';
 
         if (action === 'pull-recent') {
-          // Sync last 7 days of changes to be safe and cover recent activities
-          const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
-          const sinceTimeStr = sevenDaysAgo.toISOString().split('.')[0] + 'Z';
+          // Sync last 60 days of changes to be safe and cover recent activities
+          const sixtyDaysAgo = new Date(Date.now() - 60 * 86400000);
+          const sinceTimeStr = sixtyDaysAgo.toISOString().split('.')[0] + 'Z';
           customerQuery = `SELECT * FROM Customer WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
           invoiceQuery = `SELECT * FROM Invoice WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
           estimateQuery = `SELECT * FROM Estimate WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
@@ -743,6 +743,17 @@ export default async function handler(req, res) {
           const docNum = qboInv.DocNumber || '';
           
           let matchedEst = localEstimates.find(e => e.qbo_invoice_id === invId);
+          
+          // Try matching via LinkedTxn to find the original Estimate ID from QuickBooks
+          if (!matchedEst) {
+            const linkedTxns = qboInv.LinkedTxn || [];
+            const estimateLink = linkedTxns.find(lt => lt.TxnType === 'Estimate');
+            if (estimateLink) {
+              matchedEst = localEstimates.find(e => e.qbo_estimate_id === estimateLink.TxnId);
+            }
+          }
+
+          // Fallback to matching by estimate number
           if (!matchedEst && docNum) {
             const parsedNum = parseInt(docNum.replace(/\D/g, ''), 10);
             if (!isNaN(parsedNum)) {
@@ -754,6 +765,14 @@ export default async function handler(req, res) {
             const resolvedCreatorId = resolveCreatorFromQbo(qboInv, allProfiles);
             const updates = { qbo_invoice_id: invId, qbo_invoice_number: docNum };
             if (matchedEst.status !== 'approved') updates.status = 'approved';
+
+            // Set qbo_estimate_id if we have it in LinkedTxn and it's not set
+            const linkedTxns = qboInv.LinkedTxn || [];
+            const estimateLink = linkedTxns.find(lt => lt.TxnType === 'Estimate');
+            if (estimateLink && !matchedEst.qbo_estimate_id) {
+              updates.qbo_estimate_id = estimateLink.TxnId;
+            }
+
             if (resolvedCreatorId && !matchedEst.created_by) {
               updates.created_by = resolvedCreatorId;
             }
@@ -866,6 +885,9 @@ export default async function handler(req, res) {
               const updatedAt = qboInv.Metadata?.LastUpdatedTime || new Date().toISOString();
 
               const resolvedCreatorId = resolveCreatorFromQbo(qboInv, allProfiles);
+              const linkedTxns = qboInv.LinkedTxn || [];
+              const estimateLink = linkedTxns.find(lt => lt.TxnType === 'Estimate');
+
               const { data: newEstData, error: newEstErr } = await supabase
                 .from('estimates')
                 .insert({
@@ -878,6 +900,7 @@ export default async function handler(req, res) {
                   scope_of_work: 'Imported from QuickBooks Online',
                   qbo_invoice_id: invId,
                   qbo_invoice_number: docNum,
+                  qbo_estimate_id: estimateLink ? estimateLink.TxnId : null,
                   created_by: resolvedCreatorId || null,
                   created_at: createdAt,
                   updated_at: updatedAt
