@@ -325,7 +325,28 @@ export default function ProjectsList() {
     console.log("[ProjectsList] handleDelete started. ID:", deleteTarget.id);
     setDeleteLoading(true);
     try {
-      const { error } = await supabase.from('projects').delete().eq('id', deleteTarget.id);
+      const projectId = deleteTarget.id;
+      
+      // 1. Delete client payments
+      await supabase.from('payments').delete().eq('project_id', projectId);
+      
+      // 2. Delete project photos
+      await supabase.from('project_photos').delete().eq('project_id', projectId);
+      
+      // 3. Delete project documents
+      await supabase.from('project_documents').delete().eq('project_id', projectId);
+      
+      // 4. Delete project materials (BOM)
+      await supabase.from('project_materials').delete().eq('project_id', projectId);
+      
+      // 5. Unlink project from brigades (set project_id to NULL)
+      await supabase.from('brigades').update({ project_id: null }).eq('project_id', projectId);
+      
+      // 6. Delete project expenses
+      await supabase.from('project_expenses').delete().eq('project_id', projectId);
+
+      // 7. Delete project itself
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
       if (error) {
         console.error("[ProjectsList] delete project error:", error);
         throw error;

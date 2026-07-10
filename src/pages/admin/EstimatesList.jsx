@@ -204,9 +204,15 @@ export default function EstimatesList() {
 
   async function deleteEstimate(id) {
     if(!confirm('Delete this estimate?')) return;
-    await supabase.from('estimate_items').delete().eq('estimate_id',id);
-    await supabase.from('estimates').delete().eq('id',id);
-    fetchEstimates();
+    try {
+      await supabase.from('estimate_items').delete().eq('estimate_id',id);
+      await supabase.from('projects').update({ estimate_id: null }).eq('estimate_id',id);
+      const { error } = await supabase.from('estimates').delete().eq('id',id);
+      if (error) throw error;
+      fetchEstimates();
+    } catch (err) {
+      alert("Error deleting estimate: " + err.message);
+    }
   }
 
   const renderPhotosCell = (est) => {
