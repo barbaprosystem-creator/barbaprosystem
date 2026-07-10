@@ -621,33 +621,37 @@ export default async function handler(req, res) {
             const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
             const workType = detectWorkType(qboInv.Line);
             const grandTotal = parseFloat(qboInv.TotalAmt || 0);
+            const balance = parseFloat(qboInv.Balance || 0);
+            const hasPayment = balance < grandTotal;
 
-            // Fetch matched project if it exists
-            const { data: matchedProj } = await supabase
-              .from('projects')
-              .select('*')
-              .eq('estimate_id', matchedEst.id)
-              .maybeSingle();
+            if (hasPayment) {
+              // Fetch matched project if it exists
+              const { data: matchedProj } = await supabase
+                .from('projects')
+                .select('*')
+                .eq('estimate_id', matchedEst.id)
+                .maybeSingle();
 
-            if (matchedProj) {
-              const projUpdates = {
-                sold_price: grandTotal,
-                // Update status based on QuickBooks balance
-                status: qboInv.Balance === 0 ? 'completed' : matchedProj.status
-              };
-              await supabase.from('projects').update(projUpdates).eq('id', matchedProj.id);
-            } else {
-              // Create project since it does not exist for this approved estimate
-              await supabase.from('projects').insert({
-                estimate_id: matchedEst.id,
-                contact_id: matchedEst.contact_id,
-                title: `${clientName} - ${workType}`,
-                status: qboInv.Balance === 0 ? 'completed' : 'in_progress',
-                sold_price: grandTotal,
-                address: contactObj?.address || 'To be confirmed',
-                created_at: qboInv.Metadata?.CreateTime || new Date().toISOString()
-              });
-              invoicesCreated++;
+              if (matchedProj) {
+                const projUpdates = {
+                  sold_price: grandTotal,
+                  // Update status based on QuickBooks balance
+                  status: balance === 0 ? 'completed' : matchedProj.status
+                };
+                await supabase.from('projects').update(projUpdates).eq('id', matchedProj.id);
+              } else {
+                // Create project since it does not exist for this approved estimate and has a payment
+                await supabase.from('projects').insert({
+                  estimate_id: matchedEst.id,
+                  contact_id: matchedEst.contact_id,
+                  title: `${clientName} - ${workType}`,
+                  status: balance === 0 ? 'completed' : 'in_progress',
+                  sold_price: grandTotal,
+                  address: contactObj?.address || 'To be confirmed',
+                  created_at: qboInv.Metadata?.CreateTime || new Date().toISOString()
+                });
+                invoicesCreated++;
+              }
             }
           } else {
             const qboCustId = qboInv.CustomerRef.value;
@@ -712,6 +716,7 @@ export default async function handler(req, res) {
               const workType = detectWorkType(lines);
               const subtotal = parseFloat(qboInv.TotalAmt || 0);
               const grandTotal = parseFloat(qboInv.TotalAmt || 0);
+              const balance = parseFloat(qboInv.Balance || 0);
               const notes = qboInv.CustomerMemo?.value || 'Imported from QuickBooks Online';
               const createdAt = qboInv.Metadata?.CreateTime || new Date().toISOString();
               const updatedAt = qboInv.Metadata?.LastUpdatedTime || new Date().toISOString();
@@ -749,21 +754,26 @@ export default async function handler(req, res) {
                 
                 const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
                 const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
+                const hasPayment = balance < grandTotal;
 
-                const { error: projErr } = await supabase
-                  .from('projects')
-                  .insert({
-                    estimate_id: newEst.id,
-                    contact_id: contactId,
-                    title: `${clientName} - ${workType}`,
-                    status: qboInv.Balance === 0 ? 'completed' : 'in_progress',
-                    sold_price: grandTotal,
-                    address: projectAddress,
-                    created_at: createdAt
-                  });
+                if (hasPayment) {
+                  const { error: projErr } = await supabase
+                    .from('projects')
+                    .insert({
+                      estimate_id: newEst.id,
+                      contact_id: contactId,
+                      title: `${clientName} - ${workType}`,
+                      status: balance === 0 ? 'completed' : 'in_progress',
+                      sold_price: grandTotal,
+                      address: projectAddress,
+                      created_at: createdAt
+                    });
 
-                if (projErr) {
-                  console.error(`Error inserting project for QBO Invoice ${invId}:`, projErr);
+                  if (projErr) {
+                    console.error(`Error inserting project for QBO Invoice ${invId}:`, projErr);
+                  } else {
+                    invoicesCreated++;
+                  }
                 }
 
                 const itemsToInsert = [];
@@ -788,51 +798,11 @@ export default async function handler(req, res) {
                     console.error(`Error inserting items for QBO Invoice ${invId}:`, itemsErr);
                   }
                 }
-
-                invoicesCreated++;
               }
             } else {
               console.warn(`Could not find contact for QBO Customer ID: ${qboCustId} matching Invoice ${invId}`);
             }
           }
-        }
-
-        // Autofill missing projects for all approved estimates
-        let autoCreatedProjectsCount = 0;
-        try {
-          const { data: approvedEstimates } = await supabase
-            .from('estimates')
-            .select('*, contact:contacts(first_name, last_name, address)')
-            .eq('status', 'approved');
-
-          const { data: existingProjects } = await supabase
-            .from('projects')
-            .select('estimate_id');
-
-          const projectEstimateIds = new Set((existingProjects || []).map(p => p.estimate_id).filter(Boolean));
-          const missingProjects = (approvedEstimates || []).filter(e => !projectEstimateIds.has(e.id));
-
-          if (missingProjects.length > 0) {
-            const projectsToInsert = missingProjects.map(e => ({
-              estimate_id: e.id,
-              contact_id: e.contact_id,
-              title: `Project for ${e.contact?.first_name || 'Client'} - EST-${String(e.estimate_number).padStart(4, '0')}`,
-              status: 'pending',
-              sold_price: e.grand_total || e.subtotal || 0,
-              address: e.contact?.address || 'To be confirmed',
-              created_at: e.created_at
-            }));
-
-            const { error: insertProjErr } = await supabase.from('projects').insert(projectsToInsert);
-            if (insertProjErr) {
-              console.error('Error inserting missing projects:', insertProjErr);
-            } else {
-              autoCreatedProjectsCount = projectsToInsert.length;
-              console.log(`[QBO Sync] Automatically created ${autoCreatedProjectsCount} projects for approved estimates.`);
-            }
-          }
-        } catch (projCheckErr) {
-          console.error('Error in missing projects check:', projCheckErr);
         }
 
         return res.status(200).json({
@@ -842,7 +812,7 @@ export default async function handler(req, res) {
           customersCreated,
           invoicesProcessed: qboInvoices.length,
           invoicesMatched,
-          invoicesCreated: invoicesCreated + autoCreatedProjectsCount
+          invoicesCreated
         });
       }
 
