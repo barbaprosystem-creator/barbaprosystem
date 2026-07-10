@@ -38,3 +38,5 @@ scripts/
 
 # Temporary scratch files
 scratch/
+.vercel
+.env*

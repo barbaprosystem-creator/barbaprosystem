@@ -30,7 +30,7 @@
   "crons": [
     {
       "path": "/api/qbo-pull-recent",
-      "schedule": "0 * * * *"
+      "schedule": "0 1 * * *"
     }
   ]
 }
