@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home, RefreshCw } from 'lucide-react';
+import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home, RefreshCw, Receipt } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
 import { useLanguage } from '../../i18n/LanguageContext';
@@ -122,7 +122,7 @@ export default function ProjectsList() {
       console.log("[ProjectsList] fetchProjects started...");
       const { data, error } = await supabase
         .from('projects')
-        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id)')
+        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id), project_expenses(id)')
         .order('created_at', { ascending: false });
       if (error) {
         console.error("[ProjectsList] fetchProjects error:", error);
@@ -450,6 +450,25 @@ export default function ProjectsList() {
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                {project.project_expenses && project.project_expenses.length > 0 && (
+                  <span 
+                    className="stage-badge" 
+                    style={{ 
+                      background: 'rgba(245,158,11,0.12)', 
+                      color: '#d97706', 
+                      border: '1px solid rgba(245,158,11,0.25)',
+                      fontWeight: 'bold',
+                      fontSize: '10px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '3px'
+                    }}
+                    title={`${project.project_expenses.length} gastos registrados`}
+                  >
+                    <Receipt size={10} />
+                    <span>{project.project_expenses.length} Gastos</span>
+                  </span>
+                )}
                 {project.estimate?.qbo_invoice_number && (
                   <span 
                     className="stage-badge" 
