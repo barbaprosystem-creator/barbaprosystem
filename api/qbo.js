@@ -489,6 +489,20 @@ export default async function handler(req, res) {
       case 'webhook': {
         console.log("[QBO Webhook] Received webhook notification from QuickBooks.");
         try {
+          await supabase.from('system_settings').upsert({
+            key: 'last_webhook_received',
+            value: JSON.stringify({
+              time: new Date().toISOString(),
+              headers: req.headers,
+              body: req.body
+            }),
+            updated_at: new Date().toISOString()
+          });
+        } catch (logErr) {
+          console.error("Error logging webhook to DB:", logErr);
+        }
+
+        try {
           const signature = req.headers['intuit-signature'];
           
           // Fetch settings to check for the verifier token
