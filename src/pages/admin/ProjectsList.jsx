@@ -122,7 +122,7 @@ export default function ProjectsList() {
       console.log("[ProjectsList] fetchProjects started...");
       const { data, error } = await supabase
         .from('projects')
-        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name)')
+        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id)')
         .order('created_at', { ascending: false });
       if (error) {
         console.error("[ProjectsList] fetchProjects error:", error);
@@ -450,6 +450,21 @@ export default function ProjectsList() {
             <div className="project-card-header">
               <span className="project-number">PRJ-{String(project.project_number).padStart(4, '0')}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                {project.estimate?.qbo_invoice_number && (
+                  <span 
+                    className="stage-badge" 
+                    style={{ 
+                      background: 'rgba(16,185,129,0.12)', 
+                      color: '#10b981', 
+                      border: '1px solid rgba(16,185,129,0.25)',
+                      fontWeight: 'bold',
+                      fontSize: '10px'
+                    }}
+                    title={`Linked QBO Invoice #${project.estimate.qbo_invoice_number}`}
+                  >
+                    QBO #{project.estimate.qbo_invoice_number}
+                  </span>
+                )}
                 <span className="stage-badge" style={{ background: STATUS_MAP[project.status]?.color }}>
                   {STATUS_MAP[project.status]?.label}
                 </span>
