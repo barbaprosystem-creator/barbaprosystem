@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatCurrency, formatDate } from '../../lib/utils';
-import { CreditCard, Car, Plus, ExternalLink, Copy, Eye, EyeOff, Save, X, Loader2, DollarSign, Image as ImageIcon, Pencil } from 'lucide-react';
+import { CreditCard, Car, Plus, ExternalLink, Copy, Eye, EyeOff, Save, X, Loader2, DollarSign, Image as ImageIcon, Pencil, Trash2 } from 'lucide-react';
 
 export default function BillsPage() {
   const [bills, setBills] = useState([]);
@@ -202,6 +202,38 @@ export default function BillsPage() {
     setAutoForm({ make: '', vin: '', insurance_number: '', insurance_amount: 0, insuranceFile: null });
   };
 
+  const handleDeleteBill = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this bill? This will also permanently delete all registered payments for this bill.")) {
+      return;
+    }
+    try {
+      // 1. Clean up payments first to satisfy constraints
+      await supabase.from('bill_payments').delete().eq('target_type', 'bill').eq('target_id', id);
+      // 2. Delete the bill
+      const { error } = await supabase.from('office_bills').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (err) {
+      alert("Error deleting bill: " + err.message);
+    }
+  };
+
+  const handleDeleteAuto = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this vehicle? This will also permanently delete all registered insurance payments for this vehicle.")) {
+      return;
+    }
+    try {
+      // 1. Clean up payments first to satisfy constraints
+      await supabase.from('bill_payments').delete().eq('target_type', 'auto').eq('target_id', id);
+      // 2. Delete the auto
+      const { error } = await supabase.from('company_autos').delete().eq('id', id);
+      if (error) throw error;
+      fetchData();
+    } catch (err) {
+      alert("Error deleting vehicle: " + err.message);
+    }
+  };
+
   const handleSavePayment = async (e) => {
     e.preventDefault();
     const { error } = await supabase.from('bill_payments').insert([paymentForm]);
@@ -333,11 +365,14 @@ export default function BillsPage() {
                   <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(bill.total_paid)}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => openPaymentModal('bill', bill.id, bill.amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                      <button onClick={() => openPaymentModal('bill', bill.id, bill.amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Register payment">
                         <DollarSign size={14} /> Pay
                       </button>
-                      <button onClick={() => handleEditBill(bill)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                      <button onClick={() => handleEditBill(bill)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Edit bill">
                         <Pencil size={14} /> Edit
+                      </button>
+                      <button onClick={() => handleDeleteBill(bill.id)} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Delete bill">
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
                   </td>
@@ -403,11 +438,14 @@ export default function BillsPage() {
                   <td className="px-4 py-3 text-right text-emerald-400 font-bold">{formatCurrency(auto.total_paid)}</td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <button onClick={() => openPaymentModal('auto', auto.id, auto.insurance_amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                      <button onClick={() => openPaymentModal('auto', auto.id, auto.insurance_amount)} className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Register insurance payment">
                         <DollarSign size={14} /> Pay
                       </button>
-                      <button onClick={() => handleEditAuto(auto)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1">
+                      <button onClick={() => handleEditAuto(auto)} className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Edit vehicle">
                         <Pencil size={14} /> Edit
+                      </button>
+                      <button onClick={() => handleDeleteAuto(auto.id)} className="bg-red-600 hover:bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center justify-center gap-1" title="Delete vehicle">
+                        <Trash2 size={14} /> Delete
                       </button>
                     </div>
                   </td>
