@@ -121,16 +121,26 @@ export default function ProjectsList() {
     setLoading(true);
     try {
       console.log("[ProjectsList] fetchProjects started...");
-      const { data, error } = await supabase
-        .from('projects')
-        .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id), project_expenses(id)')
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.error("[ProjectsList] fetchProjects error:", error);
-        throw error;
+      let allData = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('projects')
+          .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id), project_expenses(id)')
+          .order('created_at', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (error) {
+          console.error("[ProjectsList] fetchProjects error page " + page, error);
+          throw error;
+        }
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < pageSize) break;
+        page++;
       }
-      console.log("[ProjectsList] fetchProjects count:", data?.length || 0);
-      setProjects(data || []);
+      console.log("[ProjectsList] fetchProjects count:", allData.length);
+      setProjects(allData);
     } catch (err) {
       console.error("[ProjectsList] fetchProjects caught exception:", err);
       alert('Error fetching projects: ' + err.message);

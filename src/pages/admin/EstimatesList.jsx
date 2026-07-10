@@ -125,11 +125,29 @@ export default function EstimatesList() {
 
   async function fetchEstimates() {
     setLoading(true);
-    const { data } = await supabase.from('estimates')
-      .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)')
-      .order('created_at',{ascending:false});
-    setEstimates(data||[]);
-    setLoading(false);
+    try {
+      let allData = [];
+      let page = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data, error } = await supabase.from('estimates')
+          .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)')
+          .order('created_at',{ascending:false})
+          .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allData = allData.concat(data);
+        if (data.length < pageSize) break;
+        page++;
+      }
+      setEstimates(allData);
+    } catch (err) {
+      console.error("Error fetching estimates:", err);
+      alert("Error fetching estimates: " + err.message);
+      setEstimates([]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function syncToQuickBooks(estimateId) {
@@ -193,7 +211,8 @@ export default function EstimatesList() {
         estimate_id: est.id,
         status: 'pending',
         sold_price: est.total || est.grand_total,
-        address: est.contact?.address || 'To be confirmed'
+        address: est.contact?.address || 'To be confirmed',
+        start_date: new Date().toISOString().split('T')[0]
       }]);
       // Automate QBO sync
       syncToQuickBooks(id).catch(console.error);

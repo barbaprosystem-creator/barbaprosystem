@@ -894,7 +894,8 @@ export default async function handler(req, res) {
                   status: balance === 0 ? 'completed' : 'in_progress',
                   sold_price: grandTotal,
                   address: contactObj?.address || 'To be confirmed',
-                  created_at: qboInv.Metadata?.CreateTime || new Date().toISOString()
+                  created_at: qboInv.Metadata?.CreateTime || new Date().toISOString(),
+                  start_date: (qboInv.Metadata?.CreateTime || new Date().toISOString()).split('T')[0]
                 });
                 invoicesCreated++;
               }
@@ -1038,7 +1039,8 @@ export default async function handler(req, res) {
                       status: balance === 0 ? 'completed' : 'in_progress',
                       sold_price: grandTotal,
                       address: projectAddress,
-                      created_at: createdAt
+                      created_at: createdAt,
+                      start_date: createdAt.split('T')[0]
                     });
 
                   if (projErr) {
