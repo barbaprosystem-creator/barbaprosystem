@@ -459,6 +459,7 @@ export default async function handler(req, res) {
         return res.status(200).json(result);
       }
 
+      case 'pull-recent':
       case 'bulk-import': {
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
         
@@ -502,8 +503,23 @@ export default async function handler(req, res) {
           }
         });
 
-        // Fetch Customers from QBO (Created in 2026)
-        const customerQuery = `SELECT * FROM Customer WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
+        // Define queries based on action
+        let customerQuery = '';
+        let invoiceQuery = '';
+
+        if (action === 'pull-recent') {
+          // Sync last 7 days of changes to be safe and cover recent activities
+          const sevenDaysAgo = new Date(Date.now() - 7 * 86400000);
+          const sinceTimeStr = sevenDaysAgo.toISOString().split('.')[0] + 'Z';
+          customerQuery = `SELECT * FROM Customer WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
+          invoiceQuery = `SELECT * FROM Invoice WHERE Metadata.LastUpdatedTime >= '${sinceTimeStr}' STARTPOSITION 1 MAXRESULTS 500`;
+        } else {
+          // Bulk Import (everything since 2026-01-01)
+          customerQuery = `SELECT * FROM Customer WHERE Metadata.CreateTime >= '2026-01-01T00:00:00-05:00' STARTPOSITION 1 MAXRESULTS 1000`;
+          invoiceQuery = `SELECT * FROM Invoice WHERE TxnDate >= '2026-01-01' STARTPOSITION 1 MAXRESULTS 1000`;
+        }
+
+        // Fetch Customers from QBO
         const customerRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(customerQuery)}&minorversion=65`, {
           headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
         });
@@ -571,8 +587,7 @@ export default async function handler(req, res) {
           }
         }
 
-        // Fetch Invoices from QBO
-        const invoiceQuery = `SELECT * FROM Invoice WHERE TxnDate >= '2026-01-01' STARTPOSITION 1 MAXRESULTS 1000`;
+        // Fetch Invoices from QBO (invoiceQuery defined above)
         const invoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(invoiceQuery)}&minorversion=65`, {
           headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
         });

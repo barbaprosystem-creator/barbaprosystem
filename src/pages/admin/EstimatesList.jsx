@@ -52,8 +52,42 @@ export default function EstimatesList() {
 
   // QuickBooks sync state
   const [syncingId, setSyncingId] = useState(null);
+  const [syncingQbo, setSyncingQbo] = useState(false);
 
-  useEffect(() => { fetchEstimates(); }, []);
+  useEffect(() => { 
+    fetchEstimates();
+    // Run incremental background sync from QBO quietly on mount
+    fetch('/api/qbo-pull-recent', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data && (data.invoicesCreated > 0 || data.customersCreated > 0)) {
+          console.log(`[QBO Background Sync] Loaded ${data.invoicesCreated} new invoices and ${data.customersCreated} new customers.`);
+          fetchEstimates();
+        }
+      })
+      .catch(err => console.error('[QBO Background Sync Error]', err));
+  }, []);
+
+  async function syncRecentQboData() {
+    setSyncingQbo(true);
+    try {
+      const res = await fetch('/api/qbo-pull-recent', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to import recent QBO updates');
+      }
+      alert(`Sincronización de QuickBooks completada!\n\n` +
+            `Facturas procesadas: ${data.invoicesProcessed}\n` +
+            `Nuevas facturas agregadas: ${data.invoicesCreated || 0}\n` +
+            `Clientes nuevos agregados: ${data.customersCreated || 0}`);
+      fetchEstimates();
+    } catch (err) {
+      console.error(err);
+      alert('Error en la sincronización de QuickBooks: ' + err.message);
+    } finally {
+      setSyncingQbo(false);
+    }
+  }
 
   async function fetchEstimates() {
     setLoading(true);
@@ -180,6 +214,14 @@ export default function EstimatesList() {
           <div className="crm-search"><Search size={16}/><input placeholder={t('actions.search') + '...'} value={search} onChange={e => setSearch(e.target.value)}/></div>
           <button className="bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-[#333] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors" onClick={() => setShowSummaryModal(true)}>
             <BarChart2 size={16}/><span>{t('estimates.salesSummary')}</span>
+          </button>
+          <button 
+            disabled={syncingQbo}
+            className="bg-[#10b981] hover:bg-[#059669] text-white px-3 py-1.5 rounded-lg flex items-center gap-2 text-sm font-bold transition-colors disabled:opacity-50"
+            onClick={syncRecentQboData}
+          >
+            <RefreshCw size={16} className={syncingQbo ? 'animate-spin' : ''}/>
+            <span>{syncingQbo ? 'Syncing QBO...' : 'Sync QBO'}</span>
           </button>
           <button className="btn-primary" onClick={() => navigate('/admin/estimator')}><Plus size={18}/><span>{t('estimates.newEstimate')}</span></button>
         </div>

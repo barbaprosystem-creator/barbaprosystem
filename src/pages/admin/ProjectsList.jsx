@@ -60,6 +60,17 @@ export default function ProjectsList() {
   useEffect(() => {
     fetchProjects();
     fetchContacts();
+
+    // Run incremental background sync from QBO quietly on mount
+    fetch('/api/qbo-pull-recent', { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (data && (data.invoicesCreated > 0 || data.customersCreated > 0)) {
+          console.log(`[QBO Projects Sync] Loaded ${data.invoicesCreated} new invoices/projects.`);
+          fetchProjects();
+        }
+      })
+      .catch(err => console.error('[QBO Projects Sync Error]', err));
   }, []);
 
   async function fetchContacts() {
