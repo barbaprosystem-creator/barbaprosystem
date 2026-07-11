@@ -871,14 +871,14 @@ export default async function handler(req, res) {
             const hasPayment = balance < grandTotal;
 
             if (hasPayment) {
-              // Fetch matched project if it exists
-              const { data: matchedProj } = await supabase
+              // Fetch matched projects if they exist
+              const { data: matchedProjList } = await supabase
                 .from('projects')
                 .select('*')
-                .eq('estimate_id', matchedEst.id)
-                .maybeSingle();
+                .eq('estimate_id', matchedEst.id);
 
-              if (matchedProj) {
+              if (matchedProjList && matchedProjList.length > 0) {
+                const matchedProj = matchedProjList[0];
                 const projUpdates = {
                   sold_price: grandTotal,
                   // Update status based on QuickBooks balance
@@ -972,14 +972,52 @@ export default async function handler(req, res) {
               const linkedTxns = qboInv.LinkedTxn || [];
               const estimateLink = linkedTxns.find(lt => lt.TxnType === 'Estimate');
 
-              const { data: doubleCheckInv } = await supabase
+              const { data: doubleCheckInvList } = await supabase
                 .from('estimates')
                 .select('id')
-                .eq('qbo_invoice_id', invId)
-                .maybeSingle();
+                .eq('qbo_invoice_id', invId);
 
-              if (doubleCheckInv) {
-                console.log(`[QBO Sync] Prevented duplicate insertion for QBO Invoice ${invId} in real-time.`);
+              if (doubleCheckInvList && doubleCheckInvList.length > 0) {
+                const doubleCheckInv = doubleCheckInvList[0];
+                console.log(`[QBO Sync] Estimate already exists for QBO Invoice ${invId} (ID: ${doubleCheckInv.id}).`);
+                
+                const hasPayment = balance < grandTotal;
+                if (hasPayment) {
+                  const { data: matchedProjList } = await supabase
+                    .from('projects')
+                    .select('*')
+                    .eq('estimate_id', doubleCheckInv.id);
+
+                  if (matchedProjList && matchedProjList.length > 0) {
+                    const matchedProj = matchedProjList[0];
+                    const projUpdates = {
+                      sold_price: grandTotal,
+                      status: balance === 0 ? 'completed' : matchedProj.status
+                    };
+                    await supabase.from('projects').update(projUpdates).eq('id', matchedProj.id);
+                  } else {
+                    const { data: contactObj } = await supabase
+                      .from('contacts')
+                      .select('first_name, last_name, address')
+                      .eq('id', contactId)
+                      .single();
+
+                    const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
+                    const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
+
+                    await supabase.from('projects').insert({
+                      estimate_id: doubleCheckInv.id,
+                      contact_id: contactId,
+                      title: `${clientName} - ${workType}`,
+                      status: balance === 0 ? 'completed' : 'in_progress',
+                      sold_price: grandTotal,
+                      address: projectAddress,
+                      created_at: createdAt,
+                      start_date: createdAt.split('T')[0]
+                    });
+                    invoicesCreated++;
+                  }
+                }
                 continue;
               }
 
