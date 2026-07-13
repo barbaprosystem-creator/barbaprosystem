@@ -6,11 +6,22 @@ import PinLock from '../../components/PinLock';
 
 // Helper component for safe inline editing (saves on blur or enter key)
 function EditableCell({ value, onSave, type = "number", className = "" }) {
-  const [editingValue, setEditingValue] = useState(value);
+  const [editingValue, setEditingValue] = useState(() => {
+    if (type === "number") {
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? "" : String(Number(parsed.toFixed(2)));
+    }
+    return value;
+  });
 
   useEffect(() => {
-    setEditingValue(value);
-  }, [value]);
+    if (type === "number") {
+      const parsed = parseFloat(value);
+      setEditingValue(isNaN(parsed) ? "" : String(Number(parsed.toFixed(2))));
+    } else {
+      setEditingValue(value);
+    }
+  }, [value, type]);
 
   const handleBlur = () => {
     const rawVal = editingValue;
@@ -93,10 +104,10 @@ export default function ProfitTracker() {
       // Process and combine
       const combined = allProjects.map(proj => {
         const projExpenses = proj.project_expenses || [];
-        const material = projExpenses.filter(e => e.type === 'material').reduce((sum, e) => sum + Number(e.amount), 0);
-        const labor = projExpenses.filter(e => e.type === 'labor').reduce((sum, e) => sum + Number(e.amount), 0);
-        const soldPrice = Number(proj.sold_price || 0);
-        const profit = soldPrice - material - labor;
+        const material = Number(projExpenses.filter(e => e.type === 'material').reduce((sum, e) => sum + Number(e.amount), 0).toFixed(2));
+        const labor = Number(projExpenses.filter(e => e.type === 'labor').reduce((sum, e) => sum + Number(e.amount), 0).toFixed(2));
+        const soldPrice = Number(Number(proj.sold_price || 0).toFixed(2));
+        const profit = Number((soldPrice - material - labor).toFixed(2));
 
         return {
           id: proj.id,
@@ -162,17 +173,18 @@ export default function ProfitTracker() {
 
   // 2. Edit Sold Price (Total)
   const updateSoldPrice = async (id, newPrice) => {
+    const roundedPrice = Number(newPrice.toFixed(2));
     setData(prev => prev.map(item => {
       if (item.id === id) {
         return { 
           ...item, 
-          soldPrice: newPrice,
-          profit: newPrice - item.material - item.labor 
+          soldPrice: roundedPrice,
+          profit: Number((roundedPrice - item.material - item.labor).toFixed(2)) 
         };
       }
       return item;
     }));
-    await supabase.from('projects').update({ sold_price: newPrice }).eq('id', id);
+    await supabase.from('projects').update({ sold_price: roundedPrice }).eq('id', id);
   };
 
   // 3. Edit Material Cost (inserts a project_expense adjustment)
@@ -180,15 +192,16 @@ export default function ProfitTracker() {
     const item = data.find(x => x.id === id);
     if (!item) return;
 
-    const diff = newMaterial - item.material;
+    const roundedMaterial = Number(newMaterial.toFixed(2));
+    const diff = Number((roundedMaterial - item.material).toFixed(2));
     if (diff === 0) return;
 
     setData(prev => prev.map(x => {
       if (x.id === id) {
         return {
           ...x,
-          material: newMaterial,
-          profit: x.soldPrice - newMaterial - x.labor
+          material: roundedMaterial,
+          profit: Number((x.soldPrice - roundedMaterial - x.labor).toFixed(2))
         };
       }
       return x;
@@ -211,15 +224,16 @@ export default function ProfitTracker() {
     const item = data.find(x => x.id === id);
     if (!item) return;
 
-    const diff = newLabor - item.labor;
+    const roundedLabor = Number(newLabor.toFixed(2));
+    const diff = Number((roundedLabor - item.labor).toFixed(2));
     if (diff === 0) return;
 
     setData(prev => prev.map(x => {
       if (x.id === id) {
         return {
           ...x,
-          labor: newLabor,
-          profit: x.soldPrice - x.material - newLabor
+          labor: roundedLabor,
+          profit: Number((x.soldPrice - x.material - roundedLabor).toFixed(2))
         };
       }
       return x;
@@ -314,10 +328,10 @@ export default function ProfitTracker() {
     return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Loading financial data...</p></div>;
   }
 
-  const totalSoldPrice = sortedData.reduce((sum, row) => sum + row.soldPrice, 0);
-  const totalMaterial = sortedData.reduce((sum, row) => sum + row.material, 0);
-  const totalLabor = sortedData.reduce((sum, row) => sum + row.labor, 0);
-  const totalProfit = sortedData.reduce((sum, row) => sum + row.profit, 0);
+  const totalSoldPrice = Number(sortedData.reduce((sum, row) => sum + row.soldPrice, 0).toFixed(2));
+  const totalMaterial = Number(sortedData.reduce((sum, row) => sum + row.material, 0).toFixed(2));
+  const totalLabor = Number(sortedData.reduce((sum, row) => sum + row.labor, 0).toFixed(2));
+  const totalProfit = Number(sortedData.reduce((sum, row) => sum + row.profit, 0).toFixed(2));
 
   return (
     <PinLock pin="2012" title="Profit Tracker — Restricted">
