@@ -49,6 +49,7 @@ export default function ProfitTracker() {
   const [loading, setLoading] = useState(true);
   const [projectTypeFilter, setProjectTypeFilter] = useState('standard');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('date-desc');
 
   useEffect(() => {
     fetchData();
@@ -67,11 +68,14 @@ export default function ProfitTracker() {
           .from('projects')
           .select(`
             id, 
+            project_number,
             title, 
             address, 
             sold_price, 
             project_type, 
             status, 
+            created_at,
+            start_date,
             contact:contacts!projects_contact_id_fkey(first_name, last_name), 
             project_expenses(type, amount)
           `)
@@ -96,6 +100,7 @@ export default function ProfitTracker() {
 
         return {
           id: proj.id,
+          projectNumber: proj.project_number ? `PRJ-${String(proj.project_number).padStart(4, '0')}` : 'N/A',
           client: proj.contact ? `${proj.contact.first_name} ${proj.contact.last_name}` : 'No Client',
           address: proj.address || 'No Address',
           service: proj.title || 'Project',
@@ -104,7 +109,9 @@ export default function ProfitTracker() {
           labor,
           profit,
           projectType: proj.project_type || 'standard',
-          status: proj.status || 'pending'
+          status: proj.status || 'pending',
+          createdAt: proj.created_at,
+          startDate: proj.start_date
         };
       });
 
@@ -122,18 +129,19 @@ export default function ProfitTracker() {
   };
 
   const handleExportCSV = () => {
-    let csvContent = "sep=,\nCLIENT,ADDRESS,SERVICE,SOLD PRICE,MATERIAL,LABOR,PROFIT\n";
+    let csvContent = "sep=,\nPROJECT #,CLIENT,ADDRESS,SERVICE,SOLD PRICE,MATERIAL,LABOR,PROFIT\n";
     
-    filteredData.forEach(row => {
+    sortedData.forEach(row => {
+      const projNum = `"${row.projectNumber}"`;
       const client = `"${(row.client || '').replace(/"/g, '""')}"`;
       const address = `"${(row.address || '').replace(/"/g, '""')}"`;
       const service = `"${(row.service || '').replace(/"/g, '""')}"`;
       
-      const line = `${client},${address},${service},${row.soldPrice},${row.material},${row.labor},${row.profit}`;
+      const line = `${projNum},${client},${address},${service},${row.soldPrice},${row.material},${row.labor},${row.profit}`;
       csvContent += line + "\n";
     });
 
-    csvContent += `"TOTAL","","",${totalSoldPrice},${totalMaterial},${totalLabor},${totalProfit}\n`;
+    csvContent += `"TOTAL","","","",${totalSoldPrice},${totalMaterial},${totalLabor},${totalProfit}\n`;
 
     const bomBytes = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bomBytes, csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -265,14 +273,51 @@ export default function ProfitTracker() {
     return matchesType && matchesStatus;
   });
 
+  // Sort filtered data dynamically
+  const sortedData = [...filteredData].sort((a, b) => {
+    if (sortBy === 'date-desc') {
+      const dateA = a.startDate || a.createdAt || 0;
+      const dateB = b.startDate || b.createdAt || 0;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    }
+    if (sortBy === 'date-asc') {
+      const dateA = a.startDate || a.createdAt || 0;
+      const dateB = b.startDate || b.createdAt || 0;
+      return new Date(dateA).getTime() - new Date(dateB).getTime();
+    }
+    if (sortBy === 'price-desc') {
+      return b.soldPrice - a.soldPrice;
+    }
+    if (sortBy === 'price-asc') {
+      return a.soldPrice - b.soldPrice;
+    }
+    if (sortBy === 'number-desc') {
+      const numA = parseInt(a.projectNumber.replace('PRJ-', '')) || 0;
+      const numB = parseInt(b.projectNumber.replace('PRJ-', '')) || 0;
+      return numB - numA;
+    }
+    if (sortBy === 'number-asc') {
+      const numA = parseInt(a.projectNumber.replace('PRJ-', '')) || 0;
+      const numB = parseInt(b.projectNumber.replace('PRJ-', '')) || 0;
+      return numA - numB;
+    }
+    if (sortBy === 'client-asc') {
+      return a.client.localeCompare(b.client);
+    }
+    if (sortBy === 'client-desc') {
+      return b.client.localeCompare(a.client);
+    }
+    return 0;
+  });
+
   if (loading) {
     return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Loading financial data...</p></div>;
   }
 
-  const totalSoldPrice = filteredData.reduce((sum, row) => sum + row.soldPrice, 0);
-  const totalMaterial = filteredData.reduce((sum, row) => sum + row.material, 0);
-  const totalLabor = filteredData.reduce((sum, row) => sum + row.labor, 0);
-  const totalProfit = filteredData.reduce((sum, row) => sum + row.profit, 0);
+  const totalSoldPrice = sortedData.reduce((sum, row) => sum + row.soldPrice, 0);
+  const totalMaterial = sortedData.reduce((sum, row) => sum + row.material, 0);
+  const totalLabor = sortedData.reduce((sum, row) => sum + row.labor, 0);
+  const totalProfit = sortedData.reduce((sum, row) => sum + row.profit, 0);
 
   return (
     <PinLock pin="2012" title="Profit Tracker — Restricted">
@@ -324,21 +369,43 @@ export default function ProfitTracker() {
           </button>
         </div>
 
-        {/* Status Dropdown */}
-        <div className="flex items-center gap-2">
-          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status:</label>
-          <select 
-            value={statusFilter} 
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-[#161616] border border-[#2d2d2d] text-white rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-blue-500 transition-colors"
-          >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="in_progress">In Progress</option>
-            <option value="completed">Completed</option>
-            <option value="on_hold">On Hold</option>
-          </select>
+        {/* Toolbar Middle/Right: Status & Sort */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Status Dropdown */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status:</label>
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="bg-[#161616] border border-[#2d2d2d] text-white rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On Hold</option>
+            </select>
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Sort:</label>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-[#161616] border border-[#2d2d2d] text-white rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-blue-500 transition-colors"
+            >
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="price-desc">Sold Price (High-Low)</option>
+              <option value="price-asc">Sold Price (Low-High)</option>
+              <option value="number-desc">Project # (High-Low)</option>
+              <option value="number-asc">Project # (Low-High)</option>
+              <option value="client-asc">Client Name (A-Z)</option>
+              <option value="client-desc">Client Name (Z-A)</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -358,6 +425,7 @@ export default function ProfitTracker() {
           <table className="w-full text-left text-sm print:border-collapse print:border-2 print:border-black">
             <thead className="bg-[#1a1a1a] text-gray-400 uppercase text-xs print:bg-[#FACB00] print:text-black print:font-black">
               <tr>
+                <th className="px-4 py-3 print:border-2 print:border-black">Project #</th>
                 <th className="px-4 py-3 print:border-2 print:border-black">Client</th>
                 <th className="px-4 py-3 print:border-2 print:border-black">Address</th>
                 <th className="px-4 py-3 print:border-2 print:border-black">Service</th>
@@ -369,8 +437,9 @@ export default function ProfitTracker() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#222] print:divide-none">
-              {filteredData.map((row) => (
+              {sortedData.map((row) => (
                 <tr key={row.id} className="hover:bg-[#1a1a1a] transition-colors print:hover:bg-transparent print:bg-white">
+                  <td className="px-4 py-3 font-semibold text-gray-400 print:text-black print:border-2 print:border-black">{row.projectNumber}</td>
                   <td className="px-4 py-3 font-medium text-white print:text-black print:border-2 print:border-black">{row.client}</td>
                   <td className="px-4 py-3 text-gray-300 print:text-black print:border-2 print:border-black">{row.address}</td>
                   
@@ -443,16 +512,16 @@ export default function ProfitTracker() {
                   </td>
                 </tr>
               ))}
-              {filteredData.length === 0 && (
+              {sortedData.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="px-4 py-8 text-center text-gray-500 font-medium print:border-2 print:border-black">
+                  <td colSpan="9" className="px-4 py-8 text-center text-gray-500 font-medium print:border-2 print:border-black">
                     No projects found for current filters.
                   </td>
                 </tr>
               )}
               {/* TOTALS ROW */}
               <tr className="bg-[#1a1a1a] text-white font-bold uppercase tracking-wider print:bg-[#ffe785] print:text-black print:font-black">
-                <td className="px-4 py-4 print:border-2 print:border-black" colSpan="3">TOTAL</td>
+                <td className="px-4 py-4 print:border-2 print:border-black" colSpan="4">TOTAL</td>
                 <td className="px-4 py-4 text-right print:border-2 print:border-black">{formatCurrency(totalSoldPrice)}</td>
                 <td className="px-4 py-4 text-right print:border-2 print:border-black">{formatCurrency(totalMaterial)}</td>
                 <td className="px-4 py-4 text-right print:border-2 print:border-black">{formatCurrency(totalLabor)}</td>
