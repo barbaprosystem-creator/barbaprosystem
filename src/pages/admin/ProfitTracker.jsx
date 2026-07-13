@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Printer, Download, Trash2 } from 'lucide-react';
+import { Loader2, Printer, Download, Trash2, Briefcase, Home } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import PinLock from '../../components/PinLock';
 
@@ -47,6 +47,8 @@ function EditableCell({ value, onSave, type = "number", className = "" }) {
 export default function ProfitTracker() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [projectTypeFilter, setProjectTypeFilter] = useState('standard');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     fetchData();
@@ -55,28 +57,38 @@ export default function ProfitTracker() {
   async function fetchData() {
     setLoading(true);
     try {
-      // 1. Fetch projects with contacts
-      const { data: projectsData, error: projError } = await supabase
-        .from('projects')
-        .select('id, title, address, sold_price, contact:contacts(first_name, last_name)')
-        .order('created_at', { ascending: false });
+      let allProjects = [];
+      let page = 0;
+      const pageSize = 1000;
 
-      if (projError) throw projError;
+      // Paginated loop to fetch ALL projects (resolves 100-row limit in Supabase)
+      while (true) {
+        const { data: pageData, error: projError } = await supabase
+          .from('projects')
+          .select(`
+            id, 
+            title, 
+            address, 
+            sold_price, 
+            project_type, 
+            status, 
+            contact:contacts!projects_contact_id_fkey(first_name, last_name), 
+            project_expenses(type, amount)
+          `)
+          .order('created_at', { ascending: false })
+          .range(page * pageSize, (page + 1) * pageSize - 1);
 
-      // 2. Fetch all expenses
-      const { data: expensesData, error: expError } = await supabase
-        .from('project_expenses')
-        .select('project_id, type, amount');
-        
-      if (expError) {
-         console.warn("Could not load project_expenses or the table does not exist.");
+        if (projError) throw projError;
+        if (!pageData || pageData.length === 0) break;
+
+        allProjects = allProjects.concat(pageData);
+        if (pageData.length < pageSize) break;
+        page++;
       }
 
-      const expenses = expensesData || [];
-
-      // 3. Process and combine
-      const combined = (projectsData || []).map(proj => {
-        const projExpenses = expenses.filter(e => e.project_id === proj.id);
+      // Process and combine
+      const combined = allProjects.map(proj => {
+        const projExpenses = proj.project_expenses || [];
         const material = projExpenses.filter(e => e.type === 'material').reduce((sum, e) => sum + Number(e.amount), 0);
         const labor = projExpenses.filter(e => e.type === 'labor').reduce((sum, e) => sum + Number(e.amount), 0);
         const soldPrice = Number(proj.sold_price || 0);
@@ -90,7 +102,9 @@ export default function ProfitTracker() {
           soldPrice,
           material,
           labor,
-          profit
+          profit,
+          projectType: proj.project_type || 'standard',
+          status: proj.status || 'pending'
         };
       });
 
@@ -110,7 +124,7 @@ export default function ProfitTracker() {
   const handleExportCSV = () => {
     let csvContent = "sep=,\nCLIENT,ADDRESS,SERVICE,SOLD PRICE,MATERIAL,LABOR,PROFIT\n";
     
-    data.forEach(row => {
+    filteredData.forEach(row => {
       const client = `"${(row.client || '').replace(/"/g, '""')}"`;
       const address = `"${(row.address || '').replace(/"/g, '""')}"`;
       const service = `"${(row.service || '').replace(/"/g, '""')}"`;
@@ -126,7 +140,7 @@ export default function ProfitTracker() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", "Barba_Construction_Profit_Tracker.csv");
+    link.setAttribute("download", `Barba_Construction_Profit_Tracker_${projectTypeFilter}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -244,30 +258,87 @@ export default function ProfitTracker() {
     }
   };
 
+  // Filter combined data based on active UI selections
+  const filteredData = data.filter(row => {
+    const matchesType = row.projectType === projectTypeFilter;
+    const matchesStatus = statusFilter === 'all' || row.status === statusFilter;
+    return matchesType && matchesStatus;
+  });
+
   if (loading) {
     return <div className="page-loading"><Loader2 size={32} className="spin" /><p>Loading financial data...</p></div>;
   }
 
-  const totalSoldPrice = data.reduce((sum, row) => sum + row.soldPrice, 0);
-  const totalMaterial = data.reduce((sum, row) => sum + row.material, 0);
-  const totalLabor = data.reduce((sum, row) => sum + row.labor, 0);
-  const totalProfit = data.reduce((sum, row) => sum + row.profit, 0);
+  const totalSoldPrice = filteredData.reduce((sum, row) => sum + row.soldPrice, 0);
+  const totalMaterial = filteredData.reduce((sum, row) => sum + row.material, 0);
+  const totalLabor = filteredData.reduce((sum, row) => sum + row.labor, 0);
+  const totalProfit = filteredData.reduce((sum, row) => sum + row.profit, 0);
 
   return (
     <PinLock pin="2012" title="Profit Tracker — Restricted">
     <div className="p-6 max-w-7xl mx-auto min-h-screen">
-      <div className="flex justify-between items-center mb-8 print:hidden">
+      
+      {/* Title & Toolbar */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8 print:hidden">
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Project Profit Tracker</h1>
           <p className="text-gray-400 mt-1">Financial summary of costs and profits per project.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#333] rounded-lg transition-colors cursor-pointer">
-            <Download size={18} /> Export CSV
+          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#333] rounded-lg transition-colors cursor-pointer text-sm font-medium">
+            <Download size={17} /> Export CSV
           </button>
-          <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold rounded-lg transition-colors cursor-pointer">
-            <Printer size={18} /> Print / PDF
+          <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold rounded-lg transition-colors cursor-pointer text-sm font-semibold">
+            <Printer size={17} /> Print / PDF
           </button>
+        </div>
+      </div>
+
+      {/* Filter Options */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 print:hidden">
+        {/* Project Type Toggle (Standard / Fix & Flip) */}
+        <div className="flex bg-[#161616] border border-[#2d2d2d] p-1 rounded-xl select-none">
+          <button
+            type="button"
+            onClick={() => setProjectTypeFilter('standard')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-250 cursor-pointer ${
+              projectTypeFilter === 'standard'
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Briefcase size={14} />
+            <span>Standard</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setProjectTypeFilter('fix_flip')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-250 cursor-pointer ${
+              projectTypeFilter === 'fix_flip'
+                ? 'bg-amber-600 text-white shadow-lg'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Home size={14} />
+            <span>Fix & Flip</span>
+          </button>
+        </div>
+
+        {/* Status Dropdown */}
+        <div className="flex items-center gap-2">
+          <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Status:</label>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-[#161616] border border-[#2d2d2d] text-white rounded-lg px-3 py-1.5 text-xs font-semibold focus:outline-none focus:border-blue-500 transition-colors"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">Pending</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="on_hold">On Hold</option>
+          </select>
         </div>
       </div>
 
@@ -277,7 +348,9 @@ export default function ProfitTracker() {
         {/* Print Only Header */}
         <div className="hidden print:block text-center p-8 pb-4">
           <h1 className="text-3xl font-black uppercase tracking-wider text-black">Barba Construction</h1>
-          <h2 className="text-xl font-bold uppercase tracking-wide mt-1 text-gray-800">Project Profit Tracker</h2>
+          <h2 className="text-xl font-bold uppercase tracking-wide mt-1 text-gray-800">
+            Project Profit Tracker — {projectTypeFilter === 'fix_flip' ? 'Fix & Flip' : 'Standard'}
+          </h2>
           <div className="w-24 h-1 bg-black mx-auto mt-4"></div>
         </div>
 
@@ -296,7 +369,7 @@ export default function ProfitTracker() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#222] print:divide-none">
-              {data.map((row) => (
+              {filteredData.map((row) => (
                 <tr key={row.id} className="hover:bg-[#1a1a1a] transition-colors print:hover:bg-transparent print:bg-white">
                   <td className="px-4 py-3 font-medium text-white print:text-black print:border-2 print:border-black">{row.client}</td>
                   <td className="px-4 py-3 text-gray-300 print:text-black print:border-2 print:border-black">{row.address}</td>
@@ -370,10 +443,10 @@ export default function ProfitTracker() {
                   </td>
                 </tr>
               ))}
-              {data.length === 0 && (
+              {filteredData.length === 0 && (
                 <tr>
                   <td colSpan="8" className="px-4 py-8 text-center text-gray-500 font-medium print:border-2 print:border-black">
-                    No projects registered yet.
+                    No projects found for current filters.
                   </td>
                 </tr>
               )}
