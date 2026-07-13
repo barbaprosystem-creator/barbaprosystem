@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { Resend } from 'resend';
 
 // QuickBooks Online CRM Integration Endpoints & Webhooks - Sync Build 1.0.4
 
@@ -107,6 +108,200 @@ function mapQboEstimateStatus(qboStatus) {
   if (s === 'rejected') return 'rejected';
   if (s === 'sent') return 'sent';
   return 'draft';
+}
+
+// Automated Email Helper using Resend
+async function sendAutoEmailForInvoice(supabase, estimateId, contact, qboInvoiceId, qboInvoiceNumber, accessToken, qboBaseUrl, realmId) {
+  try {
+    const apiKey = process.env.RESEND_API_KEY || process.env.VITE_RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('[QBO Auto-Email] RESEND_API_KEY not configured.');
+      return;
+    }
+    const resend = new Resend(apiKey);
+
+    // 1. Fetch PDF from QuickBooks Online
+    console.log(`[QBO Auto-Email] Fetching PDF for QBO Invoice ${qboInvoiceId}...`);
+    const pdfUrl = `${qboBaseUrl}/v3/company/${realmId}/invoice/${qboInvoiceId}/pdf?minorversion=65`;
+    const pdfRes = await fetch(pdfUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/pdf'
+      }
+    });
+
+    if (!pdfRes.ok) {
+      throw new Error(`Failed to fetch QBO PDF: ${pdfRes.statusText}`);
+    }
+
+    const arrayBuffer = await pdfRes.arrayBuffer();
+    const pdfBuffer = Buffer.from(arrayBuffer);
+    const pdfBase64 = pdfBuffer.toString('base64');
+
+    // 2. Prepare email body
+    const signingLink = `https://barbaprosystem.com/p/${estimateId}`;
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
+        <div style="background-color: #111111; padding: 30px 20px; text-align: center; border-bottom: 5px solid #F5C518;">
+          <img src="https://barbaprosystem.com/logo-barba.png" alt="Barba Construction" style="max-height: 60px; margin-bottom: 10px;" />
+          <p style="color: #888888; font-size: 12px; margin-top: 0;">Excellence in Roofing, Siding & Gutters</p>
+        </div>
+        
+        <div style="padding: 40px 30px;">
+          <h2 style="color: #111111; margin-top: 0; font-size: 20px;">Hello ${contact.first_name || 'Client'},</h2>
+          <p style="color: #444444; line-height: 1.6; font-size: 15px;">Please find attached the official invoice <strong>#${qboInvoiceNumber}</strong> from QuickBooks Online for your project proposal.</p>
+          
+          <p style="color: #444444; line-height: 1.6; font-size: 15px; margin-top: 25px;">To view the full contract, add your signature, and approve this proposal, please click the button below:</p>
+
+          <div style="text-align: center; margin: 40px 0;">
+            <a href="${signingLink}" style="background-color: #F5C518; color: #000000; padding: 16px 32px; text-decoration: none; font-weight: bold; border-radius: 8px; display: inline-block; font-size: 16px; box-shadow: 0 4px 6px rgba(245, 197, 24, 0.2);">
+              View Proposal, Sign and Authorize
+            </a>
+            <p style="font-size: 12px; color: #888888; margin-top: 15px;">* The official QuickBooks invoice PDF is attached directly to this email.</p>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid #eeeeee; margin: 30px 0;" />
+          
+          <p style="color: #444444; line-height: 1.6; font-size: 14px;">We are at your disposal for any questions or clarifications regarding this invoice.</p>
+          <p style="color: #111111; line-height: 1.6; font-size: 14px; margin-top: 20px;">
+            Sincerely,<br/>
+            <strong>Sales Team</strong><br/>
+            <span style="color: #666666;">Barba Construction</span>
+          </p>
+        </div>
+        <div style="background-color: #f5f5f5; padding: 15px; text-align: center; color: #888888; font-size: 12px;">
+          © ${new Date().getFullYear()} Barba Construction. All rights reserved.
+        </div>
+      </div>
+    `;
+
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Barba Construction <info@barbaprosystem.com>',
+      to: [contact.email],
+      subject: `Official Proposal Invoice #${qboInvoiceNumber} - Barba Construction`,
+      html: emailHtml,
+      reply_to: 'info@barbaprosystem.com',
+      attachments: [
+        {
+          filename: `Invoice-${qboInvoiceNumber}.pdf`,
+          content: pdfBase64
+        }
+      ]
+    });
+
+    if (emailError) {
+      throw new Error(emailError.message);
+    }
+
+    console.log(`[QBO Auto-Email] Email successfully sent for Invoice #${qboInvoiceNumber} to ${contact.email}.`);
+
+    // Update status locally to 'sent'
+    await supabase
+      .from('estimates')
+      .update({ status: 'sent', updated_at: new Date().toISOString() })
+      .eq('id', estimateId);
+
+  } catch (err) {
+    console.error('[QBO Auto-Email] Error sending automated email:', err);
+  }
+}
+
+// Automated SMS Helper using Twilio
+async function sendAutoSmsForPayment(supabase, contact, amount, projectTitle) {
+  try {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER || '+14155238886';
+
+    if (!accountSid || !authToken) {
+      console.warn('[QBO Auto-SMS] Twilio credentials missing.');
+      return;
+    }
+
+    if (!contact.phone) {
+      console.warn(`[QBO Auto-SMS] Contact ${contact.id} has no registered phone number.`);
+      return;
+    }
+
+    const cleanedPhone = contact.phone.trim();
+    const smsBody = `Barba Construction: Hemos recibido su pago de $${amount} para el proyecto "${projectTitle}". Su estado ahora es "En Progreso". Nos comunicaremos pronto para coordinar la fecha de inicio. ¡Gracias por su confianza!`;
+
+    console.log(`[QBO Auto-SMS] Sending SMS to ${cleanedPhone}...`);
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+    
+    const params = new URLSearchParams();
+    params.append('To', cleanedPhone);
+    params.append('From', fromNumber);
+    params.append('Body', smsBody);
+
+    const response = await fetch(twilioUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+      },
+      body: params.toString()
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[QBO Auto-SMS] Twilio API error:', data);
+      return;
+    }
+
+    console.log(`[QBO Auto-SMS] SMS sent successfully. Message SID: ${data.sid}`);
+
+    // Insert into db (conversaciones and mensajes) to keep sync with inbox
+    // 1. Search or create SMS conversation
+    let { data: conversacion, error: convError } = await supabase
+      .from('conversaciones')
+      .select('id')
+      .eq('cliente_id', contact.id)
+      .eq('canal', 'sms')
+      .eq('estado', 'activa')
+      .maybeSingle();
+
+    if (!conversacion) {
+      const { data: nuevaConv, error: nuevaConvError } = await supabase
+        .from('conversaciones')
+        .insert([{
+          cliente_id: contact.id,
+          canal: 'sms',
+          estado: 'activa'
+        }])
+        .select()
+        .single();
+      
+      if (!nuevaConvError && nuevaConv) {
+        conversacion = nuevaConv;
+      }
+    } else {
+      await supabase
+        .from('conversaciones')
+        .update({ ultima_interaccion: new Date().toISOString() })
+        .eq('id', conversacion.id);
+    }
+
+    if (conversacion) {
+      const { error: msgError } = await supabase
+        .from('mensajes')
+        .insert([{
+          conversacion_id: conversacion.id,
+          direccion: 'outbound',
+          contenido: smsBody,
+          twilio_message_sid: data.sid,
+          estado_entrega: 'enviado'
+        }]);
+
+      if (msgError) {
+        console.error('[QBO Auto-SMS] Error saving message to database:', msgError);
+      }
+    }
+
+  } catch (err) {
+    console.error('[QBO Auto-SMS] Error sending automated SMS:', err);
+  }
 }
 
 // Core helper to sync an estimate to QBO
@@ -998,14 +1193,14 @@ export default async function handler(req, res) {
                   } else {
                     const { data: contactObj } = await supabase
                       .from('contacts')
-                      .select('first_name, last_name, address')
+                      .select('*')
                       .eq('id', contactId)
                       .single();
 
                     const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
                     const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
 
-                    await supabase.from('projects').insert({
+                    const { error: projErr } = await supabase.from('projects').insert({
                       estimate_id: doubleCheckInv.id,
                       contact_id: contactId,
                       title: `${clientName} - ${workType}`,
@@ -1015,7 +1210,16 @@ export default async function handler(req, res) {
                       created_at: createdAt,
                       start_date: createdAt.split('T')[0]
                     });
-                    invoicesCreated++;
+
+                    if (!projErr) {
+                      invoicesCreated++;
+                      // Trigger automated SMS for payment received
+                      if (contactObj) {
+                        const paymentAmount = grandTotal - balance;
+                        const projectTitle = `${clientName} - ${workType}`;
+                        sendAutoSmsForPayment(supabase, contactObj, paymentAmount.toFixed(2), projectTitle);
+                      }
+                    }
                   }
                 }
                 continue;
@@ -1059,9 +1263,14 @@ export default async function handler(req, res) {
                 
                 const { data: contactObj } = await supabase
                   .from('contacts')
-                  .select('first_name, last_name, address')
+                  .select('*')
                   .eq('id', contactId)
                   .single();
+                
+                // Trigger automated email with invoice PDF from QBO
+                if (contactObj && contactObj.email) {
+                  sendAutoEmailForInvoice(supabase, newEst.id, contactObj, invId, docNum, accessToken, qboBaseUrl, realmId);
+                }
                 
                 const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
                 const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
@@ -1085,6 +1294,12 @@ export default async function handler(req, res) {
                     console.error(`Error inserting project for QBO Invoice ${invId}:`, projErr);
                   } else {
                     invoicesCreated++;
+                    // Trigger automated SMS for payment received
+                    if (contactObj) {
+                      const paymentAmount = grandTotal - balance;
+                      const projectTitle = `${clientName} - ${workType}`;
+                      sendAutoSmsForPayment(supabase, contactObj, paymentAmount.toFixed(2), projectTitle);
+                    }
                   }
                 }
 

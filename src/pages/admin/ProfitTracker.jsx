@@ -1,8 +1,48 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Loader2, Printer, Download } from 'lucide-react';
+import { Loader2, Printer, Download, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../../lib/utils';
 import PinLock from '../../components/PinLock';
+
+// Helper component for safe inline editing (saves on blur or enter key)
+function EditableCell({ value, onSave, type = "number", className = "" }) {
+  const [editingValue, setEditingValue] = useState(value);
+
+  useEffect(() => {
+    setEditingValue(value);
+  }, [value]);
+
+  const handleBlur = () => {
+    const rawVal = editingValue;
+    if (type === "number") {
+      const numVal = Number(rawVal);
+      if (numVal !== Number(value)) {
+        onSave(numVal);
+      }
+    } else {
+      if (rawVal !== value) {
+        onSave(rawVal);
+      }
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.target.blur();
+    }
+  };
+
+  return (
+    <input
+      type={type}
+      className={`w-full h-full px-4 py-3 bg-transparent border-none outline-none transition-colors focus:bg-[#222] focus:text-white ${className}`}
+      value={editingValue}
+      onChange={(e) => setEditingValue(e.target.value)}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+    />
+  );
+}
 
 export default function ProfitTracker() {
   const [data, setData] = useState([]);
@@ -68,11 +108,9 @@ export default function ProfitTracker() {
   };
 
   const handleExportCSV = () => {
-    // Force Excel to understand that the separator is a comma
     let csvContent = "sep=,\nCLIENT,ADDRESS,SERVICE,SOLD PRICE,MATERIAL,LABOR,PROFIT\n";
     
     data.forEach(row => {
-      // Clean and escape quotes just in case
       const client = `"${(row.client || '').replace(/"/g, '""')}"`;
       const address = `"${(row.address || '').replace(/"/g, '""')}"`;
       const service = `"${(row.service || '').replace(/"/g, '""')}"`;
@@ -81,10 +119,8 @@ export default function ProfitTracker() {
       csvContent += line + "\n";
     });
 
-    // Totals line
     csvContent += `"TOTAL","","",${totalSoldPrice},${totalMaterial},${totalLabor},${totalProfit}\n`;
 
-    // Pass the exact BOM bytes for UTF-8 and then the string
     const bomBytes = new Uint8Array([0xEF, 0xBB, 0xBF]);
     const blob = new Blob([bomBytes, csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -96,11 +132,116 @@ export default function ProfitTracker() {
     document.body.removeChild(link);
   };
 
+  // 1. Edit Service
   const updateServiceTitle = async (id, newTitle) => {
-    // Optimistic update
     setData(prev => prev.map(item => item.id === id ? { ...item, service: newTitle } : item));
-    // DB update (we use project title as service type for now)
     await supabase.from('projects').update({ title: newTitle }).eq('id', id);
+  };
+
+  // 2. Edit Sold Price (Total)
+  const updateSoldPrice = async (id, newPrice) => {
+    setData(prev => prev.map(item => {
+      if (item.id === id) {
+        return { 
+          ...item, 
+          soldPrice: newPrice,
+          profit: newPrice - item.material - item.labor 
+        };
+      }
+      return item;
+    }));
+    await supabase.from('projects').update({ sold_price: newPrice }).eq('id', id);
+  };
+
+  // 3. Edit Material Cost (inserts a project_expense adjustment)
+  const updateMaterialCost = async (id, newMaterial) => {
+    const item = data.find(x => x.id === id);
+    if (!item) return;
+
+    const diff = newMaterial - item.material;
+    if (diff === 0) return;
+
+    setData(prev => prev.map(x => {
+      if (x.id === id) {
+        return {
+          ...x,
+          material: newMaterial,
+          profit: x.soldPrice - newMaterial - x.labor
+        };
+      }
+      return x;
+    }));
+
+    const adjustmentExpense = {
+      project_id: id,
+      type: 'material',
+      amount: diff,
+      vendor: 'Ajuste Profit Tracker',
+      date: new Date().toISOString().split('T')[0],
+      description: 'Ajuste de costo de materiales desde Profit Tracker'
+    };
+
+    await supabase.from('project_expenses').insert(adjustmentExpense);
+  };
+
+  // 4. Edit Labor Cost (inserts a project_expense adjustment)
+  const updateLaborCost = async (id, newLabor) => {
+    const item = data.find(x => x.id === id);
+    if (!item) return;
+
+    const diff = newLabor - item.labor;
+    if (diff === 0) return;
+
+    setData(prev => prev.map(x => {
+      if (x.id === id) {
+        return {
+          ...x,
+          labor: newLabor,
+          profit: x.soldPrice - x.material - newLabor
+        };
+      }
+      return x;
+    }));
+
+    const adjustmentExpense = {
+      project_id: id,
+      type: 'labor',
+      amount: diff,
+      vendor: 'Ajuste Profit Tracker',
+      date: new Date().toISOString().split('T')[0],
+      description: 'Ajuste de costo de labor desde Profit Tracker'
+    };
+
+    await supabase.from('project_expenses').insert(adjustmentExpense);
+  };
+
+  // 5. Delete Project and all cascade children
+  const deleteProject = async (projectId) => {
+    if (!window.confirm("¿Está seguro de que desea eliminar este proyecto y todos sus registros asociados (pagos, gastos, materiales, fotos)? Esta acción no se puede deshacer y limpiará todo en cascada.")) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Clean cascade children
+      await supabase.from('payments').delete().eq('project_id', projectId);
+      await supabase.from('project_photos').delete().eq('project_id', projectId);
+      await supabase.from('project_documents').delete().eq('project_id', projectId);
+      await supabase.from('project_materials').delete().eq('project_id', projectId);
+      await supabase.from('project_expenses').delete().eq('project_id', projectId);
+
+      // Delete parent project
+      const { error } = await supabase.from('projects').delete().eq('id', projectId);
+      if (error) throw error;
+
+      setData(prev => prev.filter(item => item.id !== projectId));
+      alert("Proyecto eliminado con éxito.");
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el proyecto: " + err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
@@ -121,10 +262,10 @@ export default function ProfitTracker() {
           <p className="text-gray-400 mt-1">Financial summary of costs and profits per project.</p>
         </div>
         <div className="flex gap-3">
-          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#333] rounded-lg transition-colors">
+          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-white border border-[#333] rounded-lg transition-colors cursor-pointer">
             <Download size={18} /> Export CSV
           </button>
-          <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold rounded-lg transition-colors">
+          <button onClick={handlePrint} className="flex items-center gap-2 px-4 py-2 bg-[#FACB00] hover:bg-[#e0b600] text-black font-bold rounded-lg transition-colors cursor-pointer">
             <Printer size={18} /> Print / PDF
           </button>
         </div>
@@ -151,31 +292,87 @@ export default function ProfitTracker() {
                 <th className="px-4 py-3 text-right print:border-2 print:border-black">Material</th>
                 <th className="px-4 py-3 text-right print:border-2 print:border-black">Labor</th>
                 <th className="px-4 py-3 text-right text-[#FACB00] print:border-2 print:border-black print:text-black">Profit</th>
+                <th className="px-4 py-3 text-center print:hidden">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#222] print:divide-none">
-              {data.map((row, index) => (
+              {data.map((row) => (
                 <tr key={row.id} className="hover:bg-[#1a1a1a] transition-colors print:hover:bg-transparent print:bg-white">
                   <td className="px-4 py-3 font-medium text-white print:text-black print:border-2 print:border-black">{row.client}</td>
                   <td className="px-4 py-3 text-gray-300 print:text-black print:border-2 print:border-black">{row.address}</td>
+                  
+                  {/* Service Cell */}
                   <td className="px-0 py-0 print:border-2 print:border-black print:px-4 print:py-3 print:text-black">
-                    <input 
-                      className="w-full h-full px-4 py-3 bg-transparent border-none outline-none text-gray-300 hover:bg-[#222] focus:bg-[#222] focus:text-white transition-colors print:hidden" 
-                      value={row.service}
-                      onChange={(e) => updateServiceTitle(row.id, e.target.value)}
-                      title="Edit service (will auto-save)"
-                    />
+                    <div className="print:hidden h-full w-full">
+                      <EditableCell 
+                        type="text"
+                        value={row.service}
+                        onSave={(val) => updateServiceTitle(row.id, val)}
+                        className="text-left text-gray-300 hover:bg-[#222]"
+                      />
+                    </div>
                     <span className="hidden print:inline">{row.service}</span>
                   </td>
-                  <td className="px-4 py-3 text-right text-gray-300 print:text-black print:border-2 print:border-black">{formatCurrency(row.soldPrice)}</td>
-                  <td className="px-4 py-3 text-right text-gray-300 print:text-black print:border-2 print:border-black">{formatCurrency(row.material)}</td>
-                  <td className="px-4 py-3 text-right text-gray-300 print:text-black print:border-2 print:border-black">{formatCurrency(row.labor)}</td>
-                  <td className="px-4 py-3 text-right font-bold text-emerald-400 print:text-green-700 print:border-2 print:border-black">{formatCurrency(row.profit)}</td>
+
+                  {/* Sold Price Cell */}
+                  <td className="px-0 py-0 print:border-2 print:border-black print:px-4 print:py-3 print:text-black">
+                    <div className="print:hidden h-full w-full">
+                      <EditableCell 
+                        type="number"
+                        value={row.soldPrice}
+                        onSave={(val) => updateSoldPrice(row.id, val)}
+                        className="text-right text-gray-300 hover:bg-[#222]"
+                      />
+                    </div>
+                    <span className="hidden print:inline">{formatCurrency(row.soldPrice)}</span>
+                  </td>
+
+                  {/* Material Cell */}
+                  <td className="px-0 py-0 print:border-2 print:border-black print:px-4 print:py-3 print:text-black">
+                    <div className="print:hidden h-full w-full">
+                      <EditableCell 
+                        type="number"
+                        value={row.material}
+                        onSave={(val) => updateMaterialCost(row.id, val)}
+                        className="text-right text-gray-300 hover:bg-[#222]"
+                      />
+                    </div>
+                    <span className="hidden print:inline">{formatCurrency(row.material)}</span>
+                  </td>
+
+                  {/* Labor Cell */}
+                  <td className="px-0 py-0 print:border-2 print:border-black print:px-4 print:py-3 print:text-black">
+                    <div className="print:hidden h-full w-full">
+                      <EditableCell 
+                        type="number"
+                        value={row.labor}
+                        onSave={(val) => updateLaborCost(row.id, val)}
+                        className="text-right text-gray-300 hover:bg-[#222]"
+                      />
+                    </div>
+                    <span className="hidden print:inline">{formatCurrency(row.labor)}</span>
+                  </td>
+
+                  {/* Profit Cell */}
+                  <td className={`px-4 py-3 text-right font-bold print:border-2 print:border-black ${row.profit >= 0 ? 'text-emerald-400 print:text-green-700' : 'text-red-500 print:text-red-700'}`}>
+                    {formatCurrency(row.profit)}
+                  </td>
+
+                  {/* Actions Cell */}
+                  <td className="px-4 py-3 text-center print:hidden">
+                    <button 
+                      onClick={() => deleteProject(row.id)} 
+                      className="text-red-500 hover:text-red-700 p-1.5 rounded hover:bg-red-500/10 transition-colors cursor-pointer inline-flex items-center justify-center"
+                      title="Eliminar proyecto"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))}
               {data.length === 0 && (
                 <tr>
-                  <td colSpan="7" className="px-4 py-8 text-center text-gray-500 font-medium print:border-2 print:border-black">
+                  <td colSpan="8" className="px-4 py-8 text-center text-gray-500 font-medium print:border-2 print:border-black">
                     No projects registered yet.
                   </td>
                 </tr>
@@ -187,6 +384,7 @@ export default function ProfitTracker() {
                 <td className="px-4 py-4 text-right print:border-2 print:border-black">{formatCurrency(totalMaterial)}</td>
                 <td className="px-4 py-4 text-right print:border-2 print:border-black">{formatCurrency(totalLabor)}</td>
                 <td className="px-4 py-4 text-right text-[#FACB00] text-lg print:border-2 print:border-black print:text-black">{formatCurrency(totalProfit)}</td>
+                <td className="print:hidden"></td>
               </tr>
             </tbody>
           </table>
@@ -195,7 +393,7 @@ export default function ProfitTracker() {
         <div className="p-6 bg-[#161616] border-t border-[#222] print:bg-white print:border-none print:mt-4">
           <p className="font-bold text-gray-400 print:text-gray-800">FORMULA:</p>
           <p className="text-gray-500 print:text-gray-700">Profit = Sold Price - Material - Labor</p>
-          <p className="text-gray-600 text-xs mt-2 print:hidden">*Note: You can edit the "Service" column by clicking directly on the table text.</p>
+          <p className="text-gray-600 text-xs mt-2 print:hidden">*Note: You can edit the "Service", "Sold Price", "Material" and "Labor" columns by clicking directly on the table text.</p>
         </div>
       </div>
     </div>
