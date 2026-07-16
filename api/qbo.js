@@ -358,6 +358,19 @@ export async function syncEstimateToQBO(supabase, estimateId) {
     throw new Error('Estimate not found');
   }
 
+  // 1. Validar si ya está sincronizado para evitar duplicados
+  if (estimate.qbo_invoice_id) {
+    console.log(`Estimate ${estimateId} already has QBO Invoice ID: ${estimate.qbo_invoice_id}. Skipping creation.`);
+    return {
+      success: true,
+      qboInvoiceId: estimate.qbo_invoice_id,
+      qboInvoiceNumber: estimate.qbo_invoice_number,
+      accessToken,
+      qboBaseUrl,
+      realmId
+    };
+  }
+
   const { data: estimateItems, error: itemsError } = await supabase
     .from('estimate_items')
     .select('*')
@@ -519,20 +532,23 @@ export async function syncEstimateToQBO(supabase, estimateId) {
 
   const isDuplicateError = invoiceJson.Fault?.Error?.some(e => e.Message?.includes('Duplicate') || e.code === '6140');
   if (!invoiceRes.ok && isDuplicateError) {
-    console.warn(`DocNumber ${invoiceNum} already exists in QBO. Retrying without DocNumber...`);
-    delete invoicePayload.DocNumber;
+    console.warn(`DocNumber ${invoiceNum} already exists in QBO. Fetching existing invoice instead of duplicating...`);
     
-    invoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/invoice?minorversion=65`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(invoicePayload)
+    const query = `SELECT * FROM Invoice WHERE DocNumber = '${invoiceNum}'`;
+    const existingInvoiceRes = await fetch(`${qboBaseUrl}/v3/company/${realmId}/query?query=${encodeURIComponent(query)}&minorversion=65`, {
+        headers: { 'Authorization': `Bearer ${accessToken}`, 'Accept': 'application/json' }
     });
-    tid = logQboTid(invoiceRes, 'Invoice Create Try 2');
-    invoiceJson = await invoiceRes.json();
+    
+    const existingInvoiceData = await existingInvoiceRes.json();
+    const existingInvoice = existingInvoiceData.QueryResponse?.Invoice?.[0];
+
+    if (existingInvoice) {
+        console.log(`Successfully recovered existing invoice: ${existingInvoice.Id}`);
+        invoiceJson = { Invoice: existingInvoice };
+        invoiceRes = { ok: true };
+    } else {
+        console.error('Failed to recover existing invoice despite duplicate error.');
+    }
   }
 
   if (!invoiceRes.ok || !invoiceJson.Invoice) {
@@ -846,6 +862,15 @@ export default async function handler(req, res) {
             if (!matchedContact.zip && zip) updates.zip = zip;
 
             await supabase.from('contacts').update(updates).eq('id', matchedContact.id);
+            
+            // Actualizar la caché local en memoria para que otras iteraciones vean el ID
+            matchedContact.qbo_customer_id = qboId;
+            if (!matchedContact.phone && phone) matchedContact.phone = phone;
+            if (!matchedContact.address && address) matchedContact.address = address;
+            if (!matchedContact.city && city) matchedContact.city = city;
+            if (!matchedContact.state && state) matchedContact.state = state;
+            if (!matchedContact.zip && zip) matchedContact.zip = zip;
+
             customersMatched++;
             qboCustomerIdToSupabaseId[qboId] = matchedContact.id;
           } else {
@@ -863,7 +888,9 @@ export default async function handler(req, res) {
 
             if (insertContactError) throw insertContactError;
             if (newContactData && newContactData.length > 0) {
-              qboCustomerIdToSupabaseId[qboId] = newContactData[0].id;
+              const newContact = newContactData[0];
+              qboCustomerIdToSupabaseId[qboId] = newContact.id;
+              localContacts.push(newContact); // Actualizar la caché local en memoria para evitar duplicaciones en el bucle
             }
             customersCreated++;
           }
@@ -1142,8 +1169,10 @@ export default async function handler(req, res) {
                     }).select();
 
                     if (!insertContactError && newContactData && newContactData.length > 0) {
-                      contactId = newContactData[0].id;
+                      const newContact = newContactData[0];
+                      contactId = newContact.id;
                       qboCustomerIdToSupabaseId[qboCustId] = contactId;
+                      localContacts.push(newContact); // Actualizar la caché en memoria para evitar duplicaciones
                       customersCreated++;
                     }
                   }
