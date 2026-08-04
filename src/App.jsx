@@ -40,6 +40,7 @@ import TermsOfService from './pages/TermsOfService';
 import EULA from './pages/EULA';
 import ContactUs from './pages/ContactUs';
 import LandingPage from './pages/LandingPage';
+import Public3DViewer from './pages/Public3DViewer';
 
 // Loading spinner
 function LoadingScreen() {
@@ -69,6 +70,7 @@ export default function App() {
             ALWAYS-PUBLIC ROUTES (Universal access)
            ========================================== */}
         <Route path="/p/:id" element={<PDFPreview />} />
+        <Route path="/3d/:id" element={<Public3DViewer />} />
         <Route path="/contract/:id" element={<PublicContract />} />
         <Route path="/catalog" element={<PublicCatalogPage />} />
         
