@@ -116,9 +116,9 @@ export default function ModelViewerLazy({ modelUrl, projectId, canEdit = false, 
       return;
     }
 
-    // Max 50MB (límite de Supabase Storage)
-    if (file.size > 50 * 1024 * 1024) {
-      alert(`El archivo pesa ${(file.size / 1024 / 1024).toFixed(1)}MB y excede el límite de 50MB de Supabase. Por favor, optimiza el modelo con herramientas como gltf-transform o Blender.`);
+    // Max 500MB
+    if (file.size > 500 * 1024 * 1024) {
+      alert(`El archivo pesa ${(file.size / 1024 / 1024).toFixed(1)}MB y excede el límite de 500MB.`);
       return;
     }
 
