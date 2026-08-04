@@ -161,9 +161,8 @@ export default function ModelViewerLazy({ modelUrl, projectId, canEdit = false, 
       // 5. Send SMS notification to project contact with magic link
       if (contactPhone) {
         try {
-          const baseUrl = window.location.origin;
-          const magicLink = `${baseUrl}/3d/${projectId}`;
-          const smsBody = `🏗️ Barba Construction: ¡Tu propuesta 3D para "${projectTitle || 'tu proyecto'}" está lista!\n\n👉 Explórala aquí: ${magicLink}\n\nMantén presionado y arrastra para ver todos los ángulos. 🎉`;
+          const magicLink = `https://barbaprosystem.vercel.app/3d/${projectId}`;
+          const smsBody = `Barba Construction: Tu propuesta 3D para "${projectTitle || 'tu proyecto'}" esta lista! Explorala aqui: ${magicLink}`;
           const smsRes = await fetch('/api/send-message', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
