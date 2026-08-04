@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X, Pencil } from 'lucide-react';
+import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X, Pencil, Box } from 'lucide-react';
+import ModelViewerLazy from '../../components/3d/ModelViewerLazy';
 import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'payments', label: 'Client Payments',   Icon: DollarSign },
   { id: 'photos',   label: 'Photos',            Icon: Camera },
   { id: 'documents',label: 'Documents',         Icon: FileText },
+  { id: '3d-model', label: '3D Model',          Icon: Box },
 ];
 
 export default function ProjectDetail({ projectId, onBack }) {
@@ -402,6 +404,29 @@ export default function ProjectDetail({ projectId, onBack }) {
         {/* DOCUMENTS TAB */}
         {activeTab === 'documents' && (
           <ProjectDocumentsTab projectId={projectId} />
+        )}
+
+        {/* 3D MODEL TAB */}
+        {activeTab === '3d-model' && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-base font-bold text-[#f0f0f0]">Visor de Modelo 3D</h3>
+              <p className="text-sm text-[#888888] mt-0.5">
+                Vista previa interactiva de la propuesta 3D del proyecto.
+                {canEdit && ' Arrastra un archivo .glb o usa el botón para subir.'}
+              </p>
+            </div>
+            <ModelViewerLazy
+              modelUrl={project.model_3d_url}
+              projectId={projectId}
+              canEdit={canEdit}
+              contactPhone={project.contact?.phone}
+              projectTitle={project.title}
+              onModelUrlChange={(newUrl) => {
+                setProject(prev => ({ ...prev, model_3d_url: newUrl }));
+              }}
+            />
+          </div>
         )}
       </div>
 
