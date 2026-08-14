@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { ArrowLeft, MapPin, User, Calendar, DollarSign, Camera, BarChart3, Loader2, CheckCircle2, Clock, AlertCircle, Plus, PackageSearch, FileText, X, Pencil, Box } from 'lucide-react';
 import ModelViewerLazy from '../../components/3d/ModelViewerLazy';
-import WeeklyPipelineBoard from '../../components/projects/WeeklyPipelineBoard';
+import ProjectCalendarBoard from '../../components/projects/ProjectCalendarBoard';
 import ProjectAccountingTab from '../../components/projects/ProjectAccountingTab';
 import ProjectPhotosTab from '../../components/projects/ProjectPhotosTab';
 import ProjectDocumentsTab from '../../components/projects/ProjectDocumentsTab';
@@ -19,7 +19,7 @@ const STATUS_MAP = {
 };
 
 const TABS = [
-  { id: 'pipeline', label: 'Weekly Pipeline', Icon: BarChart3 },
+  { id: 'calendar', label: 'Calendar & Timeline', Icon: Calendar },
   { id: 'materials', label: 'Materials (BOM)', Icon: PackageSearch },
   { id: 'accounting', label: 'Accounting',      Icon: DollarSign },
   { id: 'payments', label: 'Client Payments',   Icon: DollarSign },
@@ -34,7 +34,7 @@ export default function ProjectDetail({ projectId, onBack }) {
   const [payments, setPayments] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('pipeline');
+  const [activeTab, setActiveTab] = useState('calendar');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({ payment_type: 'partial', amount: '', due_date: new Date().toISOString().split('T')[0] });
   const [savingPayment, setSavingPayment] = useState(false);
@@ -296,24 +296,17 @@ export default function ProjectDetail({ projectId, onBack }) {
 
       {/* Tab content */}
       <div className="bg-[#1a1a1a]/30 border border-[#2a2a2a]/40 rounded-2xl p-6">
-        {/* PIPELINE TAB */}
-        {activeTab === 'pipeline' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-base font-bold text-[#f0f0f0]">Weekly Work Pipeline</h3>
-                <p className="text-sm text-[#888888] mt-0.5">
-                  Weekly calendar progress.{' '}
-                  {canEdit ? 'Click a task to change status.' : ''}
-                </p>
-              </div>
-            </div>
-            <WeeklyPipelineBoard
-              projectId={projectId}
-              startDate={project.start_date}
-              canEdit={canEdit}
-            />
-          </div>
+        {/* CALENDAR & TIMELINE TAB */}
+        {activeTab === 'calendar' && (
+          <ProjectCalendarBoard
+            projectId={projectId}
+            startDate={project.start_date}
+            targetEndDate={project.target_end_date}
+            canEdit={canEdit}
+            onDatesUpdated={({ startDate, targetEndDate }) => {
+              setProject(prev => prev ? ({ ...prev, start_date: startDate, target_end_date: targetEndDate }) : prev);
+            }}
+          />
         )}
 
         {/* MATERIALS TAB */}

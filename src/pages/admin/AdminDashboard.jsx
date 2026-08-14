@@ -111,12 +111,14 @@ export default function AdminDashboard() {
           { data: leads, count: leadsCount },
           { data: projects, count: projectsCount },
           { count: estimatesCount },
-          { data: payments }
+          { data: payments },
+          { data: dailyReports }
         ] = await Promise.all([
           supabase.from('contacts').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
           supabase.from('projects').select('*', { count: 'exact' }).in('status', ['in_progress', 'scheduled']).order('start_date', { ascending: true }),
           supabase.from('estimates').select('*', { count: 'exact' }).eq('status', 'sent'),
-          supabase.from('payments').select('*').in('status', ['pending', 'overdue'])
+          supabase.from('payments').select('*').in('status', ['pending', 'overdue']),
+          supabase.from('daily_reports').select('id, project_id, report_date, notes, issues, work_completed, created_at').order('report_date', { ascending: false }).limit(100)
         ]);
 
         let totalRevenue = projects?.reduce((sum, p) => sum + (p.sold_price || 0), 0) || 0;
@@ -127,7 +129,58 @@ export default function AdminDashboard() {
         let finalProjectsCount = projectsCount || 0;
         let finalEstimatesCount = estimatesCount || 0;
         let finalRecentLeads = leads?.slice(0, 5) || [];
-        let finalActiveProjects = projects?.slice(0, 5) || [];
+        
+        // Attach latest daily notes and timeline status to active projects
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let finalActiveProjects = (projects?.slice(0, 8) || []).map(p => {
+          const latestReport = dailyReports?.find(r => r.project_id === p.id);
+          const noteText = latestReport?.notes || latestReport?.issues || latestReport?.work_completed || null;
+
+          let timeline = null;
+          if (p.target_end_date) {
+            const end = new Date(p.target_end_date);
+            end.setHours(0, 0, 0, 0);
+            const diffDays = Math.round((end.getTime() - today.getTime()) / (1000 * 3600 * 24));
+            
+            if (diffDays < 0) {
+              timeline = {
+                status: 'delayed',
+                days: Math.abs(diffDays),
+                label: `Retrasado ${Math.abs(diffDays)}d`,
+                color: '#ef4444',
+                bg: '#ef444420',
+                border: '#ef444440'
+              };
+            } else if (diffDays === 0) {
+              timeline = {
+                status: 'today',
+                days: 0,
+                label: 'Termina Hoy',
+                color: '#f59e0b',
+                bg: '#f59e0b20',
+                border: '#f59e0b40'
+              };
+            } else {
+              timeline = {
+                status: 'on_track',
+                days: diffDays,
+                label: `Faltan ${diffDays}d`,
+                color: '#10b981',
+                bg: '#10b98120',
+                border: '#10b98140'
+              };
+            }
+          }
+
+          return {
+            ...p,
+            latestNote: noteText,
+            latestNoteDate: latestReport?.report_date,
+            timeline
+          };
+        });
         
         let sortedPayments = payments?.sort((a, b) => {
           if (a.status === 'overdue' && b.status !== 'overdue') return -1;
@@ -135,7 +188,6 @@ export default function AdminDashboard() {
           return new Date(a.due_date || 0) - new Date(b.due_date || 0);
         }) || [];
         let finalPayments = sortedPayments.slice(0, 5);
-
 
         setStats({
           totalLeads: finalLeadsCount,
@@ -212,45 +264,101 @@ export default function AdminDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {activeProjects.map(p => (
                 <div key={p.id} onClick={() => navigate('/admin/projects')} style={{
-                  display: 'flex', alignItems: 'center', gap: '16px',
-                  padding: '16px', background: '#1e293b', borderRadius: '12px',
-                  border: '1px solid #374151', cursor: 'pointer'
-                }}>
-                  <div style={{
-                    width: '44px', height: '44px', borderRadius: '10px',
-                    background: '#f9731622', display: 'flex', alignItems: 'center',
-                    justifyContent: 'center', flexShrink: 0,
-                  }}>
-                    <FolderKanban size={20} color="#f97316" />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: '0 0 2px', fontWeight: '700', fontSize: '14px', color: '#e2e8f0' }}>
-                      PRJ-{String(p.project_number).padStart(4,`0`)} - {p.title}
-                    </p>
-                    {p.address && (
-                      <p style={{ margin: '0 0 8px', fontSize: '12px', color: '#6b7280', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <MapPin size={11} /> {p.address}
-                      </p>
-                    )}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ flex: 1, height: '6px', background: '#374151', borderRadius: '3px' }}>
-                        <div style={{
-                          width: `${p.progress_pct || 0}%`, height: '100%', borderRadius: '3px',
-                          background: p.progress_pct >= 80 ? '#10b981' : p.progress_pct >= 40 ? '#f59e0b' : '#3b82f6',
-                        }} />
-                      </div>
-                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', flexShrink: 0 }}>
-                        {p.progress_pct || 0}%
-                      </span>
+                  display: 'flex', flexDirection: 'column', gap: '10px',
+                  padding: '16px', background: '#1e293b', borderRadius: '14px',
+                  border: '1px solid #374151', cursor: 'pointer', transition: 'all 0.2s'
+                }} className="hover:border-[#FACB00]/50 hover:bg-[#1e293b]/90">
+                  
+                  {/* Top Row: Icon, Title, Timeline Status, Price */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+                    <div style={{
+                      width: '44px', height: '44px', borderRadius: '10px',
+                      background: '#f9731622', display: 'flex', alignItems: 'center',
+                      justifyContent: 'center', flexShrink: 0, marginTop: '2px'
+                    }}>
+                      <FolderKanban size={20} color="#f97316" />
                     </div>
+
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '2px' }}>
+                        <p style={{ margin: 0, fontWeight: '700', fontSize: '14px', color: '#e2e8f0' }} className="truncate">
+                          PRJ-{String(p.project_number).padStart(4,`0`)} - {p.title}
+                        </p>
+
+                        {/* Timeline Status Badge */}
+                        {p.timeline && (
+                          <span style={{
+                            fontSize: '11px', fontWeight: '700', padding: '2px 8px',
+                            borderRadius: '6px', background: p.timeline.bg,
+                            color: p.timeline.color, border: `1px solid ${p.timeline.border}`,
+                            display: 'flex', alignItems: 'center', gap: '4px'
+                          }}>
+                            {p.timeline.status === 'delayed' && <AlertTriangle size={11} />}
+                            {p.timeline.status === 'today' && <Clock size={11} />}
+                            {p.timeline.status === 'on_track' && <CheckCircle size={11} />}
+                            {p.timeline.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Address & Target Finish Date */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', fontSize: '12px', color: '#94a3b8' }}>
+                        {p.address && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }} className="truncate">
+                            <MapPin size={12} color="#f59e0b" /> {p.address}
+                          </span>
+                        )}
+                        {p.target_end_date && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <Calendar size={12} color="#60a5fa" /> Fin: <strong style={{ color: '#f8fafc' }}>{formatDate(p.target_end_date)}</strong>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {p.sold_price && (
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <p style={{ margin: 0, fontWeight: '800', color: '#10b981', fontSize: '15px' }}>
+                          {formatCurrency(p.sold_price)}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                  {p.sold_price && (
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <p style={{ margin: 0, fontWeight: '700', color: '#10b981', fontSize: '15px' }}>
-                        {formatCurrency(p.sold_price)}
-                      </p>
+
+                  {/* Progress Bar */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ flex: 1, height: '6px', background: '#374151', borderRadius: '3px' }}>
+                      <div style={{
+                        width: `${p.progress_pct || 0}%`, height: '100%', borderRadius: '3px',
+                        background: p.progress_pct >= 80 ? '#10b981' : p.progress_pct >= 40 ? '#f59e0b' : '#3b82f6',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: '12px', fontWeight: '700', color: '#9ca3af', flexShrink: 0 }}>
+                      {p.progress_pct || 0}%
+                    </span>
+                  </div>
+
+                  {/* Latest Daily Note / Bitácora Snippet */}
+                  {p.latestNote && (
+                    <div style={{
+                      padding: '7px 10px', background: '#8b5cf615',
+                      borderRadius: '8px', border: '1px solid #8b5cf635',
+                      display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px',
+                      color: '#c4b5fd'
+                    }}>
+                      <FileText size={13} color="#a78bfa" style={{ flexShrink: 0 }} />
+                      <span style={{ fontWeight: '700', color: '#e2e8f0', flexShrink: 0 }}>Última nota:</span>
+                      <span style={{ color: '#ddd6fe', fontStyle: 'italic', flex: 1 }} className="truncate">
+                        "{p.latestNote}"
+                      </span>
+                      {p.latestNoteDate && (
+                        <span style={{ fontSize: '10px', color: '#a78bfa', flexShrink: 0 }}>
+                          {formatDate(p.latestNoteDate)}
+                        </span>
+                      )}
                     </div>
                   )}
+
                 </div>
               ))}
             </div>
