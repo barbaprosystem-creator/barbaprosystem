@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
+import ActiveProjectAutocomplete from '../../components/common/ActiveProjectAutocomplete';
 import {
   HardHat, MapPin, CalendarCheck, Phone, Wrench, Users, Search, Filter,
   Plus, MoreVertical, CheckCircle2, Clock, AlertCircle, X, Trash2, Unlock, Loader2
@@ -20,7 +21,12 @@ export default function BrigadesPage() {
   const [selectedProjectId, setSelectedProjectId] = useState('');
   
   const [newBrigadeData, setNewBrigadeData] = useState({
-    name: '', foreman: '', serviceType: 'Roofing', phone: '', membersCount: 1,
+    name: '',
+    foreman: '',
+    serviceType: 'Roofing',
+    phone: '',
+    membersCount: 1,
+    projectId: ''
   });
 
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -43,7 +49,7 @@ export default function BrigadesPage() {
     try {
       const [brigadesRes, projectsRes] = await Promise.all([
         supabase.from('brigades').select('*, currentProject:projects(id, title, address, target_end_date, progress_pct, notes)').order('created_at', { ascending: false }),
-        supabase.from('projects').select('id, title, address').in('status', ['in_progress', 'scheduled'])
+        supabase.from('projects').select('id, title, address, status, project_number, target_end_date, progress_pct, notes, contacts(first_name, last_name, phone)').not('status', 'in', '("completed","cancelled")').order('created_at', { ascending: false })
       ]);
       
       if (brigadesRes.error) {
@@ -69,14 +75,14 @@ export default function BrigadesPage() {
 
   const handleAssignClick = (brigade) => {
     setSelectedBrigade(brigade);
-    setSelectedProjectId('');
+    setSelectedProjectId(brigade.current_project_id || '');
     setAssignModalOpen(true);
     setMenuOpenId(null);
   };
 
   const handleAssignSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedProjectId) return alert("Please select a project");
+    if (!selectedProjectId) return alert("Por favor selecciona un proyecto");
     setSaving(true);
     
     const { error } = await supabase.from('brigades').update({
@@ -85,7 +91,8 @@ export default function BrigadesPage() {
     }).eq('id', selectedBrigade.id);
 
     if (error) {
-      alert("Error assigning project");
+      console.error("[BrigadesPage] Assign error:", error);
+      alert(`Error al asignar proyecto: ${error.message || 'Error desconocido'}`);
     } else {
       await fetchData();
       setAssignModalOpen(false);
@@ -103,15 +110,17 @@ export default function BrigadesPage() {
       service_type: newBrigadeData.serviceType,
       phone: newBrigadeData.phone,
       members_count: Number(newBrigadeData.membersCount),
-      status: 'available'
+      current_project_id: newBrigadeData.projectId || null,
+      status: newBrigadeData.projectId ? 'working' : 'available'
     });
 
     if (error) {
-      alert("Error creating crew. Did you run the SQL file in Supabase?");
+      console.error("[BrigadesPage] Create error:", error);
+      alert(`Error al crear brigada: ${error.message || 'Verifica que hayas ejecutado el script SQL en Supabase.'}`);
     } else {
       await fetchData();
       setCreateModalOpen(false);
-      setNewBrigadeData({ name: '', foreman: '', serviceType: 'Roofing', phone: '', membersCount: 1 });
+      setNewBrigadeData({ name: '', foreman: '', serviceType: 'Roofing', phone: '', membersCount: 1, projectId: '' });
     }
     setSaving(false);
   };
@@ -124,14 +133,24 @@ export default function BrigadesPage() {
       status: 'available'
     }).eq('id', brigadeId);
     
-    if (!error) fetchData();
+    if (error) {
+      console.error("[BrigadesPage] Release error:", error);
+      alert(`Error al liberar brigada: ${error.message || 'Error desconocido'}`);
+    } else {
+      fetchData();
+    }
   };
 
   const handleDeleteBrigade = async (brigadeId) => {
     if (!confirm('Are you sure you want to delete this crew completely?')) return;
     setMenuOpenId(null);
     const { error } = await supabase.from('brigades').delete().eq('id', brigadeId);
-    if (!error) fetchData();
+    if (error) {
+      console.error("[BrigadesPage] Delete error:", error);
+      alert(`Error al eliminar brigada: ${error.message || 'Error desconocido'}`);
+    } else {
+      fetchData();
+    }
   };
 
   const getStatusConfig = (status) => {
@@ -228,11 +247,11 @@ export default function BrigadesPage() {
                   <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                     <div className="flex items-center gap-2 text-gray-300">
                       <div className="w-8 h-8 rounded-full bg-[#222] flex items-center justify-center text-[#FACB00] font-bold">
-                        {brigade.foreman.charAt(0).toUpperCase()}
+                        {brigade.foreman ? brigade.foreman.charAt(0).toUpperCase() : 'B'}
                       </div>
                       <div>
                         <p className="text-xs text-gray-500">Foreman</p>
-                        <p className="font-medium">{brigade.foreman}</p>
+                        <p className="font-medium">{brigade.foreman || 'No asignado'}</p>
                       </div>
                     </div>
                     <div className="flex flex-col justify-center">
@@ -360,55 +379,65 @@ export default function BrigadesPage() {
       {/* Assign Project Modal */}
       {assignModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md overflow-hidden">
+          <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
             <div className="flex justify-between items-center p-6 border-b border-[#222]">
-              <h2 className="text-xl font-bold text-white">Assign Project</h2>
-              <button onClick={() => setAssignModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
-                <X size={24} />
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <HardHat size={22} className="text-[#FACB00]" />
+                  Asignar Proyecto Activo
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Selecciona el proyecto activo donde estará trabajando la brigada.
+                </p>
+              </div>
+              <button onClick={() => setAssignModalOpen(false)} className="text-gray-400 hover:text-white transition-colors p-1">
+                <X size={22} />
               </button>
             </div>
-            <form onSubmit={handleAssignSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleAssignSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Selected Crew</label>
-                <div className="w-full bg-[#0a0a0a] border border-[#222] text-gray-300 rounded-lg px-4 py-2.5">
-                  {selectedBrigade?.name} - {selectedBrigade?.foreman}
+                <label className="block text-sm font-medium text-gray-400 mb-1.5">Brigada Seleccionada</label>
+                <div className="w-full bg-[#0a0a0a] border border-[#222] text-gray-200 rounded-xl px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#FACB00]/10 flex items-center justify-center text-[#FACB00] font-bold text-xs">
+                      {selectedBrigade?.name?.charAt(0)?.toUpperCase()}
+                    </div>
+                    <span className="font-bold text-white">{selectedBrigade?.name}</span>
+                    <span className="text-gray-500">•</span>
+                    <span className="text-gray-400 text-sm">{selectedBrigade?.foreman}</span>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded bg-gray-800 text-gray-300 border border-gray-700">
+                    {selectedBrigade?.service_type}
+                  </span>
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Select Active Project</label>
-                {activeProjects.length === 0 ? (
-                  <p className="text-sm text-red-400 bg-red-500/10 p-3 rounded border border-red-500/20">
-                    You have no active projects (In Progress or Scheduled). Create one first in the CRM/Projects view.
-                  </p>
-                ) : (
-                  <select 
-                    required
-                    value={selectedProjectId}
-                    onChange={(e) => setSelectedProjectId(e.target.value)}
-                    className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                  >
-                    <option value="" disabled>-- Choose a project --</option>
-                    {activeProjects.map(p => (
-                      <option key={p.id} value={p.id}>{p.title} ({p.address})</option>
-                    ))}
-                  </select>
-                )}
+                <ActiveProjectAutocomplete
+                  projects={activeProjects}
+                  value={selectedProjectId}
+                  onChange={(id) => setSelectedProjectId(id)}
+                  label="Buscar y Asignar Proyecto Activo"
+                  placeholder="Escribe dirección, cliente, # proyecto o título..."
+                  required
+                  helperText="Busca rápidamente por dirección de obra, nombre del cliente o número de proyecto."
+                />
               </div>
               
-              <div className="pt-4 flex gap-3">
+              <div className="pt-3 flex gap-3">
                 <button 
                   type="button"
                   onClick={() => setAssignModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-gray-400 bg-[#222] hover:bg-[#333] transition-colors"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-400 bg-[#1c1c1c] hover:bg-[#262626] transition-colors"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={saving || !selectedProjectId}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-black bg-[#FACB00] hover:bg-[#e0b600] transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-black bg-[#FACB00] hover:bg-[#e0b600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {saving ? 'Saving...' : 'Confirm'}
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : 'Confirmar Asignación'}
                 </button>
               </div>
             </form>
@@ -418,87 +447,118 @@ export default function BrigadesPage() {
 
       {/* Create Brigade Modal */}
       {createModalOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-          <div className="bg-[#111] border border-[#222] rounded-xl w-full max-w-md overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-lg overflow-hidden my-8 shadow-2xl">
             <div className="flex justify-between items-center p-6 border-b border-[#222]">
-              <h2 className="text-xl font-bold text-white">New Crew</h2>
-              <button onClick={() => setCreateModalOpen(false)} className="text-gray-400 hover:text-white transition-colors">
-                <X size={24} />
+              <div>
+                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                  <HardHat size={22} className="text-[#FACB00]" />
+                  Nueva Brigada (New Crew)
+                </h2>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  Registra un equipo de trabajo en campo y asígnale un proyecto activo.
+                </p>
+              </div>
+              <button onClick={() => setCreateModalOpen(false)} className="text-gray-400 hover:text-white transition-colors p-1">
+                <X size={22} />
               </button>
             </div>
             <form onSubmit={handleCreateSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Crew Name</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Nombre de la Brigada *</label>
                 <input 
                   required
                   type="text" 
                   value={newBrigadeData.name}
                   onChange={(e) => setNewBrigadeData({...newBrigadeData, name: e.target.value})}
-                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                  placeholder="e.g. Alpha Crew"
+                  className="w-full bg-[#0a0a0a] border border-[#262626] text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                  placeholder="ej. Alpha Crew / Brigada Roofing 1"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Foreman</label>
-                <input 
-                  required
-                  type="text" 
-                  value={newBrigadeData.foreman}
-                  onChange={(e) => setNewBrigadeData({...newBrigadeData, foreman: e.target.value})}
-                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                  placeholder="e.g. Lazaro Barba"
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Capataz / Foreman *</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={newBrigadeData.foreman}
+                    onChange={(e) => setNewBrigadeData({...newBrigadeData, foreman: e.target.value})}
+                    className="w-full bg-[#0a0a0a] border border-[#262626] text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                    placeholder="ej. Lazaro Barba"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Especialidad *</label>
+                  <select 
+                    value={newBrigadeData.serviceType}
+                    onChange={(e) => setNewBrigadeData({...newBrigadeData, serviceType: e.target.value})}
+                    className="w-full bg-[#0a0a0a] border border-[#262626] text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                  >
+                    <option value="Roofing">Roofing</option>
+                    <option value="Siding">Siding</option>
+                    <option value="Gutters">Gutters</option>
+                    <option value="Framing">Framing</option>
+                    <option value="Concrete">Concrete</option>
+                    <option value="Remodeling">Remodeling</option>
+                    <option value="Decking">Decking</option>
+                    <option value="General">General</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Teléfono de Contacto *</label>
+                  <input 
+                    required
+                    type="text" 
+                    value={newBrigadeData.phone}
+                    onChange={(e) => setNewBrigadeData({...newBrigadeData, phone: e.target.value})}
+                    className="w-full bg-[#0a0a0a] border border-[#262626] text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                    placeholder="ej. (502) 555-1234"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">Nº de Miembros *</label>
+                  <input 
+                    required
+                    type="number" 
+                    min="1"
+                    value={newBrigadeData.membersCount}
+                    onChange={(e) => setNewBrigadeData({...newBrigadeData, membersCount: e.target.value})}
+                    className="w-full bg-[#0a0a0a] border border-[#262626] text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Google-like Address Autocomplete for Active Projects */}
+              <div className="pt-2 border-t border-[#222]">
+                <ActiveProjectAutocomplete
+                  projects={activeProjects}
+                  value={newBrigadeData.projectId}
+                  onChange={(id) => setNewBrigadeData(prev => ({ ...prev, projectId: id }))}
+                  label="Asignar Proyecto Activo (Opcional)"
+                  placeholder="Buscar por dirección de obra, cliente o #..."
+                  allowClear
+                  helperText="Opcional: Si seleccionas un proyecto activo ahora, la brigada quedará asignada y marcada 'En Trabajo'."
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Specialty (Service)</label>
-                <select 
-                  value={newBrigadeData.serviceType}
-                  onChange={(e) => setNewBrigadeData({...newBrigadeData, serviceType: e.target.value})}
-                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                >
-                  <option value="Roofing">Roofing</option>
-                  <option value="Siding">Siding</option>
-                  <option value="Gutters">Gutters</option>
-                  <option value="Framing">Framing</option>
-                  <option value="General">General</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Contact Phone</label>
-                <input 
-                  required
-                  type="text" 
-                  value={newBrigadeData.phone}
-                  onChange={(e) => setNewBrigadeData({...newBrigadeData, phone: e.target.value})}
-                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                  placeholder="e.g. (555) 123-4567"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Number of Members</label>
-                <input 
-                  required
-                  type="number" 
-                  min="1"
-                  value={newBrigadeData.membersCount}
-                  onChange={(e) => setNewBrigadeData({...newBrigadeData, membersCount: e.target.value})}
-                  className="w-full bg-[#0a0a0a] border border-[#222] text-white rounded-lg px-4 py-2.5 focus:outline-none focus:border-[#FACB00] transition-colors"
-                />
-              </div>
-              <div className="pt-4 flex gap-3">
+
+              <div className="pt-4 flex gap-3 border-t border-[#222]">
                 <button 
                   type="button"
                   onClick={() => setCreateModalOpen(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-gray-400 bg-[#222] hover:bg-[#333] transition-colors"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-gray-400 bg-[#1c1c1c] hover:bg-[#262626] transition-colors"
                 >
-                  Cancel
+                  Cancelar
                 </button>
                 <button 
                   type="submit"
                   disabled={saving}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-bold text-black bg-[#FACB00] hover:bg-[#e0b600] transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-3 rounded-xl font-bold text-black bg-[#FACB00] hover:bg-[#e0b600] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
-                  {saving ? 'Creating...' : 'Create Crew'}
+                  {saving ? <Loader2 size={18} className="animate-spin" /> : 'Crear Brigada'}
                 </button>
               </div>
             </form>

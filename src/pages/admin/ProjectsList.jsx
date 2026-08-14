@@ -349,8 +349,12 @@ export default function ProjectsList() {
       // 4. Delete project materials (BOM)
       await supabase.from('project_materials').delete().eq('project_id', projectId);
       
-      // 5. Unlink project from brigades (set project_id to NULL)
-      await supabase.from('brigades').update({ project_id: null }).eq('project_id', projectId);
+      // 5. Unlink project from brigades (set current_project_id to NULL)
+      await supabase.from('brigades').update({ current_project_id: null }).eq('current_project_id', projectId);
+      // Also clear project_id if it exists
+      try {
+        await supabase.from('brigades').update({ project_id: null }).eq('project_id', projectId);
+      } catch (_) {}
       
       // 6. Delete project expenses
       await supabase.from('project_expenses').delete().eq('project_id', projectId);
