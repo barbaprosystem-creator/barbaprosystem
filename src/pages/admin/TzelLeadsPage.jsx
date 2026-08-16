@@ -270,8 +270,8 @@ export default function TzelLeadsPage() {
       <div className="bg-gradient-to-r from-[#141414] via-[#1a1a1a] to-[#141414] rounded-2xl p-6 shadow-2xl border border-[#242424] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#0b0b0b] border border-[#333] p-1.5 flex items-center justify-center shadow-inner">
-              <img src="/tzel-logo.png" alt="TZEL" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 rounded-xl overflow-hidden border border-[#383838] shadow-lg shadow-black/60 flex items-center justify-center bg-[#2b2b2e] flex-shrink-0">
+              <img src="/tzel-logo.jpg" alt="TZEL" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
@@ -463,8 +463,8 @@ export default function TzelLeadsPage() {
         </div>
       ) : filteredLeads.length === 0 ? (
         <div className="bg-[#141414] p-12 rounded-2xl border border-[#242424] text-center text-[#8A8A8A]">
-          <div className="w-16 h-16 mx-auto mb-3 opacity-30">
-            <img src="/tzel-logo.png" alt="TZEL" className="w-full h-full object-contain grayscale" />
+          <div className="w-16 h-16 mx-auto mb-3 rounded-2xl overflow-hidden opacity-30 border border-[#333]">
+            <img src="/tzel-logo.jpg" alt="TZEL" className="w-full h-full object-cover" />
           </div>
           <h3 className="text-lg font-bold text-white">No se encontraron leads con estos filtros</h3>
           <p className="text-sm text-[#777] mt-1">Prueba cambiando los criterios de búsqueda o actualiza el radar.</p>
