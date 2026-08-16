@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
+  Radar,
   Users,
   FileText,
   FolderKanban,
@@ -48,6 +49,7 @@ export default function AdminLayout({ profile, onSignOut }) {
     { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
     { to: '/admin/inbox', icon: MessageSquare, label: t('nav.inbox') },
     { to: '/admin/crm', icon: Users, label: t('nav.crm') },
+    { to: '/admin/tzel-leads', icon: Radar, label: '📡 Leads de TZEL' },
     { to: '/admin/estimator', icon: PenLine, label: t('nav.createEstimate') },
     { to: '/admin/estimates', icon: FileText, label: t('nav.estimatesList') },
     { to: '/admin/projects', icon: FolderKanban, label: t('nav.projects') },

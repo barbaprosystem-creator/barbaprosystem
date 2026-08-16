@@ -25,6 +25,7 @@ import ContractBuilder from './pages/admin/ContractBuilder';
 import BillsPage from './pages/admin/BillsPage';
 import ShowroomAdminPage from './pages/admin/ShowroomAdminPage';
 import AITrainingChat from './pages/admin/AITrainingChat';
+import TzelLeadsPage from './pages/admin/TzelLeadsPage';
 
 // Pages - Sales (POS)
 import POSDashboard from './pages/POSDashboard';
@@ -133,6 +134,7 @@ export default function App() {
               <Route path="settings" element={<SettingsPage role={role} />} />
               <Route path="showroom" element={<ShowroomAdminPage />} />
               <Route path="ai-training" element={<AITrainingChat />} />
+              <Route path="tzel-leads" element={<TzelLeadsPage />} />
             </Route>
 
             {/* SALES POS ROUTES */}
