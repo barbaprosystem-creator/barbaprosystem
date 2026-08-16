@@ -30,7 +30,7 @@ export default function TzelLeadsPage() {
 
       if (error) throw error;
 
-      // FILTRO ESTRICTO: Excluir licitaciones públicas, expedientes municipales y registros genéricos
+      // 1. FILTRO ESTRICTO: Excluir licitaciones públicas y expedientes
       const filteredOnlyPrivateLeads = (data || []).filter(l => {
         const name = (l.first_name || '').toLowerCase();
         const notes = (l.notes || '').toLowerCase();
@@ -45,7 +45,23 @@ export default function TzelLeadsPage() {
         return !isPublicBid;
       });
 
-      setLeads(filteredOnlyPrivateLeads);
+      // 2. DEDUPLICACIÓN EN MEMORIA GARANTIZADA: Evita mostrar duplicados
+      const seenFingerprints = new Set();
+      const uniqueLeads = [];
+
+      for (const lead of filteredOnlyPrivateLeads) {
+        const name = (lead.first_name || '').toLowerCase().trim();
+        const addr = (lead.address || '').toLowerCase().trim();
+        const noteSnippet = (lead.notes || '').slice(0, 80).replace(/\s+/g, ' ').trim().toLowerCase();
+        const fingerprint = `${name}_${addr}_${noteSnippet}`;
+
+        if (!seenFingerprints.has(fingerprint)) {
+          seenFingerprints.add(fingerprint);
+          uniqueLeads.push(lead);
+        }
+      }
+
+      setLeads(uniqueLeads);
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
     } finally {
@@ -210,7 +226,7 @@ export default function TzelLeadsPage() {
         </button>
       </div>
 
-      {/* KPI Cards Reales (Sin Precios Ficticios) */}
+      {/* KPI Cards Reales (Sin Duplicados ni Precios Ficticios) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
           <div className="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
@@ -218,7 +234,7 @@ export default function TzelLeadsPage() {
           </div>
           <div>
             <div className="text-2xl font-extrabold text-white">{filteredLeads.length}</div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Leads Residenciales Activos</div>
+            <div className="text-xs font-semibold text-[#8A8A8A]">Leads Únicos Calificados</div>
           </div>
         </div>
 
@@ -311,6 +327,11 @@ export default function TzelLeadsPage() {
             const parsed = parseNotes(lead.notes, lead);
             const activeTab = activeSpeechTab[lead.id] || 'dm';
 
+            const activeSpeechText =
+              activeTab === 'dm' ? parsed.speeches.spanishDM :
+              activeTab === 'comment' ? parsed.speeches.spanishComment :
+              parsed.speeches.englishDM;
+
             return (
               <div
                 key={lead.id}
@@ -364,8 +385,8 @@ export default function TzelLeadsPage() {
                   )}
 
                   {/* Speeches de Venta con Pestañas */}
-                  <div className="border border-[#282828] rounded-xl p-4 bg-[#0e0e0e]">
-                    <div className="flex items-center justify-between mb-3">
+                  <div className="border border-[#282828] rounded-xl p-4 bg-[#0e0e0e] space-y-3">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-[#F5C518] flex items-center gap-1.5">
                         <Sparkles size={13} className="text-[#F5C518]" /> Speech de Venta (IA)
                       </span>
@@ -399,29 +420,24 @@ export default function TzelLeadsPage() {
                       </div>
                     </div>
 
-                    {/* Texto del Speech Activo */}
-                    <div className="relative bg-[#141414] border border-[#262626] rounded-xl p-3.5 text-xs text-[#D8D8D8] leading-relaxed font-normal min-h-[80px]">
-                      {activeTab === 'dm' && (parsed.speeches.spanishDM || 'Generando speech de venta...')}
-                      {activeTab === 'comment' && (parsed.speeches.spanishComment || 'Generando comentario...')}
-                      {activeTab === 'en' && (parsed.speeches.englishDM || 'Generating pitch...')}
+                    {/* Texto del Speech Activo (Sin solapamiento) */}
+                    <div className="bg-[#141414] border border-[#262626] rounded-xl p-3.5 text-xs text-[#D8D8D8] leading-relaxed font-normal min-h-[70px]">
+                      {activeSpeechText || 'Generando speech de venta...'}
+                    </div>
 
+                    {/* Fila Dedicada para el Botón Copiar */}
+                    <div className="flex justify-end pt-1">
                       <button
-                        onClick={() => {
-                          const textToCopy =
-                            activeTab === 'dm' ? parsed.speeches.spanishDM :
-                            activeTab === 'comment' ? parsed.speeches.spanishComment :
-                            parsed.speeches.englishDM;
-                          handleCopy(lead.id, textToCopy, activeTab);
-                        }}
-                        className="absolute right-2.5 bottom-2.5 bg-[#F5C518]/15 hover:bg-[#F5C518]/25 text-[#F5C518] border border-[#F5C518]/30 px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        onClick={() => handleCopy(lead.id, activeSpeechText, activeTab)}
+                        className="bg-[#F5C518]/15 hover:bg-[#F5C518]/25 text-[#F5C518] border border-[#F5C518]/30 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
                         {copiedId === `${lead.id}-${activeTab}` ? (
                           <>
-                            <Check size={12} className="text-emerald-400" /> ¡Copiado!
+                            <Check size={13} className="text-emerald-400" /> ¡Copiado al Portapapeles!
                           </>
                         ) : (
                           <>
-                            <Copy size={12} /> Copiar
+                            <Copy size={13} /> Copiar Speech
                           </>
                         )}
                       </button>
