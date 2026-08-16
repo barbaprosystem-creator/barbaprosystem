@@ -29,6 +29,10 @@ import GlobalChatbot from '../components/chat/GlobalChatbot';
 import LanguageSwitcher from '../components/common/LanguageSwitcher';
 import { useLanguage } from '../i18n/LanguageContext';
 
+const TzelIcon = () => (
+  <img src="/tzel-logo.png" alt="TZEL" style={{ width: 18, height: 18, objectFit: 'contain', borderRadius: 3 }} />
+);
+
 export default function AdminLayout({ profile, onSignOut }) {
   const { t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -49,7 +53,7 @@ export default function AdminLayout({ profile, onSignOut }) {
     { to: '/admin', icon: LayoutDashboard, label: t('nav.dashboard'), end: true },
     { to: '/admin/inbox', icon: MessageSquare, label: t('nav.inbox') },
     { to: '/admin/crm', icon: Users, label: t('nav.crm') },
-    { to: '/admin/tzel-leads', icon: Radar, label: '📡 Leads de TZEL' },
+    { to: '/admin/tzel-leads', icon: TzelIcon, label: 'Leads de TZEL' },
     { to: '/admin/estimator', icon: PenLine, label: t('nav.createEstimate') },
     { to: '/admin/estimates', icon: FileText, label: t('nav.estimatesList') },
     { to: '/admin/projects', icon: FolderKanban, label: t('nav.projects') },

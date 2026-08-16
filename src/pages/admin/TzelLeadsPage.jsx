@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import {
-  Radar, Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
-  MapPin, DollarSign, Clock, MessageSquare, ArrowRight, RefreshCw,
-  Phone, UserCheck, Shield, Home, Wrench, Layers
+  Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
+  MapPin, MessageSquare, ArrowRight, RefreshCw,
+  Phone, UserCheck, Shield, Home, Wrench, Layers, Tag
 } from 'lucide-react';
 
 export default function TzelLeadsPage() {
@@ -53,31 +53,29 @@ export default function TzelLeadsPage() {
     }
   };
 
-  const parseNotes = (notesText) => {
+  const parseNotes = (notesText, lead) => {
     if (!notesText) {
       return {
         need: 'Cliente solicita cotización para trabajos de construcción o reparación.',
-        estimatedValue: '$8,500 USD Est.',
-        estimatedNumber: 8500,
         speeches: {
           spanishDM: 'Hola, vi tu publicación buscando contratista en Louisville. En Barba Construction tenemos cuadrilla local y fotos de obras similares. ¿Qué día podemos pasar a darte un estimado gratis?',
           spanishComment: 'Hola, te enviamos fotos y presupuesto aproximado por mensaje privado. ¡A la orden para una visita gratuita!',
           englishDM: 'Hi, saw your post looking for local contractors in Louisville. We offer free on-site estimates. Let us know when works best for you!'
         },
-        originalUrl: ''
+        originalUrl: '',
+        resolvedName: lead?.first_name || 'Cliente Potencial'
       };
     }
 
     const result = {
       need: '',
-      estimatedValue: '',
-      estimatedNumber: 8500,
       speeches: {
         spanishDM: '',
         spanishComment: '',
         englishDM: ''
       },
-      originalUrl: ''
+      originalUrl: '',
+      resolvedName: ''
     };
 
     const lines = notesText.split('\n');
@@ -87,16 +85,6 @@ export default function TzelLeadsPage() {
       const line = lines[i].trim();
       if (line.includes('🎯 NECESIDAD:')) {
         result.need = line.replace('🎯 NECESIDAD:', '').trim();
-      } else if (line.includes('VALOR ESTIMADO:')) {
-        const rawVal = line.replace(/.*VALOR ESTIMADO:\s*/, '').trim();
-        const numMatch = rawVal.match(/[\d,]+/);
-        if (numMatch) {
-          const cleanNum = parseInt(numMatch[0].replace(/,/g, ''), 10);
-          if (!isNaN(cleanNum) && cleanNum > 0) {
-            result.estimatedNumber = cleanNum;
-            result.estimatedValue = `$${cleanNum.toLocaleString()} USD`;
-          }
-        }
       } else if (line.includes('🔗 ENLACE ORIGINAL:') || line.includes('🔗 Enlace')) {
         const urlMatch = line.match(/https?:\/\/[^\s]+/);
         if (urlMatch) result.originalUrl = urlMatch[0];
@@ -117,9 +105,22 @@ export default function TzelLeadsPage() {
       }
     }
 
-    if (!result.estimatedValue) {
-      result.estimatedValue = `$${result.estimatedNumber.toLocaleString()} USD Est.`;
+    // Resolver nombre limpio
+    let displayName = lead.first_name || '';
+    if (lead.last_name && lead.last_name !== 'Potencial') {
+      displayName += ` ${lead.last_name}`;
     }
+
+    if (displayName.includes('Vecino de Facebook') || displayName.includes('Vecino del Grupo')) {
+      const groupMatch = notesText.match(/Grupo:\s*"?([^"\n]+)"?/);
+      if (groupMatch) {
+        displayName = `Solicitud en ${groupMatch[1]}`;
+      } else {
+        displayName = `Cliente en ${lead.city || 'Louisville'}`;
+      }
+    }
+
+    result.resolvedName = displayName;
 
     if (!result.speeches.spanishDM) {
       result.speeches.spanishDM = `Hola, vi tu publicación en el área de Louisville/Sur de IN. En Barba Construction contamos con experiencia y fotos de proyectos similares. Estamos disponibles para hacerte una visita y presupuesto gratis.`;
@@ -176,25 +177,18 @@ export default function TzelLeadsPage() {
     });
   }, [leads, search, selectedLocation, selectedQuality]);
 
-  const totalEstimatedValue = useMemo(() => {
-    return filteredLeads.reduce((acc, l) => {
-      const parsed = parseNotes(l.notes);
-      return acc + (parsed.estimatedNumber || 8500);
-    }, 0);
-  }, [filteredLeads]);
-
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#0b0b0b] min-h-screen text-[#F0F0F0]">
-      {/* Header Visual - Barba Dark & Gold Theme */}
+      {/* Header Visual con Logo Oficial de TZEL */}
       <div className="bg-gradient-to-r from-[#141414] via-[#1a1a1a] to-[#141414] rounded-2xl p-6 shadow-2xl border border-[#242424] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-3.5">
-            <div className="p-3 bg-[#F5C518]/15 border border-[#F5C518]/30 rounded-xl text-[#F5C518] shadow-inner">
-              <Radar className="animate-spin-slow" size={28} />
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-[#0b0b0b] border border-[#333] p-1.5 flex items-center justify-center shadow-inner">
+              <img src="/tzel-logo.png" alt="TZEL" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2.5">
-                📡 Radar de Leads TZEL
+                Radar de Leads TZEL
                 <span className="text-[11px] font-bold bg-[#F5C518]/20 text-[#F5C518] px-2.5 py-0.5 rounded-full border border-[#F5C518]/40 uppercase tracking-wide">
                   En Vivo
                 </span>
@@ -216,7 +210,7 @@ export default function TzelLeadsPage() {
         </button>
       </div>
 
-      {/* KPI Cards en Tema Oscuro */}
+      {/* KPI Cards Reales (Sin Precios Ficticios) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
           <div className="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
@@ -224,7 +218,7 @@ export default function TzelLeadsPage() {
           </div>
           <div>
             <div className="text-2xl font-extrabold text-white">{filteredLeads.length}</div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Leads Residenciales / Directos</div>
+            <div className="text-xs font-semibold text-[#8A8A8A]">Leads Residenciales Activos</div>
           </div>
         </div>
 
@@ -236,19 +230,17 @@ export default function TzelLeadsPage() {
             <div className="text-2xl font-extrabold text-white">
               {filteredLeads.filter(l => l.lead_quality === 'hot').length}
             </div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Urgencias / Goteras / Tormentas</div>
+            <div className="text-xs font-semibold text-[#8A8A8A]">Urgencias (Goteras/Tormentas)</div>
           </div>
         </div>
 
         <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-xl">
-            <DollarSign size={24} />
+          <div className="p-3 bg-[#F5C518]/10 text-[#F5C518] border border-[#F5C518]/20 rounded-xl">
+            <MapPin size={24} />
           </div>
           <div>
-            <div className="text-2xl font-extrabold text-[#F5C518]">
-              ${totalEstimatedValue.toLocaleString()}
-            </div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Volumen Estimado Total</div>
+            <div className="text-2xl font-extrabold text-[#F5C518]">KY & IN</div>
+            <div className="text-xs font-semibold text-[#8A8A8A]">Louisville & Sur de Indiana</div>
           </div>
         </div>
 
@@ -263,7 +255,7 @@ export default function TzelLeadsPage() {
         </div>
       </div>
 
-      {/* Filtros y Buscador en Tema Oscuro */}
+      {/* Filtros y Buscador */}
       <div className="bg-[#141414] p-4 rounded-2xl border border-[#242424] shadow-sm flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#666]" size={18} />
@@ -299,7 +291,7 @@ export default function TzelLeadsPage() {
         </div>
       </div>
 
-      {/* Grid de Leads en Tema Oscuro */}
+      {/* Grid de Leads */}
       {loading ? (
         <div className="bg-[#141414] p-12 rounded-2xl border border-[#242424] text-center text-[#8A8A8A]">
           <RefreshCw className="animate-spin mx-auto mb-3 text-[#F5C518]" size={32} />
@@ -307,14 +299,16 @@ export default function TzelLeadsPage() {
         </div>
       ) : filteredLeads.length === 0 ? (
         <div className="bg-[#141414] p-12 rounded-2xl border border-[#242424] text-center text-[#8A8A8A]">
-          <Radar size={48} className="mx-auto mb-3 text-[#444]" />
+          <div className="w-16 h-16 mx-auto mb-3 opacity-30">
+            <img src="/tzel-logo.png" alt="TZEL" className="w-full h-full object-contain grayscale" />
+          </div>
           <h3 className="text-lg font-bold text-white">No se encontraron leads con estos filtros</h3>
           <p className="text-sm text-[#777] mt-1">Prueba cambiando los criterios de búsqueda o actualiza el radar.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {filteredLeads.map((lead) => {
-            const parsed = parseNotes(lead.notes);
+            const parsed = parseNotes(lead.notes, lead);
             const activeTab = activeSpeechTab[lead.id] || 'dm';
 
             return (
@@ -327,7 +321,7 @@ export default function TzelLeadsPage() {
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-base text-white">
-                        {lead.first_name} {lead.last_name && lead.last_name !== 'Potencial' ? lead.last_name : ''}
+                        {parsed.resolvedName}
                       </span>
                       {lead.lead_quality === 'hot' && (
                         <span className="flex items-center gap-1 text-[11px] font-bold bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full border border-red-500/30">
@@ -344,10 +338,6 @@ export default function TzelLeadsPage() {
                         <MapPin size={13} className="text-[#666]" />
                         {lead.city || 'Louisville'}, {lead.state || 'KY'}
                       </span>
-                      <span className="flex items-center gap-1 font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                        <DollarSign size={12} />
-                        {parsed.estimatedValue}
-                      </span>
                     </div>
                   </div>
 
@@ -359,7 +349,7 @@ export default function TzelLeadsPage() {
                       className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#F5C518] rounded-xl transition-colors border border-[#333] text-xs font-bold flex items-center gap-1.5"
                       title="Abrir Post Original en Facebook / LinkedIn"
                     >
-                      <ExternalLink size={13} /> Post
+                      <ExternalLink size={13} /> Ver Post
                     </a>
                   )}
                 </div>
