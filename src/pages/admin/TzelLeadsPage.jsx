@@ -375,7 +375,7 @@ export default function TzelLeadsPage() {
       )}
 
       {/* KPI Cards Reales (Sin Duplicados ni Precios Ficticios) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
           <div className="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
             <Layers size={24} />
@@ -405,16 +405,6 @@ export default function TzelLeadsPage() {
           <div>
             <div className="text-2xl font-extrabold text-[#F5C518]">KY & IN</div>
             <div className="text-xs font-semibold text-[#8A8A8A]">Louisville & Sur de Indiana</div>
-          </div>
-        </div>
-
-        <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
-          <div className="p-3 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-xl">
-            <Sparkles size={24} />
-          </div>
-          <div>
-            <div className="text-2xl font-extrabold text-white">100% IA</div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Speeches de Venta Listos</div>
           </div>
         </div>
       </div>
