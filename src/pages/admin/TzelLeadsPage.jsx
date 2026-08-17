@@ -1750,7 +1750,7 @@ export default function TzelLeadsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Botón Marcador WebRTC (GHL VoIP) */}
                     {parsed.phone && (
                       <button
@@ -1760,6 +1760,32 @@ export default function TzelLeadsPage() {
                       >
                         <PhoneCall size={14} /> Llamar
                       </button>
+                    )}
+
+                    {/* Botón Google Maps / Ruta de Inspección para Tormentas y Direcciones */}
+                    {lead.address && lead.address.length > 5 && !lead.address.startsWith('Grupo:') && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lead.address)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1.5 bg-blue-500/15 hover:bg-blue-500/25 text-blue-400 border border-blue-500/30 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
+                        title="Ver ubicación exacta en Google Maps / Street View"
+                      >
+                        <MapPin size={13} /> Maps
+                      </a>
+                    )}
+
+                    {/* Botón Buscar Dueño / Registros Públicos */}
+                    {lead.address && !parsed.phone && !lead.address.startsWith('Grupo:') && (
+                      <a
+                        href={`https://www.truepeoplesearch.com/results?streetaddress=${encodeURIComponent(lead.address.split(',')[0])}&citystatezip=Louisville%2C+KY`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-2.5 py-1.5 bg-[#F5C518]/15 hover:bg-[#F5C518]/25 text-[#F5C518] border border-[#F5C518]/30 rounded-xl text-xs font-bold flex items-center gap-1 transition-all"
+                        title="Buscar dueño y teléfono móvil en registros públicos"
+                      >
+                        <Search size={13} /> Buscar Dueño
+                      </a>
                     )}
 
                     {parsed.originalUrl && (
