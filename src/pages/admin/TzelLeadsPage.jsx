@@ -114,50 +114,16 @@ export default function TzelLeadsPage() {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .or('source.ilike.%tzel%,external_ref.ilike.LEAD_%,notes.ilike.%SPEECH DE VENTA RECOMENDADO%')
+        .ilike('external_ref', 'LEAD_%')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-
-      // 1. FILTRO ESTRICTO: Exclusivamente Leads Generados por el Radar de TZEL
-      const filteredOnlyPrivateLeads = (data || []).filter(l => {
-        const name = (l.first_name || '').toLowerCase();
-        const notes = (l.notes || '').toLowerCase();
-        const source = (l.source || '').toLowerCase();
-        const extRef = (l.external_ref || '');
-
-        // Debe ser un lead de TZEL (con ref LEAD_ o source tzel o notas con speech de venta de TZEL)
-        const isTzelLead = extRef.startsWith('LEAD_') || source.includes('tzel') || notes.includes('speech de venta recomendado');
-        if (!isTzelLead) return false;
-
-        const isPublicBid =
-          name.includes('promotor') ||
-          name.includes('expediente') ||
-          notes.includes('expediente municipal') ||
-          notes.includes('government_bid') ||
-          notes.includes('lojic gis') ||
-          notes.includes('zonificación') ||
-          notes.includes('licitación pública');
-        return !isPublicBid;
-      });
-
-      // 2. DEDUPLICACIÓN EN MEMORIA GARANTIZADA
-      const seenFingerprints = new Set();
-      const uniqueLeads = [];
-
-      for (const lead of filteredOnlyPrivateLeads) {
-        const name = (lead.first_name || '').toLowerCase().trim();
-        const addr = (lead.address || '').toLowerCase().trim();
-        const noteSnippet = (lead.notes || '').slice(0, 80).replace(/\s+/g, ' ').trim().toLowerCase();
-        const fingerprint = `${name}_${addr}_${noteSnippet}`;
-
-        if (!seenFingerprints.has(fingerprint)) {
-          seenFingerprints.add(fingerprint);
-          uniqueLeads.push(lead);
-        }
+      if (error) {
+        console.error('Error supabase en contacts:', error);
+        throw error;
       }
 
-      setLeads(uniqueLeads);
+      console.log('✅ Leads cargados directamente de Supabase:', data?.length);
+      setLeads(data || []);
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
     } finally {
