@@ -11,6 +11,27 @@ import {
 // 48 LEADS CALIFICADOS EMBEBIDOS COMO ESTADO INICIAL
 const INITIAL_VERIFIED_LEADS = [
   {
+    "id": "0f554c31-9a1c-4b5c-a449-070683449cee",
+    "first_name": "Vecino / Propietario",
+    "last_name": "(Facebook Louisville)",
+    "email": null,
+    "phone": null,
+    "address": "Louisville Metro / Sur de Indiana",
+    "city": "Louisville",
+    "state": "KY",
+    "zip": null,
+    "source": "other",
+    "pipeline_status": "new_lead",
+    "assigned_to": null,
+    "lead_quality": "warm",
+    "external_ref": "LEAD_FB_GLOBAL_aHR0cHM6Ly93d3cuZmFjZWJv",
+    "notes": "🎯 SOLICITUD DE PROPIETARIO EN FACEBOOK:\n💰 VALOR ESTIMADO: $5500 USD\n🔥 URGENCIA: HIGH\n📌 Proyecto: 🎨 ACABADOS INTERIORES: Cliente (Vecino / Propietario) busca especialista en drywall, pintura, pisos o sótano.\n💬 Publicación: \"Looking for an affordable, experienced, and reliable person to replace vinyl flooring in the basement of a house in West Louisville....\"\n\n🔗 ENLACE A LA PUBLICACIÓN: https://www.facebook.com/groups/948251975923454/?__cft__[0]=AZZvcxvzwuQXfc9ApMuluK6iiSI2_aJcmnqmeK8IK7w9dhMocCdX8Yu50HqO32YAChkqzscqfHnFx4WEpp2qwMeEZOsyHdEQfUik3McRLB5Q2hcax6rDeTTqisTFAGcT-MgvA5XFIedb67tZLeYdi5tCbBUK9P0bJe68JIn2vEV-YChb02DLSQIgR1zN6XbEAkJB_SsIWKRpG6OX7zmBmOXo&__tn__=%3C%3C%2CP-R\n👤 PERFIL DEL AUTOR: N/A\n\n🤖 MENSAJE / RESPUESTA SUGERIDA:\nHola Vecino / Propietario, vimos tu solicitud en Facebook para RENOVATION_REMODEL. En Barba Construction estamos en Louisville y podemos hacerte un presupuesto gratis sin compromiso.",
+    "created_at": "2026-08-17T23:21:34.362957+00:00",
+    "updated_at": "2026-08-17T23:21:34.362957+00:00",
+    "sms_opt_in": false,
+    "qbo_customer_id": null
+  },
+  {
     "id": "c618e0c4-b95d-4498-bb03-21223d0c06b6",
     "first_name": "Propietario",
     "last_name": "del Inmueble",
