@@ -647,12 +647,35 @@ export default function TzelLeadsPage() {
           <p className="font-semibold text-[#F0F0F0]">Cargando oportunidades del Radar TZEL...</p>
         </div>
       ) : filteredLeads.length === 0 ? (
-        <div className="bg-[#141414] p-12 rounded-2xl border border-[#242424] text-center text-[#8A8A8A]">
+        <div className="bg-[#141414] p-12 rounded-2xl border border-[#242424] text-center text-[#8A8A8A] space-y-3">
           <div className="w-16 h-16 mx-auto mb-3 rounded-2xl overflow-hidden opacity-30 border border-[#333]">
             <img src="/tzel-logo.jpg" alt="TZEL" className="w-full h-full object-cover" />
           </div>
-          <h3 className="text-lg font-bold text-white">No se encontraron leads con estos filtros</h3>
-          <p className="text-sm text-[#777] mt-1">Prueba cambiando los criterios de búsqueda o actualiza el radar.</p>
+          <h3 className="text-lg font-bold text-white">No hay leads con los filtros actuales</h3>
+          <p className="text-sm text-[#777]">
+            {leads.length > 0
+              ? `Hay ${leads.length} leads disponibles en el radar, pero no coinciden con los filtros seleccionados.`
+              : 'Actualiza el radar para cargar nuevas oportunidades.'}
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                setSearch('');
+                setSelectedLocation('ALL');
+                setSelectedQuality('ALL');
+                setSelectedStage('ALL');
+              }}
+              className="px-4 py-2 bg-[#F5C518] hover:bg-[#FFD740] text-black text-xs font-bold rounded-xl shadow-md transition-all cursor-pointer"
+            >
+              🔄 Restablecer Filtros ({leads.length} Leads)
+            </button>
+            <button
+              onClick={fetchTzelLeads}
+              className="px-4 py-2 bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#E0E0E0] border border-[#333] text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              Recargar desde Base de Datos
+            </button>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
