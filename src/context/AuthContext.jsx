@@ -1,18 +1,30 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
+
+function getFallbackProfile(user) {
+  if (!user) return null;
+  const meta = user.user_metadata || {};
+  return {
+    id: user.id,
+    full_name: meta.full_name || user.email?.split('@')[0] || 'Usuario',
+    role: meta.role || 'salesperson',
+    is_active: true,
+  };
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isMountedRef = useRef(true);
 
-  // Fetch user profile from profiles table with timeout
-  const fetchProfile = useCallback(async (userId) => {
+  // Fetch user profile from database with a fast timeout (2.5s)
+  const fetchProfile = useCallback(async (userId, fallback) => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 5000);
+      const timeout = setTimeout(() => controller.abort(), 2500);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -24,128 +36,71 @@ export function AuthProvider({ children }) {
       clearTimeout(timeout);
 
       if (error) {
-        console.error('Error fetching profile:', error.message);
-        // Check for token invalidation / auth errors
-        if (error.status === 401 || error.message?.includes('JWT') || error.message?.includes('invalid') || error.code === 'PGRST301') {
-          return { isAuthError: true };
-        }
-        return null;
+        console.warn('Profile fetch warning (using fallback):', error.message);
+        return fallback;
       }
-      return data;
+      return data || fallback;
     } catch (err) {
-      console.error('Profile fetch timeout/error:', err.message);
-      return null;
+      console.warn('Profile fetch timeout/error (using fallback):', err.message);
+      return fallback;
     }
   }, []);
 
   useEffect(() => {
-    let mounted = true;
+    isMountedRef.current = true;
 
-    // STEP 1: Get the initial session immediately from Supabase's own cache.
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      if (!mounted) return;
-      
-      try {
-        if (s?.user) {
-          // Check if session is expired
-          const isExpired = s.expires_at ? s.expires_at * 1000 < Date.now() : false;
-          if (isExpired) {
-            console.warn('Cached session is expired, signing out to clear cache...');
-            await supabase.auth.signOut();
-            setSession(null);
-            setProfile(null);
-            return;
-          }
-
-          const p = await fetchProfile(s.user.id);
-          if (!mounted) return;
-
-          if (p?.isAuthError) {
-            console.warn('Auth error fetching initial profile, signing out to clear cache...');
-            await supabase.auth.signOut();
-            setSession(null);
-            setProfile(null);
-            return;
-          }
-
-          setSession(s);
-          if (p) {
-            setProfile(p);
-          } else {
-            const meta = s.user.user_metadata || {};
-            setProfile({
-              id: s.user.id,
-              full_name: meta.full_name || s.user.email,
-              role: meta.role || 'salesperson',
-              is_active: true,
-            });
-          }
-        } else {
-          setSession(null);
-          setProfile(null);
-        }
-      } catch (err) {
-        console.error('getSession process error:', err);
-      } finally {
-        if (mounted) setLoading(false);
+    // Safety timeout: ensure loading is ALWAYS dismissed after at most 1.5 seconds
+    const safetyTimer = setTimeout(() => {
+      if (isMountedRef.current) {
+        setLoading(false);
       }
-    }).catch((err) => {
-      console.error('getSession error:', err);
-      if (mounted) setLoading(false);
-    });
+    }, 1500);
 
-    // STEP 2: Subscribe to auth state changes (login, logout, token refresh).
+    // Subscribe to auth events (onAuthStateChange fires INITIAL_SESSION on modern Supabase)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, s) => {
-        if (!mounted) return;
+      async (event, currentSession) => {
+        if (!isMountedRef.current) return;
 
         try {
-          if (!s?.user) {
+          if (!currentSession?.user) {
             setSession(null);
             setProfile(null);
+            setLoading(false);
             return;
           }
 
-          if (event === 'SIGNED_OUT') {
-            setSession(null);
-            setProfile(null);
-            return;
-          }
-
-          const p = await fetchProfile(s.user.id);
-          if (!mounted) return;
-
-          if (p?.isAuthError) {
-            console.warn('Auth error on state change, signing out to clear cache...');
+          // Check for expired session
+          if (currentSession.expires_at && currentSession.expires_at * 1000 < Date.now()) {
+            console.warn('Expired session detected, clearing...');
             await supabase.auth.signOut();
             setSession(null);
             setProfile(null);
+            setLoading(false);
             return;
           }
 
-          setSession(s);
-          const fallback = (() => {
-            const meta = s.user.user_metadata || {};
-            return {
-              id: s.user.id,
-              full_name: meta.full_name || s.user.email,
-              role: meta.role || 'salesperson',
-              is_active: true,
-            };
-          })();
+          // 1. Immediately set session and optimistic fallback profile so UI doesn't hang
+          const fallback = getFallbackProfile(currentSession.user);
+          setSession(currentSession);
+          setProfile((prev) => prev || fallback);
+          setLoading(false);
 
-          setProfile(p || fallback);
+          // 2. Fetch full DB profile in background
+          const dbProfile = await fetchProfile(currentSession.user.id, fallback);
+          if (isMountedRef.current && dbProfile) {
+            setProfile(dbProfile);
+          }
         } catch (err) {
-          console.error('onAuthStateChange process error:', err);
-        } finally {
-          if (mounted) setLoading(false);
+          console.error('Auth state change error:', err);
+          if (isMountedRef.current) setLoading(false);
         }
       }
     );
 
     return () => {
-      mounted = false;
-      subscription.unsubscribe();
+      isMountedRef.current = false;
+      clearTimeout(safetyTimer);
+      subscription?.unsubscribe();
     };
   }, [fetchProfile]);
 

@@ -12,11 +12,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey: 'barba-crm-auth-token', // Add custom storage key to prevent collisions and force fresh session
-    // Bypass navigator.locks to prevent deadlocks (stuck loading spinner) in headless/multiple tab environments
-    lock: async (name, acquireTimeout, fn) => {
-      return await fn();
-    },
+    storageKey: 'barba-crm-auth-token',
   },
   realtime: {
     // Disable realtime to prevent WebSocket DNS resolution hanging on init

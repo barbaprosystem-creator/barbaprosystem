@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/auth/LoginPage';
@@ -46,10 +46,35 @@ const Public3DViewer = lazy(() => import('./pages/Public3DViewer'));
 
 // Loading spinner
 function LoadingScreen() {
+  const [showSlowWarning, setShowSlowWarning] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSlowWarning(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="loading-screen">
+    <div className="loading-screen" style={{ minHeight: '100dvh', background: '#0b0b0b', color: '#fff' }}>
       <div className="loading-spinner" />
-      <p>Cargando Barba Pro...</p>
+      <p style={{ color: '#aaa', fontSize: '15px', fontWeight: 500 }}>Cargando Barba Pro...</p>
+      {showSlowWarning && (
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            marginTop: '12px',
+            padding: '8px 18px',
+            background: '#FACB00',
+            color: '#000',
+            fontWeight: 700,
+            fontSize: '13px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          🔄 Recargar ahora
+        </button>
+      )}
     </div>
   );
 }
