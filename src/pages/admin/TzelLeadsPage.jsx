@@ -358,7 +358,7 @@ export default function TzelLeadsPage() {
 
       const matchesStage =
         selectedStage === 'ALL' ||
-        (selectedStage === 'booked' && (l.pipeline_status === 'appointment_set' || l.pipeline_status === 'estimate_sent' || l.pipeline_status === 'closed_won')) ||
+        (selectedStage === 'booked' && l.pipeline_status === 'appointment_set') ||
         (selectedStage === l.pipeline_status);
 
       return matchesSearch && matchesLocation && matchesQuality && matchesStage;
@@ -366,11 +366,7 @@ export default function TzelLeadsPage() {
   }, [leads, search, selectedLocation, selectedQuality, selectedStage]);
 
   const bookedAppointmentsCount = useMemo(() => {
-    return leads.filter(l =>
-      l.pipeline_status === 'appointment_set' ||
-      l.pipeline_status === 'estimate_sent' ||
-      l.pipeline_status === 'closed_won'
-    ).length;
+    return leads.filter(l => l.pipeline_status === 'appointment_set').length;
   }, [leads]);
 
   const formatTimer = (sec) => {
@@ -658,10 +654,7 @@ export default function TzelLeadsPage() {
               activeTab === 'comment' ? parsed.speeches.spanishComment :
               parsed.speeches.englishDM;
 
-            const isBooked =
-              lead.pipeline_status === 'appointment_set' ||
-              lead.pipeline_status === 'estimate_sent' ||
-              lead.pipeline_status === 'closed_won';
+            const isBooked = lead.pipeline_status === 'appointment_set';
 
             return (
               <div
@@ -697,9 +690,13 @@ export default function TzelLeadsPage() {
                         <MapPin size={13} className="text-[#666]" />
                         {lead.city || 'Louisville'}, {lead.state || 'KY'}
                       </span>
-                      {parsed.phone && (
+                      {parsed.phone ? (
                         <span className="flex items-center gap-1 text-[#F5C518] font-semibold bg-[#F5C518]/10 px-2 py-0.5 rounded-md border border-[#F5C518]/20">
                           <Phone size={12} /> {parsed.phone}
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[#888] bg-[#1a1a1a] px-2 py-0.5 rounded-md border border-[#2a2a2a] text-[11px]">
+                          <MessageSquare size={11} className="text-[#666]" /> Contactar por DM / Comentario
                         </span>
                       )}
                     </div>
