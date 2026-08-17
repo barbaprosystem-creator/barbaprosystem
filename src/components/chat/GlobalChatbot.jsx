@@ -91,15 +91,15 @@ export default function GlobalChatbot() {
     return (
       <button 
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-[#FACB00] rounded-full flex items-center justify-center text-black shadow-2xl hover:scale-110 transition-transform z-50"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 w-12 h-12 sm:w-14 sm:h-14 bg-[#FACB00] rounded-full flex items-center justify-center text-black shadow-2xl hover:scale-110 transition-transform z-50 touch-manipulation"
       >
-        <Bot size={28} />
+        <Bot size={24} className="sm:w-7 sm:h-7" />
       </button>
     );
   }
 
   return (
-    <div className="fixed bottom-6 right-6 w-96 h-[600px] max-h-[80vh] bg-[#111] border border-[#222] shadow-2xl rounded-2xl flex flex-col z-50 overflow-hidden font-sans">
+    <div className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 w-[calc(100vw-24px)] sm:w-96 max-w-[420px] h-[550px] max-h-[82vh] bg-[#111] border border-[#222] shadow-2xl rounded-2xl flex flex-col z-50 overflow-hidden font-sans">
       {/* Header */}
       <div className="bg-[#0a0a0a] border-b border-[#222] p-4 flex justify-between items-center shrink-0">
         <div className="flex items-center gap-3">
@@ -153,7 +153,7 @@ export default function GlobalChatbot() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question in plain English..."
-            className="w-full bg-[#151515] text-white rounded-lg pl-4 pr-10 py-3 border border-[#333] focus:outline-none focus:border-[#FACB00] transition-colors text-sm"
+            className="w-full bg-[#151515] text-white rounded-lg pl-4 pr-10 py-3 border border-[#333] focus:outline-none focus:border-[#FACB00] transition-colors text-base sm:text-sm"
             disabled={isThinking}
           />
           <button 

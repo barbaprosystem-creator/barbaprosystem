@@ -5,7 +5,7 @@
     <link rel="icon" type="image/png" href="/logo-barba.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="Barba Pro" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
     <meta name="description" content="Barba Pro System — Sistema operativo para Barba Construction. Estimados, CRM, proyectos y más." />
     <!-- Prevent browser auto-translation from breaking React DOM -->
     <meta name="google" content="notranslate" />
@@ -17,47 +17,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Detect Chrome auto-translation before it breaks React -->
-    <script>
-      (function() {
-        function showTranslateWarning() {
-          var root = document.getElementById('root');
-          if (!root) return;
-          root.innerHTML = [
-            '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;',
-            'height:100vh;background:#0a0a0a;color:#fff;font-family:sans-serif;gap:20px;padding:24px;text-align:center;">',
-            '<div style="font-size:48px">⚠️</div>',
-            '<h2 style="margin:0;font-size:20px;color:#FACB00;">La traducción automática no es compatible</h2>',
-            '<p style="margin:0;color:#9ca3af;font-size:15px;max-width:400px;line-height:1.5">',
-            'Esta aplicación no puede ser traducida automáticamente por el navegador.<br>',
-            'Por favor, desactiva la traducción y recarga la página.</p>',
-            '<button onclick="location.reload()" style="padding:12px 28px;background:#FACB00;color:#000;border:none;',
-            'border-radius:10px;cursor:pointer;font-weight:700;font-size:15px;">',
-            '↺ Recargar página</button>',
-            '<p style="margin:0;color:#6b7280;font-size:13px">Para desactivar: haz clic en el ícono de traducción en la barra de URL → "Nunca traducir este sitio"</p>',
-            '</div>'
-          ].join('');
-        }
-
-        // Watch for Chrome adding translated-ltr / translated-rtl class
-        var obs = new MutationObserver(function(mutations) {
-          for (var i = 0; i < mutations.length; i++) {
-            var m = mutations[i];
-            if (m.attributeName === 'class' || m.attributeName === 'lang') {
-              var html = document.documentElement;
-              var cls = html.className || '';
-              var lang = html.lang || 'es';
-              if (cls.indexOf('translated') !== -1 || (lang !== 'es' && lang !== '')) {
-                obs.disconnect();
-                showTranslateWarning();
-                return;
-              }
-            }
-          }
-        });
-        obs.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'lang'] });
-      })();
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

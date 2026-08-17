@@ -40,3 +40,4 @@ scripts/
 scratch/
 .vercel
 .env*
+build_output.txt
