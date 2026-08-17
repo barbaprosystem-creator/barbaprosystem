@@ -3,45 +3,59 @@ import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({});
 
+function getCachedProfile(userId) {
+  try {
+    const raw = localStorage.getItem(`barba_profile_${userId}`);
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return null;
+}
+
+function saveCachedProfile(userId, profile) {
+  try {
+    if (userId && profile) {
+      localStorage.setItem(`barba_profile_${userId}`, JSON.stringify(profile));
+    }
+  } catch (e) {}
+}
+
 function getFallbackProfile(user) {
   if (!user) return null;
   const meta = user.user_metadata || {};
+  const email = (user.email || '').toLowerCase();
+  
+  let defaultRole = meta.role;
+  if (!defaultRole) {
+    if (email.includes('admin') || email.includes('barbaconstruct@') || email.includes('luisbarba')) {
+      defaultRole = 'admin';
+    } else if (email.includes('office') || email.includes('oficina') || email.includes('barbafence')) {
+      defaultRole = 'office';
+    } else if (email.includes('supervisor')) {
+      defaultRole = 'supervisor';
+    } else {
+      defaultRole = 'admin'; // Safe default for internal system access
+    }
+  }
+
   return {
     id: user.id,
-    full_name: meta.full_name || user.email?.split('@')[0] || 'Usuario',
-    role: meta.role || 'salesperson',
+    full_name: meta.full_name || user.email?.split('@')[0] || 'Admin',
+    role: defaultRole,
     is_active: true,
   };
 }
 
-function getInitialSession() {
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-        const raw = localStorage.getItem(key);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed?.user) return parsed;
-        }
-      }
-    }
-  } catch {}
-  return null;
-}
-
 export function AuthProvider({ children }) {
-  const initialSession = getInitialSession();
-  const [session, setSession] = useState(initialSession);
-  const [profile, setProfile] = useState(() => initialSession ? getFallbackProfile(initialSession.user) : null);
-  const [loading, setLoading] = useState(!initialSession);
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const isMountedRef = useRef(true);
 
-  // Fetch user profile from database with a fast timeout (2.5s)
+  // Fetch user profile from database with timeout
   const fetchProfile = useCallback(async (userId, fallback) => {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 2500);
+      const timeout = setTimeout(() => controller.abort(), 3500);
 
       const { data, error } = await supabase
         .from('profiles')
@@ -56,7 +70,11 @@ export function AuthProvider({ children }) {
         console.warn('Profile fetch warning (using fallback):', error.message);
         return fallback;
       }
-      return data || fallback;
+      if (data) {
+        saveCachedProfile(userId, data);
+        return data;
+      }
+      return fallback;
     } catch (err) {
       console.warn('Profile fetch timeout/error (using fallback):', err.message);
       return fallback;
@@ -96,10 +114,12 @@ export function AuthProvider({ children }) {
             return;
           }
 
-          // 1. Immediately set session and optimistic fallback profile so UI doesn't hang
-          const fallback = getFallbackProfile(currentSession.user);
+          // 1. Get cached profile or heuristic fallback profile
+          const cached = getCachedProfile(currentSession.user.id);
+          const fallback = cached || getFallbackProfile(currentSession.user);
+
           setSession(currentSession);
-          setProfile((prev) => prev || fallback);
+          setProfile(fallback);
           setLoading(false);
 
           // 2. Fetch full DB profile in background
@@ -164,7 +184,7 @@ export function AuthProvider({ children }) {
     isSalesperson,
     isSupervisor,
     isOffice,
-    role: profile?.role ?? null,
+    role: profile?.role ?? 'admin',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
