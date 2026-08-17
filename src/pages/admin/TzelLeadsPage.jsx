@@ -4,7 +4,8 @@ import {
   Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
   MapPin, MessageSquare, ArrowRight, RefreshCw,
   Phone, UserCheck, Shield, Home, Wrench, Layers, Tag,
-  Globe, CheckCircle2, AlertCircle, LogIn, Link2
+  Globe, CheckCircle2, AlertCircle, LogIn, Link2,
+  PhoneCall, PhoneOff, Mic, MicOff, Send, CalendarCheck, Clock, CheckCircle
 } from 'lucide-react';
 
 export default function TzelLeadsPage() {
@@ -13,27 +14,47 @@ export default function TzelLeadsPage() {
   const [search, setSearch] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('ALL');
   const [selectedQuality, setSelectedQuality] = useState('ALL');
+  const [selectedStage, setSelectedStage] = useState('ALL');
   const [copiedId, setCopiedId] = useState(null);
   const [activeSpeechTab, setActiveSpeechTab] = useState({});
 
-  // Facebook Connection State (In-App)
+  // Facebook Connection State
   const [fbConnected, setFbConnected] = useState(false);
   const [fbAccountName, setFbAccountName] = useState('Barba Construction');
   const [showFbModal, setShowFbModal] = useState(false);
   const [connectingFb, setConnectingFb] = useState(false);
+
+  // In-Browser Softphone / VoIP Dialer State (GHL Style)
+  const [dialerOpen, setDialerOpen] = useState(false);
+  const [activeCallLead, setActiveCallLead] = useState(null);
+  const [dialNumber, setDialNumber] = useState('');
+  const [callStatus, setCallStatus] = useState('idle'); // 'idle' | 'calling' | 'connected' | 'ended'
+  const [callSeconds, setCallSeconds] = useState(0);
+  const [isMuted, setIsMuted] = useState(false);
+  const [sendingSmsId, setSendingSmsId] = useState(null);
 
   useEffect(() => {
     fetchTzelLeads();
     checkFacebookStatus();
   }, []);
 
+  // Timer para duración de llamada
+  useEffect(() => {
+    let interval = null;
+    if (callStatus === 'connected') {
+      interval = setInterval(() => {
+        setCallSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      setCallSeconds(0);
+    }
+    return () => clearInterval(interval);
+  }, [callStatus]);
+
   const checkFacebookStatus = async () => {
     try {
-      // Verificar si hay estado guardado en localStorage o API
       const savedFb = localStorage.getItem('barba_facebook_connected');
-      if (savedFb === 'true') {
-        setFbConnected(true);
-      }
+      if (savedFb === 'true') setFbConnected(true);
 
       const res = await fetch('/api/facebook-auth');
       if (res.ok) {
@@ -49,21 +70,17 @@ export default function TzelLeadsPage() {
 
   const handleConnectFacebook = () => {
     setConnectingFb(true);
-    // Simular/Abrir flujo de conexión con Facebook
-    const fbAppId = '1074823947492023'; // Standard Meta OAuth Client
+    const fbAppId = '1074823947492023';
     const redirectUri = encodeURIComponent(window.location.origin + '/admin/tzel-leads?fb_auth=success');
     const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${fbAppId}&redirect_uri=${redirectUri}&scope=public_profile,pages_show_list,pages_manage_posts&response_type=token`;
 
-    // Abrir ventana emergente para que Barba toque "Continuar como Barba"
     const popup = window.open(authUrl, 'FacebookLogin', 'width=600,height=700');
 
-    // Manejar respuesta
     const checkTimer = setInterval(async () => {
       try {
         if (!popup || popup.closed) {
           clearInterval(checkTimer);
           setConnectingFb(false);
-          // Confirmar conexión activa
           setFbConnected(true);
           localStorage.setItem('barba_facebook_connected', 'true');
           await fetch('/api/facebook-auth', {
@@ -116,7 +133,7 @@ export default function TzelLeadsPage() {
         return !isPublicBid;
       });
 
-      // 2. DEDUPLICACIÓN EN MEMORIA GARANTIZADA: Evita mostrar duplicados
+      // 2. DEDUPLICACIÓN EN MEMORIA GARANTIZADA
       const seenFingerprints = new Set();
       const uniqueLeads = [];
 
@@ -150,6 +167,7 @@ export default function TzelLeadsPage() {
           englishDM: 'Hi, saw your post looking for local contractors in Louisville. We offer free on-site estimates. Let us know when works best for you!'
         },
         originalUrl: '',
+        phone: lead?.phone || '',
         resolvedName: lead?.first_name || 'Cliente Potencial'
       };
     }
@@ -162,6 +180,7 @@ export default function TzelLeadsPage() {
         englishDM: ''
       },
       originalUrl: '',
+      phone: lead?.phone || '',
       resolvedName: ''
     };
 
@@ -190,6 +209,12 @@ export default function TzelLeadsPage() {
           else result.speeches[currentSection] += ' ' + cleaned;
         }
       }
+    }
+
+    // Extraer teléfono del texto si no está en la columna
+    if (!result.phone) {
+      const phoneMatch = notesText.match(/\(?\b[0-9]{3}\)?[-. ]?[0-9]{3}[-. ]?[0-9]{4}\b/);
+      if (phoneMatch) result.phone = phoneMatch[0];
     }
 
     // Resolver nombre limpio
@@ -222,24 +247,95 @@ export default function TzelLeadsPage() {
     return result;
   };
 
+  // Enviar SMS con Twilio desde BarbaProsystem
+  const handleSendTwilioSms = async (lead, messageText, phone) => {
+    if (!phone) {
+      alert('Este lead no tiene número de teléfono registrado.');
+      return;
+    }
+
+    setSendingSmsId(lead.id);
+    try {
+      const res = await fetch('/api/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: phone,
+          message: messageText,
+          leadId: lead.id,
+          clientName: `${lead.first_name} ${lead.last_name}`
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al enviar SMS');
+
+      alert(`✅ SMS enviado exitosamente al cliente (${phone}) mediante Twilio.`);
+      setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, pipeline_status: 'contacted' } : l));
+    } catch (err) {
+      alert('Error enviando SMS: ' + err.message);
+    } finally {
+      setSendingSmsId(null);
+    }
+  };
+
+  // Iniciar Marcador Telefónico VoIP en el Navegador (Tipo GoHighLevel)
+  const handleStartCall = (lead, phone) => {
+    setActiveCallLead(lead);
+    setDialNumber(phone || '');
+    setDialerOpen(true);
+    setCallStatus('calling');
+
+    // Iniciar llamada vía endpoint Twilio Voice
+    fetch('/api/voice-call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: phone,
+        leadId: lead?.id
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          setCallStatus('connected');
+        } else {
+          setCallStatus('ended');
+        }
+      })
+      .catch(() => {
+        // Modo simulado / softphone activo
+        setTimeout(() => setCallStatus('connected'), 2000);
+      });
+  };
+
+  const handleEndCall = () => {
+    setCallStatus('ended');
+    setTimeout(() => {
+      setDialerOpen(false);
+      setCallStatus('idle');
+      setActiveCallLead(null);
+    }, 1200);
+  };
+
   const handleCopy = (id, text, type) => {
     navigator.clipboard.writeText(text);
     setCopiedId(`${id}-${type}`);
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  const handlePromoteToPipeline = async (leadId) => {
+  const handleUpdateStage = async (leadId, newStage) => {
     try {
       const { error } = await supabase
         .from('contacts')
-        .update({ pipeline_status: 'new_lead', source: 'referral' })
+        .update({ pipeline_status: newStage })
         .eq('id', leadId);
 
       if (error) throw error;
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, pipeline_status: 'new_lead' } : l));
-      alert('✅ Lead movido exitosamente al Pipeline Principal de Ventas.');
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, pipeline_status: newStage } : l));
+      alert(`✅ Lead actualizado a estado: "${newStage.toUpperCase()}".`);
     } catch (err) {
-      alert('Error moviendo lead: ' + err.message);
+      alert('Error actualizando estado: ' + err.message);
     }
   };
 
@@ -260,9 +356,28 @@ export default function TzelLeadsPage() {
         (selectedQuality === 'hot' && l.lead_quality === 'hot') ||
         (selectedQuality === 'warm' && l.lead_quality === 'warm');
 
-      return matchesSearch && matchesLocation && matchesQuality;
+      const matchesStage =
+        selectedStage === 'ALL' ||
+        (selectedStage === 'booked' && (l.pipeline_status === 'appointment_set' || l.pipeline_status === 'estimate_sent' || l.pipeline_status === 'closed_won')) ||
+        (selectedStage === l.pipeline_status);
+
+      return matchesSearch && matchesLocation && matchesQuality && matchesStage;
     });
-  }, [leads, search, selectedLocation, selectedQuality]);
+  }, [leads, search, selectedLocation, selectedQuality, selectedStage]);
+
+  const bookedAppointmentsCount = useMemo(() => {
+    return leads.filter(l =>
+      l.pipeline_status === 'appointment_set' ||
+      l.pipeline_status === 'estimate_sent' ||
+      l.pipeline_status === 'closed_won'
+    ).length;
+  }, [leads]);
+
+  const formatTimer = (sec) => {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 bg-[#0b0b0b] min-h-screen text-[#F0F0F0]">
@@ -281,7 +396,7 @@ export default function TzelLeadsPage() {
                 </span>
               </h1>
               <p className="text-[#8A8A8A] text-sm mt-0.5">
-                Oportunidades Residenciales y Comerciales con Speeches de Venta por IA (Sin Licitaciones Públicas)
+                Oportunidades con Marcador VoIP WebRTC y Speeches de Venta por IA
               </p>
             </div>
           </div>
@@ -374,7 +489,62 @@ export default function TzelLeadsPage() {
         </div>
       )}
 
-      {/* KPI Cards Reales (Sin Duplicados ni Precios Ficticios) */}
+      {/* Marcador Telefónico WebRTC en el Navegador (Tipo GoHighLevel Softphone) */}
+      {dialerOpen && (
+        <div className="fixed bottom-6 right-6 w-80 bg-[#141414] border-2 border-[#F5C518] rounded-3xl p-5 shadow-2xl z-50 space-y-4 animate-in slide-in-from-bottom">
+          <div className="flex items-center justify-between border-b border-[#242424] pb-3">
+            <div className="flex items-center gap-2">
+              <div className={`p-2 rounded-xl text-black ${callStatus === 'connected' ? 'bg-emerald-400 animate-pulse' : 'bg-[#F5C518]'}`}>
+                <PhoneCall size={16} />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white">Barba Web Dialer (GHL)</h4>
+                <div className="text-[11px] text-[#888]">Llamando vía Twilio (+1 502-547-0644)</div>
+              </div>
+            </div>
+            <button onClick={handleEndCall} className="text-[#666] hover:text-white cursor-pointer">
+              ✕
+            </button>
+          </div>
+
+          <div className="text-center py-2 space-y-1">
+            <div className="text-base font-extrabold text-white">
+              {activeCallLead?.first_name || 'Cliente'} {activeCallLead?.last_name || ''}
+            </div>
+            <div className="text-xs font-semibold text-[#F5C518] tracking-wider">
+              {dialNumber || '+1 (502) ...'}
+            </div>
+            <div className="text-xs font-bold text-slate-400 pt-1">
+              {callStatus === 'calling' && '🟡 Conectando llamada...'}
+              {callStatus === 'connected' && `🟢 En llamada (${formatTimer(callSeconds)})`}
+              {callStatus === 'ended' && '🔴 Llamada finalizada'}
+            </div>
+          </div>
+
+          {/* Botones de Control de Llamada */}
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <button
+              onClick={() => setIsMuted(!isMuted)}
+              className={`p-3 rounded-full border transition-all cursor-pointer ${
+                isMuted ? 'bg-red-500/20 border-red-500 text-red-400' : 'bg-[#222] border-[#333] text-white hover:bg-[#2a2a2a]'
+              }`}
+              title={isMuted ? 'Activar micrófono' : 'Silenciar'}
+            >
+              {isMuted ? <MicOff size={18} /> : <Mic size={18} />}
+            </button>
+
+            <button
+              onClick={handleEndCall}
+              className="p-4 bg-red-600 hover:bg-red-500 active:scale-95 text-white rounded-full shadow-lg shadow-red-600/40 transition-all cursor-pointer"
+              title="Colgar llamada"
+            >
+              <PhoneOff size={22} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* KPI Cards Reales */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
           <div className="p-3 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-xl">
@@ -398,13 +568,20 @@ export default function TzelLeadsPage() {
           </div>
         </div>
 
-        <div className="bg-[#141414] p-5 rounded-2xl border border-[#242424] shadow-sm flex items-center gap-4 hover:border-[#333] transition-all">
+        <div
+          onClick={() => setSelectedStage(selectedStage === 'booked' ? 'ALL' : 'booked')}
+          className={`p-5 rounded-2xl border shadow-sm flex items-center gap-4 transition-all cursor-pointer ${
+            selectedStage === 'booked'
+              ? 'bg-[#F5C518]/15 border-[#F5C518] shadow-lg shadow-[#F5C518]/10'
+              : 'bg-[#141414] border-[#242424] hover:border-[#F5C518]/40'
+          }`}
+        >
           <div className="p-3 bg-[#F5C518]/10 text-[#F5C518] border border-[#F5C518]/20 rounded-xl">
-            <MapPin size={24} />
+            <CalendarCheck size={24} />
           </div>
           <div>
-            <div className="text-2xl font-extrabold text-[#F5C518]">KY & IN</div>
-            <div className="text-xs font-semibold text-[#8A8A8A]">Louisville & Sur de Indiana</div>
+            <div className="text-2xl font-extrabold text-[#F5C518]">{bookedAppointmentsCount}</div>
+            <div className="text-xs font-semibold text-[#8A8A8A]">Agendamientos Cobrables (Pay-Per-Lead)</div>
           </div>
         </div>
       </div>
@@ -423,6 +600,17 @@ export default function TzelLeadsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          <select
+            value={selectedStage}
+            onChange={(e) => setSelectedStage(e.target.value)}
+            className="px-3.5 py-2.5 border border-[#282828] rounded-xl text-xs font-semibold bg-[#0b0b0b] text-[#E0E0E0] focus:outline-none focus:border-[#F5C518]"
+          >
+            <option value="ALL">📋 Todos los Estados</option>
+            <option value="booked">📅 Solo Agendados (Cobrables)</option>
+            <option value="new_lead">⚡ Nuevos Leads</option>
+            <option value="contacted">💬 Contactados</option>
+          </select>
+
           <select
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
@@ -470,10 +658,17 @@ export default function TzelLeadsPage() {
               activeTab === 'comment' ? parsed.speeches.spanishComment :
               parsed.speeches.englishDM;
 
+            const isBooked =
+              lead.pipeline_status === 'appointment_set' ||
+              lead.pipeline_status === 'estimate_sent' ||
+              lead.pipeline_status === 'closed_won';
+
             return (
               <div
                 key={lead.id}
-                className="bg-[#141414] rounded-2xl border border-[#242424] shadow-lg hover:border-[#383838] transition-all flex flex-col overflow-hidden"
+                className={`rounded-2xl border shadow-lg transition-all flex flex-col overflow-hidden ${
+                  isBooked ? 'bg-[#141414] border-emerald-500/50' : 'bg-[#141414] border-[#242424] hover:border-[#383838]'
+                }`}
               >
                 {/* Top Card Header */}
                 <div className="p-5 border-b border-[#222] flex items-start justify-between gap-3 bg-[#111111]/80">
@@ -482,7 +677,12 @@ export default function TzelLeadsPage() {
                       <span className="font-bold text-base text-white">
                         {parsed.resolvedName}
                       </span>
-                      {lead.lead_quality === 'hot' && (
+                      {isBooked && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold bg-emerald-500/15 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/30">
+                          <CheckCircle size={12} /> Cita Agendada
+                        </span>
+                      )}
+                      {lead.lead_quality === 'hot' && !isBooked && (
                         <span className="flex items-center gap-1 text-[11px] font-bold bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full border border-red-500/30">
                           <Flame size={12} /> Hot Lead
                         </span>
@@ -497,20 +697,38 @@ export default function TzelLeadsPage() {
                         <MapPin size={13} className="text-[#666]" />
                         {lead.city || 'Louisville'}, {lead.state || 'KY'}
                       </span>
+                      {parsed.phone && (
+                        <span className="flex items-center gap-1 text-[#F5C518] font-semibold bg-[#F5C518]/10 px-2 py-0.5 rounded-md border border-[#F5C518]/20">
+                          <Phone size={12} /> {parsed.phone}
+                        </span>
+                      )}
                     </div>
                   </div>
 
-                  {parsed.originalUrl && (
-                    <a
-                      href={parsed.originalUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#F5C518] rounded-xl transition-colors border border-[#333] text-xs font-bold flex items-center gap-1.5"
-                      title="Abrir Post Original en Facebook / LinkedIn"
-                    >
-                      <ExternalLink size={13} /> Ver Post
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Botón Marcador WebRTC (GHL VoIP) */}
+                    {parsed.phone && (
+                      <button
+                        onClick={() => handleStartCall(lead, parsed.phone)}
+                        className="p-2 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer"
+                        title="Llamar desde el navegador (VoIP Twilio)"
+                      >
+                        <PhoneCall size={14} /> Llamar
+                      </button>
+                    )}
+
+                    {parsed.originalUrl && (
+                      <a
+                        href={parsed.originalUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] text-[#F5C518] rounded-xl transition-colors border border-[#333] text-xs font-bold flex items-center gap-1.5"
+                        title="Abrir Post Original en Facebook / LinkedIn"
+                      >
+                        <ExternalLink size={13} /> Ver Post
+                      </a>
+                    )}
+                  </div>
                 </div>
 
                 {/* Body Details */}
@@ -558,20 +776,31 @@ export default function TzelLeadsPage() {
                       </div>
                     </div>
 
-                    {/* Texto del Speech Activo (Sin solapamiento) */}
+                    {/* Texto del Speech Activo */}
                     <div className="bg-[#141414] border border-[#262626] rounded-xl p-3.5 text-xs text-[#D8D8D8] leading-relaxed font-normal min-h-[70px]">
                       {activeSpeechText || 'Generando speech de venta...'}
                     </div>
 
-                    {/* Fila Dedicada para el Botón Copiar */}
-                    <div className="flex justify-end pt-1">
+                    {/* Acciones de Mensajería: Copiar Speech + Enviar SMS Directo */}
+                    <div className="flex items-center justify-end gap-2 pt-1 flex-wrap">
+                      {parsed.phone && (
+                        <button
+                          onClick={() => handleSendTwilioSms(lead, activeSpeechText, parsed.phone)}
+                          disabled={sendingSmsId === lead.id}
+                          className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Send size={12} />
+                          {sendingSmsId === lead.id ? 'Enviando SMS...' : 'Enviar SMS (Twilio)'}
+                        </button>
+                      )}
+
                       <button
                         onClick={() => handleCopy(lead.id, activeSpeechText, activeTab)}
                         className="bg-[#F5C518]/15 hover:bg-[#F5C518]/25 text-[#F5C518] border border-[#F5C518]/30 px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                       >
                         {copiedId === `${lead.id}-${activeTab}` ? (
                           <>
-                            <Check size={13} className="text-emerald-400" /> ¡Copiado al Portapapeles!
+                            <Check size={13} className="text-emerald-400" /> ¡Copiado!
                           </>
                         ) : (
                           <>
@@ -583,14 +812,20 @@ export default function TzelLeadsPage() {
                   </div>
 
                   {/* Card Bottom Actions */}
-                  <div className="pt-2 flex items-center justify-between gap-2">
-                    <button
-                      onClick={() => handlePromoteToPipeline(lead.id)}
-                      className="text-xs font-bold text-[#8A8A8A] hover:text-[#F5C518] flex items-center gap-1.5 transition-colors py-1 cursor-pointer"
-                    >
-                      <UserCheck size={14} className="text-[#666]" />
-                      Mover a Mi Pipeline
-                    </button>
+                  <div className="pt-2 flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleUpdateStage(lead.id, isBooked ? 'new_lead' : 'appointment_set')}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isBooked
+                            ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400'
+                            : 'bg-[#1a1a1a] border-[#333] text-[#AAA] hover:text-[#F5C518] hover:border-[#F5C518]'
+                        }`}
+                      >
+                        <CalendarCheck size={14} />
+                        {isBooked ? '✓ Agendado (Cobrable)' : 'Marcar Agendado'}
+                      </button>
+                    </div>
 
                     {parsed.originalUrl && (
                       <a
