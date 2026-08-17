@@ -113,15 +113,22 @@ export default function TzelLeadsPage() {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .or('source.ilike.%tzel%,source.ilike.%facebook%,source.ilike.%linkedin%,notes.ilike.%SPEECH DE VENTA%')
+        .or('source.ilike.%tzel%,external_ref.ilike.LEAD_%,notes.ilike.%SPEECH DE VENTA RECOMENDADO%')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
-      // 1. FILTRO ESTRICTO: Excluir licitaciones públicas y expedientes
+      // 1. FILTRO ESTRICTO: Exclusivamente Leads Generados por el Radar de TZEL
       const filteredOnlyPrivateLeads = (data || []).filter(l => {
         const name = (l.first_name || '').toLowerCase();
         const notes = (l.notes || '').toLowerCase();
+        const source = (l.source || '').toLowerCase();
+        const extRef = (l.external_ref || '');
+
+        // Debe ser un lead de TZEL (con ref LEAD_ o source tzel o notas con speech de venta de TZEL)
+        const isTzelLead = extRef.startsWith('LEAD_') || source.includes('tzel') || notes.includes('speech de venta recomendado');
+        if (!isTzelLead) return false;
+
         const isPublicBid =
           name.includes('promotor') ||
           name.includes('expediente') ||
