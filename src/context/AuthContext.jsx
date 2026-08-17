@@ -14,10 +14,27 @@ function getFallbackProfile(user) {
   };
 }
 
+function getInitialSession() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.user) return parsed;
+        }
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const initialSession = getInitialSession();
+  const [session, setSession] = useState(initialSession);
+  const [profile, setProfile] = useState(() => initialSession ? getFallbackProfile(initialSession.user) : null);
+  const [loading, setLoading] = useState(!initialSession);
   const isMountedRef = useRef(true);
 
   // Fetch user profile from database with a fast timeout (2.5s)

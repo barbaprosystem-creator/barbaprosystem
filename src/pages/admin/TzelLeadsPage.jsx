@@ -109,6 +109,7 @@ export default function TzelLeadsPage() {
 
   const fetchTzelLeads = async () => {
     setLoading(true);
+    const safetyTimer = setTimeout(() => setLoading(false), 3000);
     try {
       const { data, error } = await supabase
         .from('contacts')
@@ -160,6 +161,7 @@ export default function TzelLeadsPage() {
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
     } finally {
+      clearTimeout(safetyTimer);
       setLoading(false);
     }
   };
@@ -198,9 +200,11 @@ export default function TzelLeadsPage() {
       const line = lines[i].trim();
       if (line.includes('🎯 NECESIDAD:')) {
         result.need = line.replace('🎯 NECESIDAD:', '').trim();
-      } else if (line.includes('🔗 ENLACE ORIGINAL:') || line.includes('🔗 Enlace')) {
+      } else if (line.includes('🔗 Enlace directo al Post:') || line.includes('🔗 ENLACE ORIGINAL:') || line.includes('🔗 Enlace') || line.includes('🔗 Búsqueda:')) {
         const urlMatch = line.match(/https?:\/\/[^\s]+/);
-        if (urlMatch) result.originalUrl = urlMatch[0];
+        if (urlMatch && !result.originalUrl) {
+          result.originalUrl = urlMatch[0];
+        }
       } else if (line.includes('SPEECH DE VENTA RECOMENDADO (ESPAÑOL - DM):')) {
         currentSection = 'spanishDM';
       } else if (line.includes('COMENTARIO PÚBLICO SUGERIDO:')) {
