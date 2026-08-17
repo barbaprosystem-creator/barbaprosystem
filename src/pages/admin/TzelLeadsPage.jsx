@@ -107,18 +107,23 @@ export default function TzelLeadsPage() {
     });
   };
 
+  const [dbError, setDbError] = useState(null);
+
   const fetchTzelLeads = async () => {
     setLoading(true);
+    setDbError(null);
     const safetyTimer = setTimeout(() => setLoading(false), 3000);
     try {
+      // Consulta directa por external_ref o notas de speech
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .ilike('external_ref', 'LEAD_%')
+        .or('external_ref.ilike.LEAD_%,notes.ilike.%SPEECH%')
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error supabase en contacts:', error);
+        setDbError(error.message);
         throw error;
       }
 
@@ -126,6 +131,7 @@ export default function TzelLeadsPage() {
       setLeads(data || []);
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
+      setDbError(err.message || 'Error de conexión con Supabase');
     } finally {
       clearTimeout(safetyTimer);
       setLoading(false);
@@ -405,6 +411,15 @@ export default function TzelLeadsPage() {
           </button>
         </div>
       </div>
+
+      {dbError && (
+        <div className="p-4 bg-red-950/50 border border-red-600/50 text-red-200 rounded-2xl text-xs flex items-center justify-between shadow-lg">
+          <span>⚠️ <strong>Aviso de Base de Datos:</strong> {dbError}</span>
+          <button onClick={fetchTzelLeads} className="px-3 py-1 bg-red-700 hover:bg-red-600 text-white rounded-lg font-bold cursor-pointer transition-all">
+            Reintentar Carga
+          </button>
+        </div>
+      )}
 
       {/* Modal de Conexión de Facebook para Barba */}
       {showFbModal && (
