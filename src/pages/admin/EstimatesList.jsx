@@ -59,16 +59,31 @@ export default function EstimatesList() {
   useEffect(() => { 
     fetchEstimates();
     fetchProfiles();
-    // Run incremental background sync from QBO quietly on mount
-    fetch('/api/qbo-pull-recent', { method: 'POST' })
-      .then(res => res.json())
+    
+    // Run incremental background sync from QBO quietly on mount with safety timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+    fetch('/api/qbo-pull-recent', { method: 'POST', signal: controller.signal })
+      .then(res => {
+        clearTimeout(timeoutId);
+        if (!res.ok) return null;
+        return res.json();
+      })
       .then(data => {
         if (data && (data.invoicesCreated > 0 || data.customersCreated > 0 || data.estimatesCreated > 0)) {
           console.log(`[QBO Background Sync] Loaded ${data.invoicesCreated} invoices, ${data.estimatesCreated} estimates, and ${data.customersCreated} customers.`);
           fetchEstimates();
         }
       })
-      .catch(err => console.error('[QBO Background Sync Error]', err));
+      .catch(() => {
+        clearTimeout(timeoutId);
+      });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   async function fetchProfiles() {

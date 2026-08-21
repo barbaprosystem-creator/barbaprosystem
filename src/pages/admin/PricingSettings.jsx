@@ -15,6 +15,7 @@ const EMPTY_FORM = {
 export default function PricingSettings() {
   const [items, setItems]         = useState([]);
   const [loading, setLoading]     = useState(true);
+  const [fetchError, setFetchError] = useState(null);
   const [filter, setFilter]       = useState('all');
   const [search, setSearch]       = useState('');
   const [showAdd, setShowAdd]     = useState(false);
@@ -30,10 +31,35 @@ export default function PricingSettings() {
 
   async function fetchItems() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('price_catalog').select('*').order('category').order('item_name');
-    if (!error) setItems(data || []);
-    setLoading(false);
+    setFetchError(null);
+    try {
+      const { data, error } = await supabase
+        .from('price_catalog').select('*').order('category').order('item_name');
+      if (error) {
+        console.error('Error loading price_catalog:', error);
+        // If JWT error or stale token, attempt refresh automatically
+        if (error.message?.includes('JWT') || error.status === 401 || error.code === 'PGRST301') {
+          const { data: refData } = await supabase.auth.refreshSession().catch(() => ({}));
+          if (refData?.session) {
+            const { data: retryData, error: retryErr } = await supabase
+              .from('price_catalog').select('*').order('category').order('item_name');
+            if (!retryErr) {
+              setItems(retryData || []);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+        setFetchError(error.message || 'Error reading prices from database.');
+      } else {
+        setItems(data || []);
+      }
+    } catch (err) {
+      console.error('Fetch prices caught exception:', err);
+      setFetchError(err.message || 'Connection error loading prices.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function addItem() {
@@ -233,7 +259,18 @@ export default function PricingSettings() {
 
       {/* Table */}
       <div className="pricing-table-wrap">
-        {loading ? (
+        {fetchError ? (
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#ef4444' }}>
+            <p style={{ fontWeight: 600, fontSize: '15px', marginBottom: '8px' }}>⚠️ Error loading prices: {fetchError}</p>
+            <button 
+              className="btn-primary" 
+              onClick={fetchItems} 
+              style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+            >
+              🔄 Retry Connection
+            </button>
+          </div>
+        ) : loading ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>Loading prices...</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#666' }}>

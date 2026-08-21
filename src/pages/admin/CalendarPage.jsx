@@ -307,7 +307,14 @@ export default function CalendarPage() {
       const allFetchedEvents = [];
       const fetchPromises = tokensToFetch.map(async ({ userId, userName, token }) => {
         try {
-          const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(token)}`);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+          const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(token)}`, {
+            signal: controller.signal
+          });
+          clearTimeout(timeoutId);
+
           if (!res.ok) throw new Error(`Could not connect to Google Calendar for ${userName}`);
           const items = await res.json();
           console.log(`[CalendarPage] Google Calendar event items fetched for ${userName}:`, items?.length || 0);

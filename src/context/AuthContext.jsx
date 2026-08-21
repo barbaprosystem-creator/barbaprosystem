@@ -67,6 +67,10 @@ export function AuthProvider({ children }) {
       clearTimeout(timeout);
 
       if (error) {
+        if (error.message?.includes('JWT') || error.message?.includes('expired') || error.code === 'PGRST301' || error.status === 401) {
+          console.warn('[Auth] Stale token detected during profile fetch. Refreshing session...');
+          await supabase.auth.refreshSession().catch(() => {});
+        }
         console.warn('Profile fetch warning (using fallback):', error.message);
         return fallback;
       }
@@ -104,14 +108,18 @@ export function AuthProvider({ children }) {
             return;
           }
 
-          // Check for expired session
+          // Check for expired session and attempt refresh
           if (currentSession.expires_at && currentSession.expires_at * 1000 < Date.now()) {
-            console.warn('Expired session detected, clearing...');
-            await supabase.auth.signOut();
-            setSession(null);
-            setProfile(null);
-            setLoading(false);
-            return;
+            console.warn('[Auth] Expired session detected, attempting refresh...');
+            const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+            if (refreshErr || !refreshed.session) {
+              await supabase.auth.signOut().catch(() => {});
+              setSession(null);
+              setProfile(null);
+              setLoading(false);
+              return;
+            }
+            currentSession = refreshed.session;
           }
 
           // 1. Get cached profile or heuristic fallback profile

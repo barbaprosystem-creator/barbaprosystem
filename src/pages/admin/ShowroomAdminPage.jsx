@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Plus, Trash2, Image as ImageIcon, Loader2, Folder, Upload } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function ShowroomAdminPage() {
   const [categories, setCategories] = useState([]);
@@ -75,7 +74,7 @@ export default function ShowroomAdminPage() {
 
     for (const file of files) {
       const ext = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${ext}`;
+      const fileName = `${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('showroom')
         .upload(fileName, file);
