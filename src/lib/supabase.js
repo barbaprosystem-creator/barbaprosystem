@@ -12,7 +12,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey: 'barba-crm-auth-token',
+    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    storageKey: 'barba-crm-session-token',
   },
   realtime: {
     // Disable realtime to prevent WebSocket DNS resolution hanging on init

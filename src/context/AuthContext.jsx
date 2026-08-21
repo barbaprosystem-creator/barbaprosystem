@@ -5,7 +5,7 @@ const AuthContext = createContext({});
 
 function getCachedProfile(userId) {
   try {
-    const raw = localStorage.getItem(`barba_profile_${userId}`);
+    const raw = sessionStorage.getItem(`barba_profile_${userId}`);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
   return null;
@@ -14,7 +14,7 @@ function getCachedProfile(userId) {
 function saveCachedProfile(userId, profile) {
   try {
     if (userId && profile) {
-      localStorage.setItem(`barba_profile_${userId}`, JSON.stringify(profile));
+      sessionStorage.setItem(`barba_profile_${userId}`, JSON.stringify(profile));
     }
   } catch (e) {}
 }
@@ -171,7 +171,13 @@ export function AuthProvider({ children }) {
       console.warn('SignOut server call warning:', err);
     } finally {
       try {
+        sessionStorage.removeItem('barba-crm-session-token');
+        sessionStorage.removeItem('barba-crm-auth-token');
         localStorage.removeItem('barba-crm-auth-token');
+        localStorage.removeItem('barba-crm-session-token');
+        Object.keys(sessionStorage).forEach(k => {
+          if (k.startsWith('barba_profile_')) sessionStorage.removeItem(k);
+        });
         Object.keys(localStorage).forEach(k => {
           if (k.startsWith('barba_profile_')) localStorage.removeItem(k);
         });

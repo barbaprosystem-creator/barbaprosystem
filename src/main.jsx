@@ -8,15 +8,19 @@ import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
 
 // App Cache & Version Control
-const APP_VERSION = '2026.08.21.v2';
+const APP_VERSION = '2026.08.21.v3';
 
 // Automatic cache & storage cleanup on version mismatch
 try {
   const currentStoredVersion = localStorage.getItem('barba_app_version');
   if (currentStoredVersion !== APP_VERSION) {
-    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Purging stale caches...`);
+    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Purging stale caches & legacy storage...`);
     
-    // Clear stale cached profiles without wiping authentication
+    // Clear old permanent auth tokens from localStorage so it forces clean login per session
+    localStorage.removeItem('barba-crm-auth-token');
+    localStorage.removeItem('barba-crm-session-token');
+
+    // Clear stale cached profiles
     Object.keys(localStorage).forEach(key => {
       if (key.startsWith('barba_profile_')) {
         localStorage.removeItem(key);

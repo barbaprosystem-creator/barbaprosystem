@@ -123,9 +123,10 @@ export default function App() {
           {!session || !profile ? (
             <>
               {/* Guest / Unauthenticated routes */}
-              <Route path="/" element={<LandingPage />} />
+              <Route path="/landing" element={<LandingPage />} />
+              <Route path="/" element={<LoginPage onAuth={signIn} />} />
               <Route path="/login" element={<LoginPage onAuth={signIn} />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
             </>
           ) : (
             <>
