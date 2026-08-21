@@ -67,10 +67,6 @@ export function AuthProvider({ children }) {
       clearTimeout(timeout);
 
       if (error) {
-        if (error.message?.includes('JWT') || error.message?.includes('expired') || error.code === 'PGRST301' || error.status === 401) {
-          console.warn('[Auth] Stale token detected during profile fetch. Refreshing session...');
-          await supabase.auth.refreshSession().catch(() => {});
-        }
         console.warn('Profile fetch warning (using fallback):', error.message);
         return fallback;
       }
@@ -88,41 +84,45 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     isMountedRef.current = true;
 
-    // Safety timeout: ensure loading is ALWAYS dismissed after at most 1.5 seconds
-    const safetyTimer = setTimeout(() => {
-      if (isMountedRef.current) {
+    // 1. Immediate initial check using getSession
+    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
+      if (!isMountedRef.current) return;
+      if (initialSession?.user) {
+        const cached = getCachedProfile(initialSession.user.id);
+        const fallback = cached || getFallbackProfile(initialSession.user);
+        setSession(initialSession);
+        setProfile(fallback);
+        setLoading(false);
+
+        // Fetch DB profile in background
+        fetchProfile(initialSession.user.id, fallback).then(dbProfile => {
+          if (isMountedRef.current && dbProfile) {
+            setProfile(dbProfile);
+          }
+        });
+      } else {
+        setSession(null);
+        setProfile(null);
         setLoading(false);
       }
-    }, 1500);
+    }).catch(err => {
+      console.warn('[Auth] getSession error:', err);
+      if (isMountedRef.current) setLoading(false);
+    });
 
-    // Subscribe to auth events (onAuthStateChange fires INITIAL_SESSION on modern Supabase)
+    // 2. Subscribe to auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         if (!isMountedRef.current) return;
 
         try {
-          if (!currentSession?.user) {
+          if (event === 'SIGNED_OUT' || !currentSession?.user) {
             setSession(null);
             setProfile(null);
             setLoading(false);
             return;
           }
 
-          // Check for expired session and attempt refresh
-          if (currentSession.expires_at && currentSession.expires_at * 1000 < Date.now()) {
-            console.warn('[Auth] Expired session detected, attempting refresh...');
-            const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
-            if (refreshErr || !refreshed.session) {
-              await supabase.auth.signOut().catch(() => {});
-              setSession(null);
-              setProfile(null);
-              setLoading(false);
-              return;
-            }
-            currentSession = refreshed.session;
-          }
-
-          // 1. Get cached profile or heuristic fallback profile
           const cached = getCachedProfile(currentSession.user.id);
           const fallback = cached || getFallbackProfile(currentSession.user);
 
@@ -130,7 +130,6 @@ export function AuthProvider({ children }) {
           setProfile(fallback);
           setLoading(false);
 
-          // 2. Fetch full DB profile in background
           const dbProfile = await fetchProfile(currentSession.user.id, fallback);
           if (isMountedRef.current && dbProfile) {
             setProfile(dbProfile);
@@ -144,7 +143,6 @@ export function AuthProvider({ children }) {
 
     return () => {
       isMountedRef.current = false;
-      clearTimeout(safetyTimer);
       subscription?.unsubscribe();
     };
   }, [fetchProfile]);
@@ -167,12 +165,21 @@ export function AuthProvider({ children }) {
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
+    try {
+      await supabase.auth.signOut();
+    } catch (err) {
+      console.warn('SignOut server call warning:', err);
+    } finally {
+      try {
+        localStorage.removeItem('barba-crm-auth-token');
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('barba_profile_')) localStorage.removeItem(k);
+        });
+      } catch (e) {}
       setSession(null);
       setProfile(null);
+      window.location.href = '/login';
     }
-    return { error };
   };
 
   const isAdmin = profile?.role === 'admin';

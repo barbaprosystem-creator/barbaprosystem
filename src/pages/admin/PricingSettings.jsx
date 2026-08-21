@@ -37,19 +37,6 @@ export default function PricingSettings() {
         .from('price_catalog').select('*').order('category').order('item_name');
       if (error) {
         console.error('Error loading price_catalog:', error);
-        // If JWT error or stale token, attempt refresh automatically
-        if (error.message?.includes('JWT') || error.status === 401 || error.code === 'PGRST301') {
-          const { data: refData } = await supabase.auth.refreshSession().catch(() => ({}));
-          if (refData?.session) {
-            const { data: retryData, error: retryErr } = await supabase
-              .from('price_catalog').select('*').order('category').order('item_name');
-            if (!retryErr) {
-              setItems(retryData || []);
-              setLoading(false);
-              return;
-            }
-          }
-        }
         setFetchError(error.message || 'Error reading prices from database.');
       } else {
         setItems(data || []);
