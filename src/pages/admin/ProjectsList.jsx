@@ -86,28 +86,35 @@ export default function ProjectsList() {
     fetchProjects();
     fetchContacts();
 
-    // Run incremental background sync from QBO quietly on mount with safety timeout
+    // Run incremental background sync from QBO quietly on mount with safety timeout & 10min session cooldown
+    const lastPull = sessionStorage.getItem('barba_qbo_last_pull');
+    const now = Date.now();
+    let timeoutId = null;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-    fetch('/api/qbo-pull-recent', { method: 'POST', signal: controller.signal })
-      .then(res => {
-        clearTimeout(timeoutId);
-        if (!res.ok) return null;
-        return res.json();
-      })
-      .then(data => {
-        if (data && (data.invoicesCreated > 0 || data.customersCreated > 0 || data.estimatesCreated > 0)) {
-          console.log(`[QBO Projects Sync] Loaded ${data.invoicesCreated} invoices, ${data.estimatesCreated} estimates.`);
-          fetchProjects();
-        }
-      })
-      .catch(() => {
-        clearTimeout(timeoutId);
-      });
+    if (!lastPull || now - parseInt(lastPull, 10) > 10 * 60 * 1000) {
+      sessionStorage.setItem('barba_qbo_last_pull', now.toString());
+      timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      fetch('/api/qbo-pull-recent', { method: 'POST', signal: controller.signal })
+        .then(res => {
+          if (timeoutId) clearTimeout(timeoutId);
+          if (!res.ok) return null;
+          return res.json();
+        })
+        .then(data => {
+          if (data && (data.invoicesCreated > 0 || data.customersCreated > 0 || data.estimatesCreated > 0)) {
+            console.log(`[QBO Projects Sync] Loaded ${data.invoicesCreated} invoices, ${data.estimatesCreated} estimates.`);
+            fetchProjects();
+          }
+        })
+        .catch(() => {
+          if (timeoutId) clearTimeout(timeoutId);
+        });
+    }
 
     return () => {
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
       controller.abort();
     };
   }, []);

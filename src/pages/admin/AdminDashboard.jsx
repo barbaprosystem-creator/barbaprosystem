@@ -118,7 +118,7 @@ export default function AdminDashboard() {
           supabase.from('projects').select('*', { count: 'exact' }).in('status', ['in_progress', 'scheduled']).order('start_date', { ascending: true }),
           supabase.from('estimates').select('*', { count: 'exact' }).eq('status', 'sent'),
           supabase.from('payments').select('*').in('status', ['pending', 'overdue']),
-          supabase.from('daily_reports').select('id, project_id, report_date, notes, issues, work_completed, created_at').order('report_date', { ascending: false }).limit(100)
+          supabase.from('daily_reports').select('id, project_id, report_date, issues, work_completed, created_at').order('report_date', { ascending: false }).limit(100)
         ]);
 
         let totalRevenue = projects?.reduce((sum, p) => sum + (p.sold_price || 0), 0) || 0;
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
 
         let finalActiveProjects = (projects?.slice(0, 8) || []).map(p => {
           const latestReport = dailyReports?.find(r => r.project_id === p.id);
-          const noteText = latestReport?.notes || latestReport?.issues || latestReport?.work_completed || null;
+          const noteText = latestReport?.issues || latestReport?.work_completed || null;
 
           let timeline = null;
           if (p.target_end_date) {

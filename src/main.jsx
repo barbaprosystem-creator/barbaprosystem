@@ -55,12 +55,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-if ('caches' in window) {
-  caches.keys().then(names => {
-    names.forEach(name => caches.delete(name));
-  }).catch(() => {});
-}
-
 // Reset chunk error refresh flag on successful app initialization
 try {
   sessionStorage.setItem('chunk-error-refreshed', 'false');

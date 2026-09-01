@@ -19,6 +19,8 @@ export default function TzelLeadsPage() {
   const [contactStatusFilter, setContactStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState('ALL');
   const [sortBy, setSortBy] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const LEADS_PER_PAGE = 24;
   const [copiedId, setCopiedId] = useState(null);
   const [activeSpeechTab, setActiveSpeechTab] = useState({});
 
@@ -47,6 +49,11 @@ export default function TzelLeadsPage() {
     fetchTzelLeads();
     checkFacebookStatus();
   }, []);
+
+  // Reset page to 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
 
   // Timer para duración de llamada
   useEffect(() => {
@@ -119,7 +126,22 @@ export default function TzelLeadsPage() {
 
   const [dbError, setDbError] = useState(null);
 
-  const fetchTzelLeads = async (retryCount = 0) => {
+  const fetchTzelLeads = async (forceRefresh = false, retryCount = 0) => {
+    if (!forceRefresh) {
+      const cached = sessionStorage.getItem('barba_tzel_leads_cache');
+      const cachedTime = sessionStorage.getItem('barba_tzel_leads_cache_time');
+      if (cached && cachedTime && (Date.now() - parseInt(cachedTime, 10) < 5 * 60 * 1000)) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setLeads(parsed);
+            setLoading(false);
+            return;
+          }
+        } catch {}
+      }
+    }
+
     setLoading(true);
     setDbError(null);
     try {
@@ -138,11 +160,15 @@ export default function TzelLeadsPage() {
 
       console.log('✅ Leads cargados directamente de Supabase:', data?.length);
       setLeads(data || []);
+      try {
+        sessionStorage.setItem('barba_tzel_leads_cache', JSON.stringify(data || []));
+        sessionStorage.setItem('barba_tzel_leads_cache_time', Date.now().toString());
+      } catch {}
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
       setDbError(err.message || 'Error de conexión con Supabase');
       if (retryCount < 2) {
-        setTimeout(() => fetchTzelLeads(retryCount + 1), 1200);
+        setTimeout(() => fetchTzelLeads(forceRefresh, retryCount + 1), 1200);
       }
     } finally {
       setLoading(false);
@@ -526,6 +552,13 @@ export default function TzelLeadsPage() {
     return result;
   }, [leads, search, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
 
+  const totalPages = Math.ceil(filteredLeads.length / LEADS_PER_PAGE) || 1;
+
+  const paginatedLeads = useMemo(() => {
+    const start = (currentPage - 1) * LEADS_PER_PAGE;
+    return filteredLeads.slice(start, start + LEADS_PER_PAGE);
+  }, [filteredLeads, currentPage]);
+
   const bookedAppointmentsCount = useMemo(() => {
     return leads.filter(l => l.pipeline_status === 'appointment_set').length;
   }, [leads]);
@@ -600,7 +633,7 @@ export default function TzelLeadsPage() {
           </button>
 
           <button
-            onClick={fetchTzelLeads}
+            onClick={() => fetchTzelLeads(true)}
             disabled={loading}
             className="flex items-center gap-2 bg-[#F5C518] hover:bg-[#FFD740] active:scale-95 text-black px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg shadow-[#F5C518]/20 cursor-pointer"
           >
@@ -937,8 +970,38 @@ export default function TzelLeadsPage() {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {filteredLeads.map((lead) => {
+        <div className="space-y-5">
+          {/* Barra de Paginación Superior */}
+          <div className="flex items-center justify-between gap-4 bg-[#141414] border border-[#242424] rounded-2xl p-4 flex-wrap">
+            <div className="text-xs text-[#888]">
+              Mostrando <span className="font-bold text-white">{filteredLeads.length === 0 ? 0 : (currentPage - 1) * LEADS_PER_PAGE + 1}</span> a <span className="font-bold text-white">{Math.min(currentPage * LEADS_PER_PAGE, filteredLeads.length)}</span> de <span className="font-bold text-[#F5C518]">{filteredLeads.length}</span> oportunidades
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white rounded-lg border border-[#333] transition-all cursor-pointer"
+              >
+                ← Anterior
+              </button>
+              
+              <span className="text-xs font-semibold px-2 text-[#AAA]">
+                Página {currentPage} de {totalPages}
+              </span>
+              
+              <button
+                onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white rounded-lg border border-[#333] transition-all cursor-pointer"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {paginatedLeads.map((lead) => {
             const parsed = parseNotes(lead.notes, lead);
             const activeTab = activeSpeechTab[lead.id] || 'dm';
             const dateInfo = formatLeadDate(lead.created_at);
@@ -1234,7 +1297,58 @@ export default function TzelLeadsPage() {
             );
           })}
         </div>
-      )}
+
+        {/* Barra de Paginación Inferior */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between gap-4 bg-[#141414] border border-[#242424] rounded-2xl p-4 flex-wrap mt-6">
+            <div className="text-xs text-[#888]">
+              Página <span className="font-bold text-white">{currentPage}</span> de <span className="font-bold text-white">{totalPages}</span> ({filteredLeads.length} leads en total)
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { setCurrentPage(p => Math.max(p - 1, 1)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white rounded-lg border border-[#333] transition-all cursor-pointer"
+              >
+                ← Anterior
+              </button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  let pageNum = i + 1;
+                  if (totalPages > 5 && currentPage > 3) {
+                    pageNum = currentPage - 3 + i + 1;
+                    if (pageNum > totalPages) pageNum = totalPages - (4 - i);
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => { setCurrentPage(pageNum); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        currentPage === pageNum
+                          ? 'bg-[#F5C518] text-black shadow-md'
+                          : 'bg-[#1a1a1a] text-[#888] hover:text-white border border-[#2a2a2a]'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              
+              <button
+                onClick={() => { setCurrentPage(p => Math.min(p + 1, totalPages)); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                disabled={currentPage >= totalPages}
+                className="px-3 py-1.5 bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white rounded-lg border border-[#333] transition-all cursor-pointer"
+              >
+                Siguiente →
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )}
     </div>
   );
 }
