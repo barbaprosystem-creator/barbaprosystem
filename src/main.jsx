@@ -16,8 +16,7 @@ try {
   if (currentStoredVersion !== APP_VERSION) {
     console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Purging stale caches & legacy storage...`);
     
-    // Clear old permanent auth tokens from localStorage so it forces clean login per session
-    localStorage.removeItem('barba-crm-auth-token');
+    // Clear stale data caches on version bump while preserving active auth token
     localStorage.removeItem('barba-crm-session-token');
 
     // Clear stale cached profiles

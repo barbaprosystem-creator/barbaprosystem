@@ -5,7 +5,7 @@ const AuthContext = createContext({});
 
 function getCachedProfile(userId) {
   try {
-    const raw = sessionStorage.getItem(`barba_profile_${userId}`);
+    const raw = localStorage.getItem(`barba_profile_${userId}`) || sessionStorage.getItem(`barba_profile_${userId}`);
     if (raw) return JSON.parse(raw);
   } catch (e) {}
   return null;
@@ -14,6 +14,7 @@ function getCachedProfile(userId) {
 function saveCachedProfile(userId, profile) {
   try {
     if (userId && profile) {
+      localStorage.setItem(`barba_profile_${userId}`, JSON.stringify(profile));
       sessionStorage.setItem(`barba_profile_${userId}`, JSON.stringify(profile));
     }
   } catch (e) {}

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
+import { syncEntities } from '../../lib/dataCache';
 import {
   Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
   MapPin, MessageSquare, ArrowRight, RefreshCw,
@@ -126,50 +127,33 @@ export default function TzelLeadsPage() {
 
   const [dbError, setDbError] = useState(null);
 
-  const fetchTzelLeads = async (forceRefresh = false, retryCount = 0) => {
-    if (!forceRefresh) {
-      const cached = sessionStorage.getItem('barba_tzel_leads_cache');
-      const cachedTime = sessionStorage.getItem('barba_tzel_leads_cache_time');
-      if (cached && cachedTime && (Date.now() - parseInt(cachedTime, 10) < 5 * 60 * 1000)) {
-        try {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setLeads(parsed);
-            setLoading(false);
-            return;
-          }
-        } catch {}
-      }
+  const fetchTzelLeads = async (forceRefresh = false) => {
+    if (forceRefresh) {
+      setLoading(true);
     }
-
-    setLoading(true);
     setDbError(null);
     try {
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .or('external_ref.ilike.LEAD_%,notes.ilike.%SPEECH%,notes.ilike.%INFRACCIÓN%')
-        .order('created_at', { ascending: false })
-        .limit(3000);
+      const data = await syncEntities({
+        table: 'contacts',
+        cacheKey: 'tzel_leads',
+        select: '*',
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 2500,
+        filterBuilder: (q) => q.or('external_ref.ilike.LEAD_%,notes.ilike.%SPEECH%,notes.ilike.%INFRACCIÓN%'),
+        forceRefresh,
+        onImmediateData: (cachedData) => {
+          setLeads(cachedData);
+          setLoading(false);
+        }
+      });
 
-      if (error) {
-        console.error('Error supabase en contacts:', error);
-        setDbError(error.message);
-        throw error;
+      if (data && data.length > 0) {
+        setLeads(data);
       }
-
-      console.log('✅ Leads cargados directamente de Supabase:', data?.length);
-      setLeads(data || []);
-      try {
-        sessionStorage.setItem('barba_tzel_leads_cache', JSON.stringify(data || []));
-        sessionStorage.setItem('barba_tzel_leads_cache_time', Date.now().toString());
-      } catch {}
     } catch (err) {
       console.error('Error cargando leads de TZEL:', err);
       setDbError(err.message || 'Error de conexión con Supabase');
-      if (retryCount < 2) {
-        setTimeout(() => fetchTzelLeads(forceRefresh, retryCount + 1), 1200);
-      }
     } finally {
       setLoading(false);
     }

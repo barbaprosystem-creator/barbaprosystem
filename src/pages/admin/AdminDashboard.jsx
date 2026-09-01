@@ -104,9 +104,22 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    // 1. Instant load from local cache (0ms)
+    try {
+      const cached = localStorage.getItem('barba_cache_dashboard') || sessionStorage.getItem('barba_cache_dashboard');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.stats) setStats(parsed.stats);
+        if (parsed.recentLeads) setRecentLeads(parsed.recentLeads);
+        if (parsed.activeProjects) setActiveProjects(parsed.activeProjects);
+        if (parsed.payments) setPayments(parsed.payments);
+        setLoading(false);
+      }
+    } catch (e) {}
+
+    // 2. Background refresh
     async function loadDashboardData() {
       try {
-        setLoading(true);
         const [
           { data: leads, count: leadsCount },
           { data: projects, count: projectsCount },
@@ -189,7 +202,7 @@ export default function AdminDashboard() {
         }) || [];
         let finalPayments = sortedPayments.slice(0, 5);
 
-        setStats({
+        const computedStats = {
           totalLeads: finalLeadsCount,
           activeProjects: finalProjectsCount,
           estimatesSent: finalEstimatesCount,
@@ -198,11 +211,23 @@ export default function AdminDashboard() {
           closedThisMonth: wonLeads, 
           overduePayments,
           wonLeads
-        });
+        };
 
+        setStats(computedStats);
         setRecentLeads(finalRecentLeads);
         setActiveProjects(finalActiveProjects);
         setPayments(finalPayments);
+
+        // Save to local cache
+        try {
+          localStorage.setItem('barba_cache_dashboard', JSON.stringify({
+            stats: computedStats,
+            recentLeads: finalRecentLeads,
+            activeProjects: finalActiveProjects,
+            payments: finalPayments,
+            cachedAt: Date.now()
+          }));
+        } catch (e) {}
 
       } catch (err) {
         console.error('Error loading dashboard data:', err);

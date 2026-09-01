@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { syncEntities } from '../../lib/dataCache';
 import { Search, Loader2, MapPin, Calendar, User, TrendingUp, ChevronRight, Plus, X, Pencil, Trash2, AlertTriangle, Briefcase, Home, RefreshCw, Receipt } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import ProjectDetail from './ProjectDetail';
@@ -119,53 +120,43 @@ export default function ProjectsList() {
     };
   }, []);
 
-  async function fetchContacts() {
+  async function fetchContacts(forceRefresh = false) {
     try {
-      console.log("[ProjectsList] fetchContacts started...");
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('id, first_name, last_name')
-        .order('first_name');
-      if (error) {
-        console.error("[ProjectsList] fetchContacts error:", error);
-        throw error;
-      }
-      console.log("[ProjectsList] fetchContacts count:", data?.length || 0);
-      setContacts(data || []);
+      const data = await syncEntities({
+        table: 'contacts',
+        cacheKey: 'contacts_min',
+        select: 'id, first_name, last_name',
+        orderBy: 'first_name',
+        ascending: true,
+        forceRefresh,
+        onImmediateData: (cached) => setContacts(cached)
+      });
+      if (data && data.length > 0) setContacts(data);
     } catch (err) {
-      console.error("[ProjectsList] fetchContacts caught exception:", err);
-      setContacts([]);
+      console.warn("[ProjectsList] fetchContacts error:", err);
     }
   }
 
-  async function fetchProjects() {
-    setLoading(true);
+  async function fetchProjects(forceRefresh = false) {
     try {
-      console.log("[ProjectsList] fetchProjects started...");
-      let allData = [];
-      let page = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data, error } = await supabase
-          .from('projects')
-          .select('*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id), project_expenses(id)')
-          .order('created_at', { ascending: false })
-          .range(page * pageSize, (page + 1) * pageSize - 1);
-        if (error) {
-          console.error("[ProjectsList] fetchProjects error page " + page, error);
-          throw error;
+      const data = await syncEntities({
+        table: 'projects',
+        cacheKey: 'projects_list',
+        select: '*, contact:contacts!projects_contact_id_fkey(first_name,last_name,phone), supervisor:profiles!projects_supervisor_id_fkey(full_name), estimate:estimates(qbo_invoice_number, qbo_invoice_id, qbo_estimate_id), project_expenses(id)',
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 1500,
+        forceRefresh,
+        onImmediateData: (cached) => {
+          setProjects(cached);
+          setLoading(false);
         }
-        if (!data || data.length === 0) break;
-        allData = allData.concat(data);
-        if (data.length < pageSize) break;
-        page++;
+      });
+      if (data && data.length > 0) {
+        setProjects(data);
       }
-      console.log("[ProjectsList] fetchProjects count:", allData.length);
-      setProjects(allData);
     } catch (err) {
       console.error("[ProjectsList] fetchProjects caught exception:", err);
-      alert('Error fetching projects: ' + err.message);
-      setProjects([]);
     } finally {
       setLoading(false);
     }
