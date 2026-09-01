@@ -1121,7 +1121,7 @@ export default async function handler(req, res) {
                   title: `${clientName} - ${workType}`,
                   status: balance === 0 ? 'completed' : 'in_progress',
                   sold_price: grandTotal,
-                  address: contactObj?.address || 'To be confirmed',
+                  address: qboInv.ShipAddr?.Line1 || qboInv.BillAddr?.Line1 || contactObj?.address || 'To be confirmed',
                   created_at: qboInv.TxnDate ? (qboInv.TxnDate + 'T12:00:00Z') : (qboInv.Metadata?.CreateTime || new Date().toISOString()),
                   start_date: qboInv.TxnDate || (qboInv.Metadata?.CreateTime || new Date().toISOString()).split('T')[0]
                 });
@@ -1233,7 +1233,7 @@ export default async function handler(req, res) {
                       .single();
 
                     const clientName = contactObj ? `${contactObj.first_name} ${contactObj.last_name}` : 'Client';
-                    const projectAddress = contactObj?.address || qboInv.BillAddr?.Line1 || '';
+                    const projectAddress = qboInv.ShipAddr?.Line1 || qboInv.BillAddr?.Line1 || contactObj?.address || 'To be confirmed';
 
                     const { error: projErr } = await supabase.from('projects').insert({
                       estimate_id: doubleCheckInv.id,
