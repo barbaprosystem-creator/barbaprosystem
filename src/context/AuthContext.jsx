@@ -172,9 +172,35 @@ export function AuthProvider({ children }) {
       }
     );
 
+    // 3. Tab wake & focus listener to ensure valid token after idle/sleep
+    const handleWakeCheck = async () => {
+      if (document.visibilityState === 'visible') {
+        try {
+          const { data: { session: currentSess } } = await supabase.auth.getSession();
+          if (currentSess?.user) {
+            const now = Math.floor(Date.now() / 1000);
+            if (currentSess.expires_at && (currentSess.expires_at - now < 60)) {
+              const { data: userData } = await supabase.auth.getUser();
+              if (userData?.user) {
+                const { data: refreshed } = await supabase.auth.getSession();
+                if (refreshed?.session && isMountedRef.current) {
+                  setSession(refreshed.session);
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
+    window.addEventListener('focus', handleWakeCheck);
+    document.addEventListener('visibilitychange', handleWakeCheck);
+
     return () => {
       isMountedRef.current = false;
       subscription?.unsubscribe();
+      window.removeEventListener('focus', handleWakeCheck);
+      document.removeEventListener('visibilitychange', handleWakeCheck);
     };
   }, [fetchProfile]);
 
