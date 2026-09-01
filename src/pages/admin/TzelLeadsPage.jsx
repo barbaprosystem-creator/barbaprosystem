@@ -1811,8 +1811,9 @@ export default function TzelLeadsPage() {
       const { data, error } = await supabase
         .from('contacts')
         .select('*')
-        .or('external_ref.ilike.LEAD_%,notes.ilike.%SPEECH%')
-        .order('created_at', { ascending: false });
+        .or('external_ref.ilike.LEAD_%,notes.ilike.%SPEECH%,notes.ilike.%INFRACCIÓN%')
+        .order('created_at', { ascending: false })
+        .limit(3000);
 
       if (error) {
         console.error('Error supabase en contacts:', error);
