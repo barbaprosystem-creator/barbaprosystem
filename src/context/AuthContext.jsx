@@ -84,31 +84,62 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     isMountedRef.current = true;
 
-    // 1. Immediate initial check using getSession
-    supabase.auth.getSession().then(({ data: { session: initialSession }, error }) => {
-      if (!isMountedRef.current) return;
-      if (initialSession?.user) {
-        const cached = getCachedProfile(initialSession.user.id);
-        const fallback = cached || getFallbackProfile(initialSession.user);
-        setSession(initialSession);
+    // 1. Initial auth check with token validity verification
+    const initAuth = async () => {
+      try {
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        if (!isMountedRef.current) return;
+
+        if (error || !initialSession?.user) {
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        const isExpired = initialSession.expires_at && (initialSession.expires_at - now < 30);
+
+        let activeSession = initialSession;
+
+        if (isExpired) {
+          // Verify user and let Supabase SDK refresh the token before mounting pages
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError || !userData?.user) {
+            setSession(null);
+            setProfile(null);
+            setLoading(false);
+            return;
+          }
+          const { data: refreshedSession } = await supabase.auth.getSession();
+          activeSession = refreshedSession?.session || initialSession;
+        }
+
+        if (!isMountedRef.current) return;
+
+        const cached = getCachedProfile(activeSession.user.id);
+        const fallback = cached || getFallbackProfile(activeSession.user);
+        setSession(activeSession);
         setProfile(fallback);
         setLoading(false);
 
         // Fetch DB profile in background
-        fetchProfile(initialSession.user.id, fallback).then(dbProfile => {
+        fetchProfile(activeSession.user.id, fallback).then(dbProfile => {
           if (isMountedRef.current && dbProfile) {
             setProfile(dbProfile);
           }
         });
-      } else {
-        setSession(null);
-        setProfile(null);
-        setLoading(false);
+      } catch (err) {
+        console.warn('[Auth] Initialization error:', err);
+        if (isMountedRef.current) {
+          setSession(null);
+          setProfile(null);
+          setLoading(false);
+        }
       }
-    }).catch(err => {
-      console.warn('[Auth] getSession error:', err);
-      if (isMountedRef.current) setLoading(false);
-    });
+    };
+
+    initAuth();
 
     // 2. Subscribe to auth events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

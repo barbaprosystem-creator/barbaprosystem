@@ -8,7 +8,7 @@ import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
 
 // App Cache & Version Control
-const APP_VERSION = '2026.08.21.v3';
+const APP_VERSION = '2026.09.01.v1';
 
 // Automatic cache & storage cleanup on version mismatch
 try {
@@ -40,7 +40,7 @@ try {
   console.warn('[App] Error in version cache cleanup:', e);
 }
 
-// Clean up any legacy service workers that might be aggressively caching index.html or API responses
+// Clean up any legacy service workers and caches that might be aggressively caching index.html or API responses
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
@@ -53,6 +53,12 @@ if ('serviceWorker' in navigator) {
   }).catch((err) => {
     console.error('[ServiceWorker] Error checking registrations:', err);
   });
+}
+
+if ('caches' in window) {
+  caches.keys().then(names => {
+    names.forEach(name => caches.delete(name));
+  }).catch(() => {});
 }
 
 // Reset chunk error refresh flag on successful app initialization

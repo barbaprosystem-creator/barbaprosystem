@@ -843,13 +843,19 @@ export default async function handler(req, res) {
           const zip = billAddr.PostalCode || '';
 
           let matchedContact = localContacts.find(c => c.qbo_customer_id === qboId);
-          if (!matchedContact && email) {
-            matchedContact = localContacts.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
-          }
           if (!matchedContact && displayName) {
             matchedContact = localContacts.find(c => {
               const localFullName = `${c.first_name || ''} ${c.last_name || ''}`.trim().toLowerCase();
-              return localFullName === displayName.trim().toLowerCase();
+              return localFullName === displayName.trim().toLowerCase() && (!c.qbo_customer_id || c.qbo_customer_id === qboId);
+            });
+          }
+          if (!matchedContact && email) {
+            // Only match by email if contact does NOT have a different QBO ID already assigned AND name matches or is empty
+            matchedContact = localContacts.find(c => {
+              if (c.qbo_customer_id && c.qbo_customer_id !== qboId) return false;
+              if (!c.email || c.email.toLowerCase() !== email.toLowerCase()) return false;
+              const localFullName = `${c.first_name || ''} ${c.last_name || ''}`.trim().toLowerCase();
+              return !localFullName || localFullName === displayName.trim().toLowerCase();
             });
           }
 
