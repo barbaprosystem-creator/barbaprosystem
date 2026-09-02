@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { syncEntities } from '../../lib/dataCache';
+import { syncEntities, setCached } from '../../lib/dataCache';
 import {
   Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
   MapPin, MessageSquare, ArrowRight, RefreshCw,
@@ -30,6 +30,7 @@ export default function TzelLeadsPage() {
   const [expandedNotesId, setExpandedNotesId] = useState({});
   const [savingNoteId, setSavingNoteId] = useState(null);
   const [noteSavedFeedback, setNoteSavedFeedback] = useState(null);
+  const [statusToast, setStatusToast] = useState(null);
 
   // Facebook Connection State
   const [fbConnected, setFbConnected] = useState(false);
@@ -219,17 +220,20 @@ export default function TzelLeadsPage() {
         updatedFullNotes = `${originalNotes.trim()}\n\n=========================================\n${userNotesTag}\n${newNoteText.trim()}`;
       }
 
-      const { error } = await supabase
-        .from('contacts')
-        .update({ notes: updatedFullNotes })
-        .eq('id', leadId);
-
-      if (error) throw error;
-
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, notes: updatedFullNotes } : l));
+      const nowIso = new Date().toISOString();
+      const updated = leads.map(l => l.id === leadId ? { ...l, notes: updatedFullNotes, updated_at: nowIso } : l);
+      setLeads(updated);
+      setCached('tzel_leads', updated);
       setLeadNotes(prev => ({ ...prev, [leadId]: newNoteText }));
       setNoteSavedFeedback(leadId);
       setTimeout(() => setNoteSavedFeedback(null), 2500);
+
+      const { error } = await supabase
+        .from('contacts')
+        .update({ notes: updatedFullNotes, updated_at: nowIso })
+        .eq('id', leadId);
+
+      if (error) throw error;
     } catch (err) {
       alert('Error guardando nota: ' + err.message);
     } finally {
@@ -237,17 +241,54 @@ export default function TzelLeadsPage() {
     }
   };
 
-  // Actualizar Estatus de Contacto en Supabase
+  // Actualizar Estatus de Contacto en Supabase y Caché Local
   const handleUpdateContactStatus = async (leadId, newStatus) => {
     try {
+      const lead = leads.find(l => l.id === leadId);
+      const leadName = lead?.first_name ? `${lead.first_name} ${lead.last_name || ''}`.trim() : 'Lead';
+      const nowIso = new Date().toISOString();
+
+      // 1. Actualización optimista inmediata en Estado y Caché Local
+      const updated = leads.map(l => l.id === leadId ? { ...l, pipeline_status: newStatus, updated_at: nowIso } : l);
+      setLeads(updated);
+      setCached('tzel_leads', updated);
+
+      const statusLabels = {
+        new_lead: '⚪ Sin Contactar',
+        contacted: '🟡 Contactado',
+        appointment_set: '🟣 Cita Agendada',
+        estimate_sent: '🔵 Estimado Enviado',
+        closed_won: '🟢 Ganado / Cerrado',
+        closed_lost: '🔴 No Interesado'
+      };
+
+      const label = statusLabels[newStatus] || newStatus;
+      const isFilteredOut = contactStatusFilter !== 'ALL' && (
+        (contactStatusFilter === 'not_contacted' && newStatus !== 'new_lead') ||
+        (contactStatusFilter !== 'not_contacted' && contactStatusFilter !== newStatus)
+      );
+
+      setStatusToast({
+        id: leadId,
+        leadName,
+        message: `Estado de "${leadName}" cambiado a ${label}`,
+        status: newStatus,
+        isFilteredOut
+      });
+      setTimeout(() => setStatusToast(null), 4000);
+
+      // 2. Persistir en la base de datos Supabase
       const { error } = await supabase
         .from('contacts')
-        .update({ pipeline_status: newStatus })
+        .update({ pipeline_status: newStatus, updated_at: nowIso })
         .eq('id', leadId);
 
-      if (error) throw error;
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, pipeline_status: newStatus } : l));
+      if (error) {
+        console.error('Error supabase updating pipeline_status:', error);
+        throw error;
+      }
     } catch (err) {
+      console.error('Error actualizando estado de contacto:', err);
       alert('Error actualizando estado de contacto: ' + err.message);
     }
   };
@@ -388,7 +429,10 @@ export default function TzelLeadsPage() {
       if (!res.ok) throw new Error(data.error || 'Error al enviar SMS');
 
       alert(`✅ SMS enviado exitosamente al cliente (${phone}) mediante Twilio.`);
-      setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, pipeline_status: 'contacted' } : l));
+      const nowIso = new Date().toISOString();
+      const updated = leads.map(l => l.id === lead.id ? { ...l, pipeline_status: 'contacted', updated_at: nowIso } : l);
+      setLeads(updated);
+      setCached('tzel_leads', updated);
     } catch (err) {
       alert('Error enviando SMS: ' + err.message);
     } finally {
@@ -1333,6 +1377,27 @@ export default function TzelLeadsPage() {
         )}
       </div>
     )}
+
+      {/* Floating Status Update Toast Feedback */}
+      {statusToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#181818] border-2 border-[#F5C518] text-white px-5 py-3.5 rounded-2xl shadow-2xl z-50 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-5 max-w-lg">
+          <CheckCircle2 className="text-[#F5C518] shrink-0" size={20} />
+          <div className="text-xs">
+            <span className="font-bold text-white block">{statusToast.message}</span>
+            {statusToast.isFilteredOut && (
+              <span className="text-[11px] text-[#A0A0A0] mt-0.5 flex items-center gap-1.5">
+                (El lead se movió a la categoría correspondiente. Para verlo, cambia el filtro arriba a "Todos" o "{statusToast.status === 'contacted' ? 'Contactados' : statusToast.status}")
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setStatusToast(null)}
+            className="text-[#777] hover:text-white ml-2 text-sm cursor-pointer p-1"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </div>
   );
 }
