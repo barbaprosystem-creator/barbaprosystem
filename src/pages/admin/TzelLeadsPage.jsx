@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { syncEntities, setCached } from '../../lib/dataCache';
+import { syncEntities, updateCachedRecord } from '../../lib/dataCache';
 import {
   Search, Filter, Copy, Check, ExternalLink, Flame, Sparkles,
   MapPin, MessageSquare, ArrowRight, RefreshCw,
@@ -221,9 +221,9 @@ export default function TzelLeadsPage() {
       }
 
       const nowIso = new Date().toISOString();
-      const updated = leads.map(l => l.id === leadId ? { ...l, notes: updatedFullNotes, updated_at: nowIso } : l);
-      setLeads(updated);
-      setCached('tzel_leads', updated);
+      const updatedLead = { ...lead, notes: updatedFullNotes, updated_at: nowIso };
+      setLeads(prev => prev.map(l => l.id === leadId ? updatedLead : l));
+      updateCachedRecord('tzel_leads', updatedLead);
       setLeadNotes(prev => ({ ...prev, [leadId]: newNoteText }));
       setNoteSavedFeedback(leadId);
       setTimeout(() => setNoteSavedFeedback(null), 2500);
@@ -249,9 +249,9 @@ export default function TzelLeadsPage() {
       const nowIso = new Date().toISOString();
 
       // 1. Actualización optimista inmediata en Estado y Caché Local
-      const updated = leads.map(l => l.id === leadId ? { ...l, pipeline_status: newStatus, updated_at: nowIso } : l);
-      setLeads(updated);
-      setCached('tzel_leads', updated);
+      const updatedLead = { ...lead, pipeline_status: newStatus, updated_at: nowIso };
+      setLeads(prev => prev.map(l => l.id === leadId ? updatedLead : l));
+      updateCachedRecord('tzel_leads', updatedLead);
 
       const statusLabels = {
         new_lead: '⚪ Sin Contactar',
@@ -430,9 +430,9 @@ export default function TzelLeadsPage() {
 
       alert(`✅ SMS enviado exitosamente al cliente (${phone}) mediante Twilio.`);
       const nowIso = new Date().toISOString();
-      const updated = leads.map(l => l.id === lead.id ? { ...l, pipeline_status: 'contacted', updated_at: nowIso } : l);
-      setLeads(updated);
-      setCached('tzel_leads', updated);
+      const updatedLead = { ...lead, pipeline_status: 'contacted', updated_at: nowIso };
+      setLeads(prev => prev.map(l => l.id === lead.id ? updatedLead : l));
+      updateCachedRecord('tzel_leads', updatedLead);
     } catch (err) {
       alert('Error enviando SMS: ' + err.message);
     } finally {

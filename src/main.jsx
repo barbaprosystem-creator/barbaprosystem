@@ -7,31 +7,36 @@ import { AuthProvider } from './hooks/useAuth';
 import ErrorBoundary from './components/common/ErrorBoundary.jsx';
 import { LanguageProvider } from './i18n/LanguageContext.jsx';
 
-// App Cache & Version Control
-const APP_VERSION = '2026.09.01.v1';
+// DEV-only diagnostics (tree-shaken in production)
+if (import.meta.env.DEV) {
+  import('./lib/devDiagnostics.js');
+}
 
-// Automatic cache & storage cleanup on version mismatch
+// App Cache & Version Control
+const APP_VERSION = '2026.09.02.v1';
+
+// Version-aware cleanup — only invalidate data caches, NEVER purge CacheStorage or auth
 try {
   const currentStoredVersion = localStorage.getItem('barba_app_version');
   if (currentStoredVersion !== APP_VERSION) {
-    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Purging stale caches & legacy storage...`);
-    
-    // Clear stale data caches on version bump while preserving active auth token
+    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Invalidating stale data caches...`);
+
+    // Remove legacy session key (migrated to barba-crm-auth-token)
     localStorage.removeItem('barba-crm-session-token');
 
-    // Clear stale cached profiles
+    // Invalidate data cache sync timestamps so next page load does a full refresh
+    // Do NOT delete the cached data itself — it can serve as instant placeholder
     Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('barba_profile_')) {
+      if (key.startsWith('barba_last_sync_')) {
         localStorage.removeItem(key);
       }
     });
 
-    // Clear CacheStorage
-    if ('caches' in window) {
-      caches.keys().then(names => {
-        names.forEach(name => caches.delete(name));
-      }).catch(() => {});
-    }
+    // Clear dashboard cache (small, safe to invalidate)
+    localStorage.removeItem('barba_cache_dashboard');
+
+    // Do NOT purge CacheStorage — Vite hashed filenames handle asset versioning
+    // Do NOT purge barba_profile_* — they are small and useful for instant auth
 
     localStorage.setItem('barba_app_version', APP_VERSION);
   }
@@ -39,7 +44,7 @@ try {
   console.warn('[App] Error in version cache cleanup:', e);
 }
 
-// Clean up any legacy service workers and caches that might be aggressively caching index.html or API responses
+// Clean up any legacy service workers (one-time, harmless)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.getRegistrations().then((registrations) => {
     for (const registration of registrations) {
@@ -49,15 +54,28 @@ if ('serviceWorker' in navigator) {
         }
       });
     }
-  }).catch((err) => {
-    console.error('[ServiceWorker] Error checking registrations:', err);
-  });
+  }).catch(() => {});
 }
 
-// Reset chunk error refresh flag on successful app initialization
+// Handle stale chunk errors after deploys — with anti-infinite-reload protection
 try {
   sessionStorage.setItem('chunk-error-refreshed', 'false');
 } catch (e) {}
+
+// Vite preload error handler — catches dynamic import failures before ErrorBoundary
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  try {
+    const hasReloaded = sessionStorage.getItem('vite-preload-refreshed') === 'true';
+    if (!hasReloaded) {
+      sessionStorage.setItem('vite-preload-refreshed', 'true');
+      console.warn('[Vite] Preload error detected. Reloading to fetch latest chunks...');
+      window.location.reload();
+    } else {
+      console.error('[Vite] Preload error persists after reload. Not reloading again to prevent loop.');
+    }
+  } catch (e) {}
+});
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 

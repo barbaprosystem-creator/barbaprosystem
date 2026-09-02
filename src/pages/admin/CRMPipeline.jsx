@@ -247,9 +247,14 @@ export default function CRMPipeline() {
   const [viewClient, setViewClient] = useState(null);
   const [chatModal, setChatModal] = useState({ open: false, cliente: null });
 
-  useEffect(() => { if (profile) fetchData(); }, [profile]);
+  useEffect(() => {
+    if (!profile?.id) return;
+    const controller = new AbortController();
+    fetchData(controller.signal);
+    return () => controller.abort();
+  }, [profile?.id]);
 
-  async function fetchData() {
+  async function fetchData(signal) {
     setLoading(true);
     let query = supabase.from('contacts')
       .select('*, assigned_profile:profiles!contacts_assigned_to_fkey(full_name)')
@@ -259,10 +264,13 @@ export default function CRMPipeline() {
       query = query.eq('assigned_to', profile.id);
     }
 
-    const [cRes, pRes] = await Promise.all([
-      query,
-      supabase.from('profiles').select('id,full_name,role').in('role', ['salesperson', 'admin']),
-    ]);
+    if (signal) query = query.abortSignal(signal);
+
+    const profilesQuery = supabase.from('profiles').select('id,full_name,role').in('role', ['salesperson', 'admin']);
+    if (signal) profilesQuery.abortSignal(signal);
+
+    const [cRes, pRes] = await Promise.all([query, profilesQuery]);
+    if (signal?.aborted) return;
     setContacts(cRes.data || []);
     setSalespeople(pRes.data || []);
     setLoading(false);

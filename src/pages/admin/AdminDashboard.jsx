@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { getCached, setCached } from '../../lib/dataCache';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { 
@@ -104,18 +105,20 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    // 1. Instant load from local cache (0ms)
-    try {
-      const cached = localStorage.getItem('barba_cache_dashboard') || sessionStorage.getItem('barba_cache_dashboard');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed.stats) setStats(parsed.stats);
-        if (parsed.recentLeads) setRecentLeads(parsed.recentLeads);
-        if (parsed.activeProjects) setActiveProjects(parsed.activeProjects);
-        if (parsed.payments) setPayments(parsed.payments);
-        setLoading(false);
-      }
-    } catch (e) {}
+    // 1. Instant load from IndexedDB cache (async but fast, ~1-5ms)
+    (async () => {
+      try {
+        const cached = await getCached('dashboard');
+        if (cached && cached.data?.length > 0) {
+          const parsed = cached.data[0];
+          if (parsed.stats) setStats(parsed.stats);
+          if (parsed.recentLeads) setRecentLeads(parsed.recentLeads);
+          if (parsed.activeProjects) setActiveProjects(parsed.activeProjects);
+          if (parsed.payments) setPayments(parsed.payments);
+          setLoading(false);
+        }
+      } catch (e) {}
+    })();
 
     // 2. Background refresh
     async function loadDashboardData() {
@@ -218,16 +221,15 @@ export default function AdminDashboard() {
         setActiveProjects(finalActiveProjects);
         setPayments(finalPayments);
 
-        // Save to local cache
-        try {
-          localStorage.setItem('barba_cache_dashboard', JSON.stringify({
-            stats: computedStats,
-            recentLeads: finalRecentLeads,
-            activeProjects: finalActiveProjects,
-            payments: finalPayments,
-            cachedAt: Date.now()
-          }));
-        } catch (e) {}
+        // Save to IndexedDB cache
+        setCached('dashboard', [{
+          id: 'dashboard_data',
+          stats: computedStats,
+          recentLeads: finalRecentLeads,
+          activeProjects: finalActiveProjects,
+          payments: finalPayments,
+          cachedAt: Date.now()
+        }]).catch(() => {});
 
       } catch (err) {
         console.error('Error loading dashboard data:', err);

@@ -174,8 +174,14 @@ export function AuthProvider({ children }) {
     );
 
     // 3. Tab wake & focus listener to ensure valid token after idle/sleep
-    const handleWakeCheck = async () => {
-      if (document.visibilityState === 'visible') {
+    let wakeCheckTimer = null;
+    let isWakeChecking = false;
+    const handleWakeCheck = () => {
+      if (document.visibilityState !== 'visible' || isWakeChecking) return;
+      // Debounce: both 'focus' and 'visibilitychange' fire on tab switch
+      clearTimeout(wakeCheckTimer);
+      wakeCheckTimer = setTimeout(async () => {
+        isWakeChecking = true;
         try {
           const { data: { session: currentSess } } = await supabase.auth.getSession();
           if (currentSess?.user) {
@@ -191,7 +197,8 @@ export function AuthProvider({ children }) {
             }
           }
         } catch (e) {}
-      }
+        isWakeChecking = false;
+      }, 2000);
     };
 
     window.addEventListener('focus', handleWakeCheck);
@@ -200,6 +207,7 @@ export function AuthProvider({ children }) {
     return () => {
       isMountedRef.current = false;
       subscription?.unsubscribe();
+      clearTimeout(wakeCheckTimer);
       window.removeEventListener('focus', handleWakeCheck);
       document.removeEventListener('visibilitychange', handleWakeCheck);
     };

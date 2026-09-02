@@ -57,20 +57,21 @@ export default function EstimatesList() {
   const [syncingQbo, setSyncingQbo] = useState(false);
 
   useEffect(() => { 
-    fetchEstimates();
+    const fetchController = new AbortController();
+    fetchEstimates(fetchController.signal);
     fetchProfiles();
     
     // Run incremental background sync from QBO quietly on mount with safety timeout & 10min session cooldown
     const lastPull = sessionStorage.getItem('barba_qbo_last_pull');
     const now = Date.now();
     let timeoutId = null;
-    const controller = new AbortController();
+    const qboController = new AbortController();
 
     if (!lastPull || now - parseInt(lastPull, 10) > 10 * 60 * 1000) {
       sessionStorage.setItem('barba_qbo_last_pull', now.toString());
-      timeoutId = setTimeout(() => controller.abort(), 3500);
+      timeoutId = setTimeout(() => qboController.abort(), 3500);
 
-      fetch('/api/qbo-pull-recent', { method: 'POST', signal: controller.signal })
+      fetch('/api/qbo-pull-recent', { method: 'POST', signal: qboController.signal })
         .then(res => {
           if (timeoutId) clearTimeout(timeoutId);
           if (!res.ok) return null;
@@ -88,8 +89,9 @@ export default function EstimatesList() {
     }
 
     return () => {
+      fetchController.abort();
       if (timeoutId) clearTimeout(timeoutId);
-      controller.abort();
+      qboController.abort();
     };
   }, []);
 
@@ -145,17 +147,19 @@ export default function EstimatesList() {
     }
   }
 
-  async function fetchEstimates() {
+  async function fetchEstimates(signal) {
     setLoading(true);
     try {
       let allData = [];
       let page = 0;
       const pageSize = 1000;
       while (true) {
-        const { data, error } = await supabase.from('estimates')
+        let query = supabase.from('estimates')
           .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)')
           .order('created_at',{ascending:false})
           .range(page * pageSize, (page + 1) * pageSize - 1);
+        if (signal) query = query.abortSignal(signal);
+        const { data, error } = await query;
         if (error) throw error;
         if (!data || data.length === 0) break;
         allData = allData.concat(data);
@@ -164,6 +168,7 @@ export default function EstimatesList() {
       }
       setEstimates(allData);
     } catch (err) {
+      if (err.name === 'AbortError') return;
       console.error("Error fetching estimates:", err);
       alert("Error fetching estimates: " + err.message);
       setEstimates([]);
