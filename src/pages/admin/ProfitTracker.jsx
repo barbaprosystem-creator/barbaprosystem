@@ -69,37 +69,31 @@ export default function ProfitTracker() {
   async function fetchData() {
     setLoading(true);
     try {
-      let allProjects = [];
-      let page = 0;
-      const pageSize = 1000;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      // Paginated loop to fetch ALL projects (resolves 100-row limit in Supabase)
-      while (true) {
-        const { data: pageData, error: projError } = await supabase
-          .from('projects')
-          .select(`
-            id, 
-            project_number,
-            title, 
-            address, 
-            sold_price, 
-            project_type, 
-            status, 
-            created_at,
-            start_date,
-            contact:contacts!projects_contact_id_fkey(first_name, last_name), 
-            project_expenses(type, amount)
-          `)
-          .order('created_at', { ascending: false })
-          .range(page * pageSize, (page + 1) * pageSize - 1);
+      const { data: pageData, error: projError } = await supabase
+        .from('projects')
+        .select(`
+          id, 
+          project_number,
+          title, 
+          address, 
+          sold_price, 
+          project_type, 
+          status, 
+          created_at,
+          start_date,
+          contact:contacts!projects_contact_id_fkey(first_name, last_name), 
+          project_expenses(type, amount)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(1000)
+        .abortSignal(controller.signal);
 
-        if (projError) throw projError;
-        if (!pageData || pageData.length === 0) break;
-
-        allProjects = allProjects.concat(pageData);
-        if (pageData.length < pageSize) break;
-        page++;
-      }
+      clearTimeout(timeoutId);
+      if (projError) throw projError;
+      const allProjects = pageData || [];
 
       // Process and combine
       const combined = allProjects.map(proj => {

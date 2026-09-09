@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { getCached, setCached } from '../../lib/dataCache';
 import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import OmnichannelChat from '../../components/chat/OmnichannelChat';
@@ -249,13 +250,21 @@ export default function CRMPipeline() {
 
   useEffect(() => {
     if (!profile?.id) return;
+
+    // 1. Instant load from IndexedDB cache (0ms)
+    getCached('crm_contacts').then(cached => {
+      if (cached?.data?.length > 0) {
+        setContacts(cached.data);
+        setLoading(false);
+      }
+    }).catch(() => {});
+
     const controller = new AbortController();
     fetchData(controller.signal);
     return () => controller.abort();
   }, [profile?.id]);
 
   async function fetchData(signal) {
-    setLoading(true);
     let query = supabase.from('contacts')
       .select('*, assigned_profile:profiles!contacts_assigned_to_fkey(full_name)')
       .order('created_at', { ascending: false });
@@ -269,11 +278,19 @@ export default function CRMPipeline() {
     const profilesQuery = supabase.from('profiles').select('id,full_name,role').in('role', ['salesperson', 'admin']);
     if (signal) profilesQuery.abortSignal(signal);
 
-    const [cRes, pRes] = await Promise.all([query, profilesQuery]);
-    if (signal?.aborted) return;
-    setContacts(cRes.data || []);
-    setSalespeople(pRes.data || []);
-    setLoading(false);
+    try {
+      const [cRes, pRes] = await Promise.all([query, profilesQuery]);
+      if (signal?.aborted) return;
+      if (cRes.data) {
+        setContacts(cRes.data);
+        setCached('crm_contacts', cRes.data).catch(() => {});
+      }
+      setSalespeople(pRes.data || []);
+    } catch (err) {
+      if (err.name !== 'AbortError') console.error('Error fetching CRM contacts:', err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleDrop(e, newStatus) {

@@ -31,8 +31,10 @@ export function LanguageProvider({ children }) {
     return result;
   }, [lang]);
 
+  const value = React.useMemo(() => ({ lang, switchLang, t }), [lang, switchLang, t]);
+
   return (
-    <LanguageContext.Provider value={{ lang, switchLang, t }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

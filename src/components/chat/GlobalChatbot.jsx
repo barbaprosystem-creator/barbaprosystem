@@ -18,13 +18,19 @@ export default function GlobalChatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Cuando se abre el chat, hacer scroll abajo y refrescar los datos en vivo
+  // Scroll down when new messages arrive
   useEffect(() => {
     if (isOpen) {
       scrollToBottom();
-      fetchCRMContext();
     }
   }, [messages, isOpen]);
+
+  // Only refresh live CRM context when chat is opened
+  useEffect(() => {
+    if (isOpen) {
+      fetchCRMContext();
+    }
+  }, [isOpen]);
 
   const fetchCRMContext = async () => {
     try {

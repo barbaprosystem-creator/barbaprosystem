@@ -46,11 +46,40 @@ function getFallbackProfile(user) {
   };
 }
 
+function isProfileEqual(p1, p2) {
+  if (!p1 && !p2) return true;
+  if (!p1 || !p2) return false;
+  return p1.id === p2.id && p1.role === p2.role && p1.full_name === p2.full_name && p1.is_active === p2.is_active;
+}
+
+function getInitialState() {
+  if (typeof window === 'undefined') {
+    return { initialSession: null, initialProfile: null, initialLoading: true };
+  }
+  try {
+    const rawToken = localStorage.getItem('barba-crm-auth-token');
+    if (!rawToken) {
+      return { initialSession: null, initialProfile: null, initialLoading: false };
+    }
+    const parsed = JSON.parse(rawToken);
+    const user = parsed?.user;
+    if (user?.id) {
+      const cached = getCachedProfile(user.id);
+      const fallback = cached || getFallbackProfile(user);
+      return { initialSession: parsed, initialProfile: fallback, initialLoading: false };
+    }
+  } catch (e) {}
+  return { initialSession: null, initialProfile: null, initialLoading: true };
+}
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [initial] = useState(getInitialState);
+  const [session, setSession] = useState(initial.initialSession);
+  const [profile, setProfile] = useState(initial.initialProfile);
+  const [loading, setLoading] = useState(initial.initialLoading);
   const isMountedRef = useRef(true);
+  const profileRef = useRef(initial.initialProfile);
+  profileRef.current = profile;
 
   // Fetch user profile from database with timeout
   const fetchProfile = useCallback(async (userId, fallback) => {
@@ -120,13 +149,16 @@ export function AuthProvider({ children }) {
 
         const cached = getCachedProfile(activeSession.user.id);
         const fallback = cached || getFallbackProfile(activeSession.user);
+        
         setSession(activeSession);
-        setProfile(fallback);
+        if (!profileRef.current) {
+          setProfile(fallback);
+        }
         setLoading(false);
 
         // Fetch DB profile in background
         fetchProfile(activeSession.user.id, fallback).then(dbProfile => {
-          if (isMountedRef.current && dbProfile) {
+          if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
             setProfile(dbProfile);
           }
         });
@@ -155,15 +187,18 @@ export function AuthProvider({ children }) {
             return;
           }
 
-          const cached = getCachedProfile(currentSession.user.id);
-          const fallback = cached || getFallbackProfile(currentSession.user);
-
           setSession(currentSession);
-          setProfile(fallback);
           setLoading(false);
 
-          const dbProfile = await fetchProfile(currentSession.user.id, fallback);
-          if (isMountedRef.current && dbProfile) {
+          // Only set fallback if we have NO profile yet
+          if (!profileRef.current) {
+            const cached = getCachedProfile(currentSession.user.id);
+            const fallback = cached || getFallbackProfile(currentSession.user);
+            setProfile(fallback);
+          }
+
+          const dbProfile = await fetchProfile(currentSession.user.id, profileRef.current);
+          if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
             setProfile(dbProfile);
           }
         } catch (err) {
@@ -178,7 +213,6 @@ export function AuthProvider({ children }) {
     let isWakeChecking = false;
     const handleWakeCheck = () => {
       if (document.visibilityState !== 'visible' || isWakeChecking) return;
-      // Debounce: both 'focus' and 'visibilitychange' fire on tab switch
       clearTimeout(wakeCheckTimer);
       wakeCheckTimer = setTimeout(async () => {
         isWakeChecking = true;
@@ -213,24 +247,24 @@ export function AuthProvider({ children }) {
     };
   }, [fetchProfile]);
 
-  const signIn = async (email, password) => {
+  const signIn = useCallback(async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     return { data, error };
-  };
+  }, []);
 
-  const signUp = async (email, password, metadata = {}) => {
+  const signUp = useCallback(async (email, password, metadata = {}) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: metadata },
     });
     return { data, error };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await supabase.auth.signOut();
     } catch (err) {
@@ -252,14 +286,14 @@ export function AuthProvider({ children }) {
       setProfile(null);
       window.location.href = '/login';
     }
-  };
+  }, []);
 
   const isAdmin = profile?.role === 'admin';
   const isSalesperson = profile?.role === 'salesperson';
   const isSupervisor = profile?.role === 'supervisor';
   const isOffice = profile?.role === 'office';
 
-  const value = {
+  const value = React.useMemo(() => ({
     session,
     user: session?.user ?? null,
     profile,
@@ -272,7 +306,18 @@ export function AuthProvider({ children }) {
     isSupervisor,
     isOffice,
     role: profile?.role ?? 'admin',
-  };
+  }), [
+    session,
+    profile,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    isAdmin,
+    isSalesperson,
+    isSupervisor,
+    isOffice,
+  ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

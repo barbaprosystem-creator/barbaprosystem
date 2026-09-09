@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { syncEntities } from '../../lib/dataCache';
 import { Plus, Search, Loader2, Send, CheckCircle, XCircle, Trash2, FileSignature, BarChart2, X, Edit, RefreshCw } from 'lucide-react';
 import { formatCurrency, formatDate } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -58,7 +59,7 @@ export default function EstimatesList() {
 
   useEffect(() => { 
     const fetchController = new AbortController();
-    fetchEstimates(fetchController.signal);
+    fetchEstimates(false, fetchController.signal);
     fetchProfiles();
     
     // Run incremental background sync from QBO quietly on mount with safety timeout & 10min session cooldown
@@ -147,31 +148,28 @@ export default function EstimatesList() {
     }
   }
 
-  async function fetchEstimates(signal) {
-    setLoading(true);
+  async function fetchEstimates(forceRefresh = false, signal = null) {
     try {
-      let allData = [];
-      let page = 0;
-      const pageSize = 1000;
-      while (true) {
-        let query = supabase.from('estimates')
-          .select('*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)')
-          .order('created_at',{ascending:false})
-          .range(page * pageSize, (page + 1) * pageSize - 1);
-        if (signal) query = query.abortSignal(signal);
-        const { data, error } = await query;
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        allData = allData.concat(data);
-        if (data.length < pageSize) break;
-        page++;
+      const data = await syncEntities({
+        table: 'estimates',
+        cacheKey: 'estimates_list',
+        select: '*, contact:contacts!estimates_contact_id_fkey(first_name,last_name,phone,address,email), creator:profiles!estimates_created_by_fkey(full_name)',
+        orderBy: 'created_at',
+        ascending: false,
+        limit: 1000,
+        forceRefresh,
+        signal,
+        onImmediateData: (cached) => {
+          setEstimates(cached);
+          setLoading(false);
+        }
+      });
+      if (data && data.length > 0) {
+        setEstimates(data);
       }
-      setEstimates(allData);
     } catch (err) {
       if (err.name === 'AbortError') return;
       console.error("Error fetching estimates:", err);
-      alert("Error fetching estimates: " + err.message);
-      setEstimates([]);
     } finally {
       setLoading(false);
     }
@@ -190,7 +188,7 @@ export default function EstimatesList() {
         throw new Error(data.error || 'Failed to sync');
       }
       alert(`Successfully synced to QuickBooks! Invoice ID: ${data.qboInvoiceNumber}`);
-      fetchEstimates();
+      fetchEstimates(true);
     } catch (err) {
       console.error(err);
       alert('Error syncing to QuickBooks: ' + err.message);
@@ -198,7 +196,8 @@ export default function EstimatesList() {
       setSyncingId(null);
     }
   }
-  async function updateStatus(id, status) {
+
+  async function updateStatus(id, status) {
     const est = estimates.find(e => e.id === id);
     if (!est) return;
 
@@ -206,7 +205,7 @@ export default function EstimatesList() {
       if (!est.contact?.email) {
         alert('Estimate marked as sent. (The client does not have a registered email to notify)');
         await supabase.from('estimates').update({status, updated_at: new Date().toISOString()}).eq('id', id);
-        fetchEstimates();
+        fetchEstimates(true);
         return;
       }
       try {
@@ -220,7 +219,7 @@ export default function EstimatesList() {
           throw new Error(result.error || 'Error al enviar el correo');
         }
         alert('Estimate and QuickBooks Invoice sent by email successfully.');
-        fetchEstimates();
+        fetchEstimates(true);
       } catch (err) {
         console.error('Error sending email:', err);
         alert(`Resend Error: ${err.message}`);
@@ -245,7 +244,7 @@ export default function EstimatesList() {
       syncToQuickBooks(id).catch(console.error);
     }
     
-    fetchEstimates();
+    fetchEstimates(true);
   }
 
   async function deleteEstimate(id) {
@@ -255,7 +254,7 @@ export default function EstimatesList() {
       await supabase.from('projects').update({ estimate_id: null }).eq('estimate_id',id);
       const { error } = await supabase.from('estimates').delete().eq('id',id);
       if (error) throw error;
-      fetchEstimates();
+      fetchEstimates(true);
     } catch (err) {
       alert("Error deleting estimate: " + err.message);
     }

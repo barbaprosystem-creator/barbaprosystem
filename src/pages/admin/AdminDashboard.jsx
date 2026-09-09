@@ -120,31 +120,46 @@ export default function AdminDashboard() {
       } catch (e) {}
     })();
 
-    // 2. Background refresh
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    // 2. Background refresh with ultra-lightweight queries
     async function loadDashboardData() {
       try {
         const [
-          { data: leads, count: leadsCount },
+          { count: leadsCount },
+          { count: wonLeadsCount },
+          { data: recentLeadsData },
           { data: projects, count: projectsCount },
           { count: estimatesCount },
           { data: payments },
           { data: dailyReports }
         ] = await Promise.all([
-          supabase.from('contacts').select('*', { count: 'exact' }).order('created_at', { ascending: false }),
-          supabase.from('projects').select('*', { count: 'exact' }).in('status', ['in_progress', 'scheduled']).order('start_date', { ascending: true }),
-          supabase.from('estimates').select('*', { count: 'exact' }).eq('status', 'sent'),
-          supabase.from('payments').select('*').in('status', ['pending', 'overdue']),
-          supabase.from('daily_reports').select('id, project_id, report_date, issues, work_completed, created_at').order('report_date', { ascending: false }).limit(100)
+          // Fast counts without transferring table data
+          supabase.from('contacts').select('id', { count: 'exact', head: true }).abortSignal(controller.signal),
+          supabase.from('contacts').select('id', { count: 'exact', head: true }).eq('pipeline_status', 'closed_won').abortSignal(controller.signal),
+          // Only recent 5 leads with required fields
+          supabase.from('contacts').select('id, first_name, last_name, phone, created_at, pipeline_status').order('created_at', { ascending: false }).limit(5).abortSignal(controller.signal),
+          // Active projects with required columns
+          supabase.from('projects').select('id, title, status, sold_price, start_date, target_end_date, address, progress_pct', { count: 'exact' }).in('status', ['in_progress', 'scheduled']).order('start_date', { ascending: true }).limit(50).abortSignal(controller.signal),
+          // Fast count for sent estimates
+          supabase.from('estimates').select('id', { count: 'exact', head: true }).eq('status', 'sent').abortSignal(controller.signal),
+          // Only pending/overdue payments with required columns
+          supabase.from('payments').select('id, amount, status, due_date, project_id').in('status', ['pending', 'overdue']).abortSignal(controller.signal),
+          // Recent daily reports
+          supabase.from('daily_reports').select('id, project_id, report_date, issues, work_completed').order('report_date', { ascending: false }).limit(50).abortSignal(controller.signal)
         ]);
+
+        clearTimeout(timeoutId);
 
         let totalRevenue = projects?.reduce((sum, p) => sum + (p.sold_price || 0), 0) || 0;
         let pendingPayments = payments?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
         let overduePayments = payments?.filter(p => p.status === 'overdue').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-        let wonLeads = leads?.filter(l => l.pipeline_status === 'closed_won').length || 0;
+        let wonLeads = wonLeadsCount || 0;
         let finalLeadsCount = leadsCount || 0;
         let finalProjectsCount = projectsCount || 0;
         let finalEstimatesCount = estimatesCount || 0;
-        let finalRecentLeads = leads?.slice(0, 5) || [];
+        let finalRecentLeads = recentLeadsData || [];
         
         // Attach latest daily notes and timeline status to active projects
         const today = new Date();
@@ -232,13 +247,20 @@ export default function AdminDashboard() {
         }]).catch(() => {});
 
       } catch (err) {
-        console.error('Error loading dashboard data:', err);
+        if (err.name !== 'AbortError') {
+          console.error('Error loading dashboard data:', err);
+        }
       } finally {
         setLoading(false);
       }
     }
 
     loadDashboardData();
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
   const SOURCE_ICONS = {

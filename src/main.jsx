@@ -13,7 +13,7 @@ if (import.meta.env.DEV) {
 }
 
 // App Cache & Version Control
-const APP_VERSION = '2026.09.02.v1';
+const APP_VERSION = '2026.09.09.v1';
 
 // Version-aware cleanup — only invalidate data caches, NEVER purge CacheStorage or auth
 try {
@@ -80,22 +80,20 @@ window.addEventListener('vite:preloadError', (event) => {
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <LanguageProvider>
-        {clientId ? (
-          <GoogleOAuthProvider clientId={clientId}>
-            <AuthProvider>
-              <App />
-            </AuthProvider>
-          </GoogleOAuthProvider>
-        ) : (
+  <ErrorBoundary>
+    <LanguageProvider>
+      {clientId ? (
+        <GoogleOAuthProvider clientId={clientId}>
           <AuthProvider>
             <App />
           </AuthProvider>
-        )}
-      </LanguageProvider>
-    </ErrorBoundary>
-  </StrictMode>,
+        </GoogleOAuthProvider>
+      ) : (
+        <AuthProvider>
+          <App />
+        </AuthProvider>
+      )}
+    </LanguageProvider>
+  </ErrorBoundary>,
 )
 

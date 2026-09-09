@@ -218,7 +218,8 @@ export async function syncEntities({
         } else {
           // No changes — touch lastSync
           await setMeta(`sync_${cacheName}`, { lastSync: new Date().toISOString(), count: cached.count });
-          return cached.data;
+          // If onImmediateData was already called, returning null prevents redundant state updates/flickers
+          return onImmediateData ? null : cached.data;
         }
       }
     }
@@ -235,6 +236,11 @@ export async function syncEntities({
     if (fullData) {
       await setCached(cacheName, fullData);
       await setMeta(`fullsync_${cacheName}`, { timestamp: new Date().toISOString() });
+      if (onImmediateData && cached && cached.data && cached.data.length === fullData.length) {
+        if (cached.data[0]?.id === fullData[0]?.id && cached.data[cached.data.length - 1]?.id === fullData[fullData.length - 1]?.id) {
+          return null;
+        }
+      }
       return fullData;
     }
 

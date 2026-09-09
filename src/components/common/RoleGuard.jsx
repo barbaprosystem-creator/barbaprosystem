@@ -13,14 +13,13 @@ export default function RoleGuard({ allowed, role, fallback, children }) {
   if (!role) return <Navigate to="/login" replace />;
 
   if (!allowed.includes(role)) {
-    // Redirect to the user's default home based on role
     const roleHome = {
       admin: '/admin',
+      office: '/admin',
+      supervisor: '/admin/projects',
       salesperson: '/pos/estimator',
-      supervisor: '/projects',
-      office: '/crm',
     };
-    return <Navigate to={fallback || roleHome[role] || '/'} replace />;
+    return <Navigate to={fallback || roleHome[role] || '/admin'} replace />;
   }
 
   return children;
