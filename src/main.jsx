@@ -13,7 +13,7 @@ if (import.meta.env.DEV) {
 }
 
 // App Cache & Version Control
-const APP_VERSION = '2026.09.09.v1';
+const APP_VERSION = '2026.09.10.v1';
 
 // Version-aware cleanup — only invalidate data caches, NEVER purge CacheStorage or auth
 try {

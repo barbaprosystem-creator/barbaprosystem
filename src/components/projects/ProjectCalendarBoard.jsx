@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatDate } from '../../lib/utils';
 import {
@@ -239,9 +239,8 @@ export default function ProjectCalendarBoard({
       const payload = {
         project_id: projectId,
         report_date: selectedDay,
-        notes: dayNoteText.trim(),
-        issues: dayNoteText.trim(),
         work_completed: dayNoteText.trim(),
+        issues: dayNoteText.trim(),
         weather: dayWeather,
         crew_count: dayCrewCount ? Number(dayCrewCount) : null,
         hours_worked: dayHoursWorked ? Number(dayHoursWorked) : null,
