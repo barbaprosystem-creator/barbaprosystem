@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2, MessageCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Users, Search, Plus, Mail, Phone, Eye, Edit2, X, Loader2, MessageCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import OmnichannelChat from '../components/chat/OmnichannelChat';
 import ClientDetail from './admin/ClientDetail';
 
 export default function Clients() {
+  const { profile } = useAuth();
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const CLIENTS_PER_PAGE = 25;
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -36,6 +40,10 @@ export default function Clients() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   const handleSaveClient = async (e) => {
     e.preventDefault();
@@ -88,6 +96,12 @@ export default function Clients() {
     c.last_name?.toLowerCase().includes(search.toLowerCase()) ||
     c.email?.toLowerCase().includes(search.toLowerCase()) ||
     c.phone?.includes(search)
+  );
+
+  const totalPages = Math.ceil(filtered.length / CLIENTS_PER_PAGE) || 1;
+  const paginatedClients = filtered.slice(
+    (currentPage - 1) * CLIENTS_PER_PAGE,
+    currentPage * CLIENTS_PER_PAGE
   );
 
   const statusMap = {
@@ -155,7 +169,7 @@ export default function Clients() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/50">
-                    {filtered.map((client) => {
+                    {paginatedClients.map((client) => {
                       const s = statusMap[client.pipeline_status] || { label: client.pipeline_status || '-', cls: 'bg-[#1a1a1a] text-[#c0c0c0] border-[#2a2a2a]' };
                       return (
                         <tr key={client.id} className="hover:bg-[#1a1a1a]/30 transition-colors">
@@ -218,6 +232,32 @@ export default function Clients() {
                     })}
                   </tbody>
                 </table>
+              </div>
+            )}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-[#1a1a1a]/60 bg-[#0d0d0d]/40 text-xs text-[#888] gap-3">
+                <span>
+                  Showing {((currentPage - 1) * CLIENTS_PER_PAGE) + 1} - {Math.min(currentPage * CLIENTS_PER_PAGE, filtered.length)} of {filtered.length} clients
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#2a2a2a] bg-[#141414] hover:bg-[#202020] disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all cursor-pointer font-medium"
+                  >
+                    <ChevronLeft size={14} /> Previous
+                  </button>
+                  <span className="font-semibold text-white px-2">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#2a2a2a] bg-[#141414] hover:bg-[#202020] disabled:opacity-30 disabled:cursor-not-allowed text-white transition-all cursor-pointer font-medium"
+                  >
+                    Next <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
             )}
           </div>

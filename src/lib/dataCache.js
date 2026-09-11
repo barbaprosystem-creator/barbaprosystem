@@ -15,19 +15,26 @@ import { supabase } from './supabase.js';
  */
 
 // ─── IndexedDB Database ───────────────────────────────────────────────────────
-const CACHE_VERSION = 2; // Bump this when schema changes to force re-sync
+const CACHE_VERSION = 3; // Bump to 3 for composite primary key [_collection+id]
 
 const db = new Dexie('BarbaCache');
-db.version(CACHE_VERSION).stores({
-  // Generic key-value metadata store
+db.version(2).stores({
   meta: 'key',
-  // Data collections — indexed by id for fast single-record updates
   collections: 'id, _collection, updated_at',
+});
+db.version(CACHE_VERSION).stores({
+  meta: 'key',
+  // Composite primary key [_collection+id] isolates records across views without collision
+  collections: '[_collection+id], _collection, id, updated_at',
+}).upgrade(tx => {
+  // Clear old single-id records to avoid primary key mismatch on upgrade
+  return tx.table('collections').clear();
 });
 
 // ─── Configuration per collection ─────────────────────────────────────────────
 const COLLECTION_CONFIG = {
-  tzel_leads:     { maxSize: 2000, fullRefreshHours: 12 },
+  tzel_leads:     { maxSize: 2500, fullRefreshHours: 12 },
+  crm_contacts:   { maxSize: 2000, fullRefreshHours: 12 },
   contacts_min:   { maxSize: 2000, fullRefreshHours: 24 },
   projects_list:  { maxSize: 1000, fullRefreshHours: 24 },
   estimates_list: { maxSize: 1000, fullRefreshHours: 24 },
@@ -213,12 +220,20 @@ export async function syncEntities({
             const valB = b[orderBy] || '';
             return ascending ? (valA > valB ? 1 : -1) : (valB > valA ? 1 : -1);
           });
-          await setCached(cacheName, merged);
+          // Derive lastSync from maximum server updated_at/created_at in delta
+          let maxTimestamp = cached.lastSync;
+          for (const d of delta) {
+            const t = d.updated_at || d.created_at;
+            if (t && (!maxTimestamp || t > maxTimestamp)) {
+              maxTimestamp = t;
+            }
+          }
+          await setCached(cacheName, merged, maxTimestamp || new Date().toISOString());
           return merged;
         } else {
-          // No changes — touch lastSync
+          // No changes — touch lastSync metadata
           await setMeta(`sync_${cacheName}`, { lastSync: new Date().toISOString(), count: cached.count });
-          // If onImmediateData was already called, returning null prevents redundant state updates/flickers
+          // If onImmediateData was already called, returning null prevents redundant state updates
           return onImmediateData ? null : cached.data;
         }
       }
@@ -234,13 +249,16 @@ export async function syncEntities({
     if (error) throw error;
 
     if (fullData) {
-      await setCached(cacheName, fullData);
-      await setMeta(`fullsync_${cacheName}`, { timestamp: new Date().toISOString() });
-      if (onImmediateData && cached && cached.data && cached.data.length === fullData.length) {
-        if (cached.data[0]?.id === fullData[0]?.id && cached.data[cached.data.length - 1]?.id === fullData[fullData.length - 1]?.id) {
-          return null;
+      // Derive lastSync from maximum server updated_at/created_at
+      let maxTimestamp = null;
+      for (const d of fullData) {
+        const t = d.updated_at || d.created_at;
+        if (t && (!maxTimestamp || t > maxTimestamp)) {
+          maxTimestamp = t;
         }
       }
+      await setCached(cacheName, fullData, maxTimestamp || new Date().toISOString());
+      await setMeta(`fullsync_${cacheName}`, { timestamp: new Date().toISOString() });
       return fullData;
     }
 
@@ -262,6 +280,21 @@ export async function clearCached(cacheKey) {
     await db.meta.delete(`fullsync_${cacheKey}`);
   } catch (err) {
     console.warn(`[DataCache] clearCached(${cacheKey}) error:`, err.message);
+  }
+}
+
+/**
+ * Clear ALL cached data and metadata from IndexedDB (used on signOut and version upgrade).
+ */
+export async function clearAllCache() {
+  try {
+    await db.transaction('rw', db.collections, db.meta, async () => {
+      await db.collections.clear();
+      await db.meta.clear();
+    });
+    console.log('[DataCache] All IndexedDB cache cleared successfully.');
+  } catch (err) {
+    console.warn('[DataCache] clearAllCache error:', err.message);
   }
 }
 

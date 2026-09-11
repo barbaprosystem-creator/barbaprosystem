@@ -12,31 +12,22 @@ if (import.meta.env.DEV) {
   import('./lib/devDiagnostics.js');
 }
 
-// App Cache & Version Control
-const APP_VERSION = '2026.09.10.v1';
+import { clearAllCache } from './lib/dataCache';
 
-// Version-aware cleanup — only invalidate data caches, NEVER purge CacheStorage or auth
+// App Cache & Version Control
+const APP_VERSION = '2026.09.11.v1';
+
+// Version-aware cleanup — invalidate IndexedDB data caches, NEVER purge CacheStorage or auth
 try {
   const currentStoredVersion = localStorage.getItem('barba_app_version');
   if (currentStoredVersion !== APP_VERSION) {
-    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Invalidating stale data caches...`);
+    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Invalidating IndexedDB data caches...`);
 
-    // Remove legacy session key (migrated to barba-crm-auth-token)
+    // Remove legacy session keys if present
     localStorage.removeItem('barba-crm-session-token');
 
-    // Invalidate data cache sync timestamps so next page load does a full refresh
-    // Do NOT delete the cached data itself — it can serve as instant placeholder
-    Object.keys(localStorage).forEach(key => {
-      if (key.startsWith('barba_last_sync_')) {
-        localStorage.removeItem(key);
-      }
-    });
-
-    // Clear dashboard cache (small, safe to invalidate)
-    localStorage.removeItem('barba_cache_dashboard');
-
-    // Do NOT purge CacheStorage — Vite hashed filenames handle asset versioning
-    // Do NOT purge barba_profile_* — they are small and useful for instant auth
+    // Invalidate all IndexedDB collections so next page loads do fresh clean synchronizations
+    clearAllCache().catch(err => console.warn('[App] clearAllCache on version update error:', err));
 
     localStorage.setItem('barba_app_version', APP_VERSION);
   }

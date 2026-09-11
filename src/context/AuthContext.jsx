@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { clearAllCache } from '../lib/dataCache';
 
 const AuthContext = createContext({});
 
@@ -34,7 +35,7 @@ function getFallbackProfile(user) {
     } else if (email.includes('supervisor')) {
       defaultRole = 'supervisor';
     } else {
-      defaultRole = 'admin'; // Safe default for internal system access
+      defaultRole = 'salesperson'; // Safe default for internal system access (never fail-open to admin)
     }
   }
 
@@ -281,6 +282,8 @@ export function AuthProvider({ children }) {
         Object.keys(localStorage).forEach(k => {
           if (k.startsWith('barba_profile_')) localStorage.removeItem(k);
         });
+        // Atomic purge of all IndexedDB cached entities (prevents cross-user data leakage)
+        await clearAllCache();
       } catch (e) {}
       setSession(null);
       setProfile(null);
@@ -305,7 +308,7 @@ export function AuthProvider({ children }) {
     isSalesperson,
     isSupervisor,
     isOffice,
-    role: profile?.role ?? 'admin',
+    role: profile?.role ?? 'salesperson',
   }), [
     session,
     profile,

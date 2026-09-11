@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { syncEntities, updateCachedRecord } from '../../lib/dataCache';
 import {
@@ -14,6 +14,7 @@ export default function TzelLeadsPage() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [channelFilter, setChannelFilter] = useState('ALL'); // 'ALL' | 'BARBA_CONSTRUCTION' | 'PRE_FORECLOSURE'
   const [selectedLocation, setSelectedLocation] = useState('ALL');
   const [selectedQuality, setSelectedQuality] = useState('ALL');
@@ -52,10 +53,18 @@ export default function TzelLeadsPage() {
     checkFacebookStatus();
   }, []);
 
+  // Debounce search by 250ms to protect CPU on large dataset
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 250);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   // Reset page to 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
+  }, [debouncedSearch, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
 
   // Timer para duración de llamada
   useEffect(() => {
@@ -87,6 +96,14 @@ export default function TzelLeadsPage() {
     } catch {}
   };
 
+  const fbCheckTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (fbCheckTimerRef.current) clearInterval(fbCheckTimerRef.current);
+    };
+  }, []);
+
   const handleConnectFacebook = () => {
     setConnectingFb(true);
     const fbAppId = '1074823947492023';
@@ -95,24 +112,31 @@ export default function TzelLeadsPage() {
 
     const popup = window.open(authUrl, 'FacebookLogin', 'width=600,height=700');
 
-    const checkTimer = setInterval(async () => {
+    if (fbCheckTimerRef.current) clearInterval(fbCheckTimerRef.current);
+
+    fbCheckTimerRef.current = setInterval(async () => {
       try {
         if (!popup || popup.closed) {
-          clearInterval(checkTimer);
+          clearInterval(fbCheckTimerRef.current);
+          fbCheckTimerRef.current = null;
           setConnectingFb(false);
-          setFbConnected(true);
-          localStorage.setItem('barba_facebook_connected', 'true');
-          await fetch('/api/facebook-auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              connected: true,
-              name: 'Barba Construction',
-              connectedAt: new Date().toISOString()
-            })
-          });
+          const res = await fetch('/api/facebook-auth');
+          if (res.ok) {
+            const data = await res.json();
+            if (data.connected) {
+              setFbConnected(true);
+              if (data.accountName) setFbAccountName(data.accountName);
+              localStorage.setItem('barba_facebook_connected', 'true');
+            }
+          }
         }
-      } catch {}
+      } catch {
+        if (fbCheckTimerRef.current) {
+          clearInterval(fbCheckTimerRef.current);
+          fbCheckTimerRef.current = null;
+        }
+        setConnectingFb(false);
+      }
     }, 1500);
   };
 
@@ -483,11 +507,12 @@ export default function TzelLeadsPage() {
   };
 
   const filteredLeads = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
     let result = leads.filter(l => {
-      const matchesSearch =
+      const matchesSearch = !q ||
         `${l.first_name || ''} ${l.last_name || ''} ${l.address || ''} ${l.city || ''} ${l.notes || ''}`
           .toLowerCase()
-          .includes(search.toLowerCase());
+          .includes(q);
 
       const matchesLocation =
         selectedLocation === 'ALL' ||
@@ -557,28 +582,26 @@ export default function TzelLeadsPage() {
     }
     result = deduplicated;
 
-    result.sort((a, b) => {
-      if (sortBy === 'newest') {
-        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-      }
-      if (sortBy === 'oldest') {
-        return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-      }
-      if (sortBy === 'highest_value') {
-        const getVal = (notes) => {
-          const m = (notes || '').match(/\$([0-9,]+)/);
-          return m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
-        };
-        return getVal(b.notes) - getVal(a.notes);
-      }
-      if (sortBy === 'status') {
-        return (a.pipeline_status || '').localeCompare(b.pipeline_status || '');
-      }
-      return 0;
-    });
+    if (sortBy === 'newest') {
+      result.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+    } else if (sortBy === 'oldest') {
+      result.sort((a, b) => new Date(a.created_at || 0) - new Date(b.created_at || 0));
+    } else if (sortBy === 'highest_value') {
+      const valMap = new Map();
+      const getVal = (item) => {
+        if (valMap.has(item.id)) return valMap.get(item.id);
+        const m = (item.notes || '').match(/\$([0-9,]+)/);
+        const v = m ? parseInt(m[1].replace(/,/g, ''), 10) : 0;
+        valMap.set(item.id, v);
+        return v;
+      };
+      result.sort((a, b) => getVal(b) - getVal(a));
+    } else if (sortBy === 'status') {
+      result.sort((a, b) => (a.pipeline_status || '').localeCompare(b.pipeline_status || ''));
+    }
 
     return result;
-  }, [leads, search, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
+  }, [leads, debouncedSearch, channelFilter, selectedLocation, selectedQuality, contactStatusFilter, dateFilter, sortBy]);
 
   const totalPages = Math.ceil(filteredLeads.length / LEADS_PER_PAGE) || 1;
 

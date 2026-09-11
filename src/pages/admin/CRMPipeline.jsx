@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
-import { getCached, setCached } from '../../lib/dataCache';
+import { getCached, setCached, updateCachedRecord } from '../../lib/dataCache';
 import { Plus, Search, Phone, MapPin, Calendar, X, Loader2, Star, Filter, MessageCircle } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import OmnichannelChat from '../../components/chat/OmnichannelChat';
@@ -247,21 +247,30 @@ export default function CRMPipeline() {
   const [filterQuality, setFilterQuality] = useState('all');
   const [viewClient, setViewClient] = useState(null);
   const [chatModal, setChatModal] = useState({ open: false, cliente: null });
+  const [expandedStages, setExpandedStages] = useState({});
 
   useEffect(() => {
     if (!profile?.id) return;
 
+    let isCurrent = true;
     // 1. Instant load from IndexedDB cache (0ms)
     getCached('crm_contacts').then(cached => {
-      if (cached?.data?.length > 0) {
+      if (isCurrent && cached?.data?.length > 0) {
         setContacts(cached.data);
         setLoading(false);
       }
     }).catch(() => {});
 
     const controller = new AbortController();
-    fetchData(controller.signal);
-    return () => controller.abort();
+    fetchData(controller.signal).then(() => {
+      // Mark isCurrent false so any pending/late cache resolution cannot overwrite fresh network data
+      isCurrent = false;
+    });
+
+    return () => {
+      isCurrent = false;
+      controller.abort();
+    };
   }, [profile?.id]);
 
   async function fetchData(signal) {
@@ -297,9 +306,14 @@ export default function CRMPipeline() {
     e.preventDefault();
     const id = e.dataTransfer.getData('leadId');
     if (!id) return;
-    setContacts(prev => prev.map(c => c.id === id ? { ...c, pipeline_status: newStatus } : c));
+    const nowIso = new Date().toISOString();
+    setContacts(prev => prev.map(c => c.id === id ? { ...c, pipeline_status: newStatus, updated_at: nowIso } : c));
+    const found = contacts.find(c => c.id === id);
+    if (found) {
+      updateCachedRecord('crm_contacts', { ...found, pipeline_status: newStatus, updated_at: nowIso });
+    }
     const { error } = await supabase.from('contacts')
-      .update({ pipeline_status: newStatus, updated_at: new Date().toISOString() })
+      .update({ pipeline_status: newStatus, updated_at: nowIso })
       .eq('id', id);
     if (error) fetchData();
   }
@@ -412,7 +426,22 @@ export default function CRMPipeline() {
                   <span className="kanban-stage-count">{stageLeads.length}</span>
                 </div>
                 <div className="kanban-column-body">
-                  {stageLeads.map(c => <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} onViewClick={setViewClient} />)}
+                  {(expandedStages[stage.id] ? stageLeads : stageLeads.slice(0, 35)).map(c => (
+                    <LeadCard key={c.id} lead={c} onClick={handleEdit} onChatClick={(client) => setChatModal({ open: true, cliente: client })} onViewClick={setViewClient} />
+                  ))}
+                  {stageLeads.length > 35 && (
+                    <button
+                      type="button"
+                      onClick={() => setExpandedStages(prev => ({ ...prev, [stage.id]: !prev[stage.id] }))}
+                      style={{
+                        width: '100%', padding: '6px 10px', marginTop: '6px', fontSize: '11px', fontWeight: '600',
+                        borderRadius: '6px', border: '1px dashed #444', background: '#181818',
+                        color: '#9ca3af', cursor: 'pointer', textAlign: 'center'
+                      }}
+                    >
+                      {expandedStages[stage.id] ? '▲ Mostrar menos (35)' : `▼ Ver ${stageLeads.length - 35} más`}
+                    </button>
+                  )}
                   {stageLeads.length === 0 && <div className="kanban-empty"><p>No leads</p></div>}
                 </div>
               </div>
