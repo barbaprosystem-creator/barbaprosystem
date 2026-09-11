@@ -151,7 +151,7 @@ async function callOpenAI(messages, temperature, response_format, openAiApiKey) 
       model,
       messages,
       temperature,
-      max_tokens: hasImages ? 1000 : 2000,
+      max_tokens: hasImages ? 2000 : 3000,
       ...(response_format && { response_format }),
     }),
   });
@@ -180,34 +180,34 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Messages are required and must be an array' });
   }
 
-  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
   const openAiApiKey = process.env.OPENAI_API_KEY || process.env.VITE_OPENAI_API_KEY;
+  const geminiApiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
-  if (!geminiApiKey && !openAiApiKey) {
-    return res.status(500).json({ error: 'No AI API key configured (neither Gemini nor OpenAI)' });
+  if (!openAiApiKey && !geminiApiKey) {
+    return res.status(500).json({ error: 'No AI API key configured (neither OpenAI nor Gemini)' });
   }
 
-  // 1. Try Google Gemini first if key exists
-  if (geminiApiKey) {
-    try {
-      const geminiResult = await callGoogleGemini(messages, temperature, response_format, geminiApiKey);
-      return res.status(200).json(geminiResult);
-    } catch (geminiError) {
-      console.warn('[AI Handler] Gemini failed, attempting OpenAI fallback:', geminiError.message);
-      if (!openAiApiKey) {
-        return res.status(500).json({ error: `Gemini error: ${geminiError.message}` });
-      }
-    }
-  }
-
-  // 2. OpenAI Fallback
+  // 1. Prioritize OpenAI (User configured OpenAI as primary AI engine)
   if (openAiApiKey) {
     try {
       const openAiResult = await callOpenAI(messages, temperature, response_format, openAiApiKey);
       return res.status(200).json(openAiResult);
     } catch (openAiError) {
-      console.error('[AI Handler] OpenAI error:', openAiError.message);
-      return res.status(500).json({ error: `AI Error: ${openAiError.message}` });
+      console.warn('[AI Handler] OpenAI failed, attempting Gemini fallback:', openAiError.message);
+      if (!geminiApiKey) {
+        return res.status(500).json({ error: `OpenAI Error: ${openAiError.message}` });
+      }
+    }
+  }
+
+  // 2. Gemini Fallback
+  if (geminiApiKey) {
+    try {
+      const geminiResult = await callGoogleGemini(messages, temperature, response_format, geminiApiKey);
+      return res.status(200).json(geminiResult);
+    } catch (geminiError) {
+      console.error('[AI Handler] Gemini error:', geminiError.message);
+      return res.status(500).json({ error: `AI Error: ${geminiError.message}` });
     }
   }
 
