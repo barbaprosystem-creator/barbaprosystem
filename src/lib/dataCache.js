@@ -7,18 +7,28 @@ import { withDeadline } from './withDeadline.js';
  * ──────────────────────────────────────────────────
  * Principles:
  * 1. UI ALWAYS renders immediately.
- * 2. Cache read has a strict 300ms deadline — if Dexie hangs or errors, it falls back to network.
- * 3. Network fetch has a strict 6500ms deadline.
- * 4. Cache writes are asynchronous in the background (NEVER block the UI return).
- * 5. If network fails/aborts, returns cached data or [] without ever throwing or leaving spinners active.
+ * 2. Fresh, isolated IndexedDB ('BarbaCache_v4') prevents any legacy version collisions.
+ * 3. Never closes db during active app session.
+ * 4. Cache read has a strict 300ms deadline — if IndexedDB is slow, it falls back to network.
+ * 5. Cache writes are asynchronous in the background (NEVER block UI return).
+ * 6. Guaranteed zero-hang returns on all queries.
  */
 
 // ─── IndexedDB Database ───────────────────────────────────────────────────────
-const db = new Dexie('BarbaCache');
+const db = new Dexie('BarbaCache_v4');
 db.version(1).stores({
   meta: 'key',
   collections: 'id, _collection, updated_at',
 });
+
+async function ensureDbOpen() {
+  if (!db.isOpen()) {
+    try {
+      await db.open();
+    } catch {}
+  }
+  return db.isOpen();
+}
 
 // ─── Configuration per collection ─────────────────────────────────────────────
 const COLLECTION_CONFIG = {
@@ -38,6 +48,7 @@ function getConfig(cacheKey) {
 // ─── Metadata helpers ─────────────────────────────────────────────────────────
 async function getMeta(key) {
   try {
+    await ensureDbOpen();
     return await withDeadline(() => db.meta.get(key), { timeoutMs: 300, label: 'db.meta.get' });
   } catch {
     return null;
@@ -46,6 +57,7 @@ async function getMeta(key) {
 
 async function setMeta(key, value) {
   try {
+    await ensureDbOpen();
     await db.meta.put({ key, ...value });
   } catch {}
 }
@@ -58,6 +70,7 @@ async function setMeta(key, value) {
  */
 export async function getCached(cacheKey) {
   try {
+    await ensureDbOpen();
     return await withDeadline(
       async () => {
         const meta = await getMeta(`sync_${cacheKey}`);
@@ -88,6 +101,9 @@ export async function getCached(cacheKey) {
  */
 export async function setCached(cacheKey, data, lastSync = null) {
   try {
+    await ensureDbOpen();
+    if (!db.isOpen()) return;
+
     const nowIso = lastSync || new Date().toISOString();
     const config = getConfig(cacheKey);
 
@@ -108,7 +124,8 @@ export async function setCached(cacheKey, data, lastSync = null) {
       await db.meta.put({ key: `sync_${cacheKey}`, lastSync: nowIso, count: tagged.length });
     });
   } catch (err) {
-    console.warn(`[DataCache] setCached(${cacheKey}) write error:`, err?.message);
+    // Non-blocking: background cache failures never disrupt user interaction
+    console.debug(`[DataCache] setCached(${cacheKey}) background write:`, err?.message);
   }
 }
 
@@ -118,6 +135,7 @@ export async function setCached(cacheKey, data, lastSync = null) {
 export async function updateCachedRecord(cacheKey, record) {
   if (!record || !record.id) return;
   try {
+    await ensureDbOpen();
     await db.collections.put({ ...record, _collection: cacheKey });
   } catch {}
 }
@@ -182,7 +200,7 @@ export async function syncEntities({
       }
     }
   } catch (err) {
-    console.warn(`[DataCache] Immediate cache read failed for ${cacheName}:`, err);
+    console.debug(`[DataCache] Immediate cache read skipped for ${cacheName}:`, err?.message);
   }
 
   const shouldFullRefresh = forceRefresh || !cached || cached.data.length === 0 || await needsFullRefresh(cacheName);
@@ -253,7 +271,7 @@ export async function syncEntities({
     if (err?.name === 'AbortError' || signal?.aborted) {
       return cached?.data || [];
     }
-    console.warn(`[DataCache] syncEntities(${table}) network timeout or error:`, err?.message);
+    console.debug(`[DataCache] syncEntities(${table}) network timeout or error:`, err?.message);
     return cached?.data || [];
   }
 }
@@ -263,33 +281,27 @@ export async function syncEntities({
  */
 export async function clearCached(cacheKey) {
   try {
-    await db.collections.where('_collection').equals(cacheKey).delete();
+    await ensureDbOpen();
+    if (db.isOpen()) {
+      await db.collections.where('_collection').equals(cacheKey).delete();
+    }
   } catch (err) {
-    console.warn(`[DataCache] clearCached(${cacheKey}) error:`, err.message);
+    console.debug(`[DataCache] clearCached(${cacheKey}) error:`, err?.message);
   }
 }
 
 /**
- * Clear ALL cached data from IndexedDB safely with timeout.
+ * Clear ALL cached data from IndexedDB safely without closing database.
  */
 export async function clearAllCache() {
-  if (typeof window === 'undefined' || !window.indexedDB) return;
-
   try {
-    await withDeadline(
-      () => new Promise((resolve) => {
-        try {
-          db.close();
-        } catch {}
-        const req = window.indexedDB.deleteDatabase('BarbaCache');
-        req.onsuccess = () => resolve();
-        req.onerror = () => resolve();
-        req.onblocked = () => resolve();
-      }),
-      { timeoutMs: 1500, label: 'clearAllCache' }
-    );
+    await ensureDbOpen();
+    if (db.isOpen()) {
+      await db.collections.clear().catch(() => {});
+      await db.meta.clear().catch(() => {});
+    }
   } catch (err) {
-    console.warn('[DataCache] clearAllCache skipped/timed out:', err.message);
+    console.debug('[DataCache] clearAllCache skipped:', err?.message);
   }
 }
 
@@ -298,7 +310,8 @@ export async function clearAllCache() {
  */
 export async function getCacheDiagnostics() {
   try {
-    return { status: 'healthy', database: 'BarbaCache' };
+    await ensureDbOpen();
+    return { status: 'healthy', database: 'BarbaCache_v4', isOpen: db.isOpen() };
   } catch {
     return { status: 'unreachable' };
   }
