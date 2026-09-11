@@ -84,6 +84,7 @@ export default function ProjectsList() {
   }
 
   useEffect(() => {
+    const safetyTimer = setTimeout(() => setLoading(false), 5000);
     fetchProjects();
     fetchContacts();
 
@@ -115,6 +116,7 @@ export default function ProjectsList() {
     }
 
     return () => {
+      clearTimeout(safetyTimer);
       if (timeoutId) clearTimeout(timeoutId);
       controller.abort();
     };

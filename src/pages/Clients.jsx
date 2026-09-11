@@ -30,15 +30,30 @@ export default function Clients() {
   const [currentClient, setCurrentClient] = useState(defaultClientState);
 
   useEffect(() => {
+    let alive = true;
+    const safetyTimer = setTimeout(() => {
+      if (alive) setLoading(false);
+    }, 5000);
+
     async function load() {
-      const { data } = await supabase
-        .from('contacts')
-        .select('*')
-        .order('created_at', { ascending: false });
-      setClients(data || []);
-      setLoading(false);
+      try {
+        const { data } = await supabase
+          .from('contacts')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (alive) setClients(data || []);
+      } catch (e) {
+        console.warn('Error loading clients:', e);
+      } finally {
+        if (alive) setLoading(false);
+      }
     }
     load();
+
+    return () => {
+      alive = false;
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   useEffect(() => {

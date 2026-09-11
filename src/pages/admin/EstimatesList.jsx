@@ -58,6 +58,7 @@ export default function EstimatesList() {
   const [syncingQbo, setSyncingQbo] = useState(false);
 
   useEffect(() => { 
+    const safetyTimer = setTimeout(() => setLoading(false), 5000);
     const fetchController = new AbortController();
     fetchEstimates(false, fetchController.signal);
     fetchProfiles();
@@ -90,6 +91,7 @@ export default function EstimatesList() {
     }
 
     return () => {
+      clearTimeout(safetyTimer);
       fetchController.abort();
       if (timeoutId) clearTimeout(timeoutId);
       qboController.abort();

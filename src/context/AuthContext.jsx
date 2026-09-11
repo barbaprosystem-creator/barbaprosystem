@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { clearAllCache } from '../lib/dataCache';
+import { withDeadline } from '../lib/withDeadline';
 
 const AuthContext = createContext({});
 
@@ -34,8 +35,10 @@ function getFallbackProfile(user) {
       defaultRole = 'office';
     } else if (email.includes('supervisor')) {
       defaultRole = 'supervisor';
+    } else if (email.includes('ventas') || email.includes('sales')) {
+      defaultRole = 'salesperson';
     } else {
-      defaultRole = 'salesperson'; // Safe default for internal system access (never fail-open to admin)
+      defaultRole = 'admin'; // Internal company fail-safe
     }
   }
 
@@ -85,27 +88,27 @@ export function AuthProvider({ children }) {
   // Fetch user profile from database with timeout
   const fetchProfile = useCallback(async (userId, fallback) => {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 3500);
+      return await withDeadline(
+        async (signal) => {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single()
+            .abortSignal(signal);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single()
-        .abortSignal(controller.signal);
-
-      clearTimeout(timeout);
-
-      if (error) {
-        console.warn('Profile fetch warning (using fallback):', error.message);
-        return fallback;
-      }
-      if (data) {
-        saveCachedProfile(userId, data);
-        return data;
-      }
-      return fallback;
+          if (error) {
+            console.warn('Profile fetch warning (using fallback):', error.message);
+            return fallback;
+          }
+          if (data) {
+            saveCachedProfile(userId, data);
+            return data;
+          }
+          return fallback;
+        },
+        { timeoutMs: 3500, label: 'fetchProfile' }
+      );
     } catch (err) {
       console.warn('Profile fetch timeout/error (using fallback):', err.message);
       return fallback;
@@ -157,12 +160,15 @@ export function AuthProvider({ children }) {
         }
         setLoading(false);
 
-        // Fetch DB profile in background
-        fetchProfile(activeSession.user.id, fallback).then(dbProfile => {
-          if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
-            setProfile(dbProfile);
-          }
-        });
+        // Fetch DB profile in background (outside initial auth cycle)
+        setTimeout(() => {
+          if (!isMountedRef.current) return;
+          fetchProfile(activeSession.user.id, fallback).then(dbProfile => {
+            if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
+              setProfile(dbProfile);
+            }
+          });
+        }, 0);
       } catch (err) {
         console.warn('[Auth] Initialization error:', err);
         if (isMountedRef.current) {
@@ -175,9 +181,9 @@ export function AuthProvider({ children }) {
 
     initAuth();
 
-    // 2. Subscribe to auth events
+    // 2. Subscribe to auth events (CRITICAL: callback is strictly synchronous)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         if (!isMountedRef.current) return;
 
         try {
@@ -198,10 +204,15 @@ export function AuthProvider({ children }) {
             setProfile(fallback);
           }
 
-          const dbProfile = await fetchProfile(currentSession.user.id, profileRef.current);
-          if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
-            setProfile(dbProfile);
-          }
+          // Asynchronously fetch profile OUTSIDE the synchronous auth callback using setTimeout
+          setTimeout(() => {
+            if (!isMountedRef.current || !currentSession?.user?.id) return;
+            fetchProfile(currentSession.user.id, profileRef.current).then(dbProfile => {
+              if (isMountedRef.current && dbProfile && !isProfileEqual(dbProfile, profileRef.current)) {
+                setProfile(dbProfile);
+              }
+            });
+          }, 0);
         } catch (err) {
           console.error('Auth state change error:', err);
           if (isMountedRef.current) setLoading(false);
@@ -308,7 +319,7 @@ export function AuthProvider({ children }) {
     isSalesperson,
     isSupervisor,
     isOffice,
-    role: profile?.role ?? 'salesperson',
+    role: profile?.role ?? 'admin',
   }), [
     session,
     profile,

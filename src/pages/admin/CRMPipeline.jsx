@@ -250,8 +250,12 @@ export default function CRMPipeline() {
   const [expandedStages, setExpandedStages] = useState({});
 
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.id) {
+      setLoading(false);
+      return;
+    }
 
+    const safetyTimer = setTimeout(() => setLoading(false), 5000);
     let isCurrent = true;
     // 1. Instant load from IndexedDB cache (0ms)
     getCached('crm_contacts').then(cached => {
@@ -268,6 +272,7 @@ export default function CRMPipeline() {
     });
 
     return () => {
+      clearTimeout(safetyTimer);
       isCurrent = false;
       controller.abort();
     };

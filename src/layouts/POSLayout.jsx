@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -111,7 +111,14 @@ export default function POSLayout({ onSignOut, profile }) {
       </nav>
 
       <main className="admin-main">
-        <Outlet />
+        <Suspense fallback={
+          <div className="page-loading" style={{ minHeight: '350px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: '#888' }}>
+            <div className="loading-spinner" style={{ width: '28px', height: '28px' }} />
+            <p style={{ fontSize: '13px', fontWeight: 500, color: '#aaa' }}>Cargando sección...</p>
+          </div>
+        }>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );

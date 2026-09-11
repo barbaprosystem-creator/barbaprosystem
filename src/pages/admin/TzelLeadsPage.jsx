@@ -49,8 +49,10 @@ export default function TzelLeadsPage() {
   const [sendingSmsId, setSendingSmsId] = useState(null);
 
   useEffect(() => {
+    const safetyTimer = setTimeout(() => setLoading(false), 5000);
     fetchTzelLeads();
     checkFacebookStatus();
+    return () => clearTimeout(safetyTimer);
   }, []);
 
   // Debounce search by 250ms to protect CPU on large dataset

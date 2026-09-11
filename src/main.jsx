@@ -15,18 +15,18 @@ if (import.meta.env.DEV) {
 import { clearAllCache } from './lib/dataCache';
 
 // App Cache & Version Control
-const APP_VERSION = '2026.09.11.v1';
+const APP_VERSION = '2026.09.11.v2';
 
 // Version-aware cleanup — invalidate IndexedDB data caches, NEVER purge CacheStorage or auth
 try {
   const currentStoredVersion = localStorage.getItem('barba_app_version');
   if (currentStoredVersion !== APP_VERSION) {
-    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Invalidating IndexedDB data caches...`);
+    console.log(`[App] New version detected (${currentStoredVersion} -> ${APP_VERSION}). Purging stale IndexedDB data caches...`);
 
     // Remove legacy session keys if present
     localStorage.removeItem('barba-crm-session-token');
 
-    // Invalidate all IndexedDB collections so next page loads do fresh clean synchronizations
+    // Invalidate all IndexedDB collections asynchronously
     clearAllCache().catch(err => console.warn('[App] clearAllCache on version update error:', err));
 
     localStorage.setItem('barba_app_version', APP_VERSION);
@@ -55,15 +55,15 @@ try {
 
 // Vite preload error handler — catches dynamic import failures before ErrorBoundary
 window.addEventListener('vite:preloadError', (event) => {
-  event.preventDefault();
   try {
     const hasReloaded = sessionStorage.getItem('vite-preload-refreshed') === 'true';
     if (!hasReloaded) {
+      event.preventDefault();
       sessionStorage.setItem('vite-preload-refreshed', 'true');
       console.warn('[Vite] Preload error detected. Reloading to fetch latest chunks...');
       window.location.reload();
     } else {
-      console.error('[Vite] Preload error persists after reload. Not reloading again to prevent loop.');
+      console.error('[Vite] Preload error persists after reload. Allowing error boundary to catch it.');
     }
   } catch (e) {}
 });
