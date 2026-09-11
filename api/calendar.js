@@ -55,102 +55,108 @@ export default async function handler(req, res) {
         oauth2Client.setCredentials({ refresh_token: userRefreshToken });
 
         const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
-        
-        let allGoogleItems = [];
-        let calendarListSuccess = false;
 
-        // Intentar obtener todos los calendarios activos
-        try {
-          const calListRes = await calendar.calendarList.list();
-          const calendars = calListRes.data.items || [];
-          const activeCalendars = calendars.filter(c => c.selected || c.primary);
+        // Concurrent fetching of Calendar events and Tasks in parallel
+        const [calendarEvents, taskEvents] = await Promise.all([
+          // Fetch Google Calendar events
+          (async () => {
+            const items = [];
+            let calendarListSuccess = false;
 
-          if (activeCalendars.length > 0) {
-            calendarListSuccess = true;
-            const eventPromises = activeCalendars.map(async (cal) => {
+            try {
+              const calListRes = await calendar.calendarList.list();
+              const calendars = calListRes.data.items || [];
+              const activeCalendars = calendars.filter(c => c.selected || c.primary);
+
+              if (activeCalendars.length > 0) {
+                calendarListSuccess = true;
+                const eventPromises = activeCalendars.map(async (cal) => {
+                  try {
+                    const res = await calendar.events.list({
+                      calendarId: cal.id,
+                      timeMin: timeMin,
+                      maxResults: 250,
+                      singleEvents: true,
+                      orderBy: 'startTime',
+                    });
+                    return (res.data.items || []).map(ev => ({
+                      ...ev,
+                      calendarName: cal.summary,
+                      calendarColor: cal.backgroundColor || null,
+                      isTask: false,
+                    }));
+                  } catch (err) {
+                    return [];
+                  }
+                });
+                const nested = await Promise.all(eventPromises);
+                items.push(...nested.flat());
+              }
+            } catch (err) {
+              console.warn('Could not retrieve calendar list, falling back to primary:', err.message);
+            }
+
+            if (!calendarListSuccess) {
               try {
                 const res = await calendar.events.list({
-                  calendarId: cal.id,
+                  calendarId: 'primary',
                   timeMin: timeMin,
-                  maxResults: 1000,
+                  maxResults: 500,
                   singleEvents: true,
                   orderBy: 'startTime',
                 });
-                return (res.data.items || []).map(ev => ({
+                items.push(...(res.data.items || []).map(ev => ({
                   ...ev,
-                  calendarName: cal.summary,
-                  calendarColor: cal.backgroundColor || null,
+                  calendarName: 'Primary',
                   isTask: false,
-                }));
+                })));
               } catch (err) {
-                console.warn(`Error fetching events for calendar ${cal.id}:`, err.message);
-                return [];
+                console.error('Error fetching primary calendar events:', err.message);
               }
-            });
-            const eventsNested = await Promise.all(eventPromises);
-            allGoogleItems.push(...eventsNested.flat());
-          }
-        } catch (err) {
-          console.warn('Could not retrieve calendar list, falling back to primary:', err.message);
-        }
+            }
 
-        // Si falló el listado de calendarios (por ejemplo, falta de scopes), consultar solo el principal
-        if (!calendarListSuccess) {
-          try {
-            const res = await calendar.events.list({
-              calendarId: 'primary',
-              timeMin: timeMin,
-              maxResults: 1000,
-              singleEvents: true,
-              orderBy: 'startTime',
-            });
-            const primaryEvents = (res.data.items || []).map(ev => ({
-              ...ev,
-              calendarName: 'Primary',
-              isTask: false,
-            }));
-            allGoogleItems.push(...primaryEvents);
-          } catch (err) {
-            console.error('Error fetching primary calendar events:', err);
-          }
-        }
+            return items;
+          })(),
 
-        // 2. Intentar obtener tareas de Google Tasks
-        try {
-          const tasksClient = google.tasks({ version: 'v1', auth: oauth2Client });
-          const taskListsRes = await tasksClient.tasklists.list({ maxResults: 100 });
-          const taskLists = taskListsRes.data.items || [];
-
-          const taskPromises = taskLists.map(async (list) => {
+          // Fetch Google Tasks in parallel
+          (async () => {
             try {
-              const res = await tasksClient.tasks.list({
-                tasklist: list.id,
-                showCompleted: true,
-                showHidden: true,
-                maxResults: 150,
+              const tasksClient = google.tasks({ version: 'v1', auth: oauth2Client });
+              const taskListsRes = await tasksClient.tasklists.list({ maxResults: 10 });
+              const taskLists = taskListsRes.data.items || [];
+
+              const taskPromises = taskLists.map(async (list) => {
+                try {
+                  const res = await tasksClient.tasks.list({
+                    tasklist: list.id,
+                    showCompleted: true,
+                    showHidden: true,
+                    maxResults: 100,
+                  });
+                  return (res.data.items || []).map(task => ({
+                    id: task.id,
+                    summary: task.title || '(Untitled Task)',
+                    description: task.notes || '',
+                    start: { date: task.due ? task.due.split('T')[0] : new Date().toISOString().split('T')[0] },
+                    end: { date: task.due ? task.due.split('T')[0] : new Date().toISOString().split('T')[0] },
+                    isTask: true,
+                    taskStatus: task.status,
+                    taskListName: list.title,
+                    htmlLink: 'https://tasks.google.com/',
+                  }));
+                } catch (err) {
+                  return [];
+                }
               });
-              return (res.data.items || []).map(task => ({
-                id: task.id,
-                summary: task.title || '(Untitled Task)',
-                description: task.notes || '',
-                start: { date: task.due ? task.due.split('T')[0] : new Date().toISOString().split('T')[0] },
-                end: { date: task.due ? task.due.split('T')[0] : new Date().toISOString().split('T')[0] },
-                isTask: true,
-                taskStatus: task.status, // 'needsAction' o 'completed'
-                taskListName: list.title,
-                htmlLink: 'https://tasks.google.com/',
-              }));
+              const nested = await Promise.all(taskPromises);
+              return nested.flat();
             } catch (err) {
-              console.warn(`Error fetching tasks from list ${list.id}:`, err.message);
               return [];
             }
-          });
-          const tasksNested = await Promise.all(taskPromises);
-          allGoogleItems.push(...tasksNested.flat());
-        } catch (err) {
-          console.warn('Could not retrieve Google Tasks (API disabled or missing scopes):', err.message);
-        }
+          })()
+        ]);
 
+        const allGoogleItems = [...calendarEvents, ...taskEvents];
         return res.status(200).json(allGoogleItems);
       } else {
         // Cuenta de servicio global (comportamiento original)

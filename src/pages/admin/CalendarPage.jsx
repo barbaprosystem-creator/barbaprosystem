@@ -308,7 +308,7 @@ export default function CalendarPage() {
       const fetchPromises = tokensToFetch.map(async ({ userId, userName, token }) => {
         try {
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 4000);
+          const timeoutId = setTimeout(() => controller.abort(), 8500);
 
           const res = await fetch(`/api/calendar?user_refresh_token=${encodeURIComponent(token)}`, {
             signal: controller.signal
@@ -354,7 +354,11 @@ export default function CalendarPage() {
           });
           allFetchedEvents.push(...mapped);
         } catch (err) {
-          console.warn(`Could not load Google events for ${userName}:`, err.message);
+          if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+            console.debug(`[CalendarPage] Google Calendar fetch timed out or aborted for ${userName}`);
+          } else {
+            console.warn(`Could not load Google events for ${userName}:`, err.message);
+          }
         }
       });
 
