@@ -16,7 +16,7 @@ function LoadingOverlay() {
     <div className="absolute inset-0 flex flex-col items-center justify-center z-10 pointer-events-none">
       <div className="w-16 h-16 rounded-full border-4 border-violet-500/20 border-t-violet-500 animate-spin" />
       <p className="mt-4 text-sm font-semibold text-[#888888] tracking-wide">
-        Cargando modelo 3D… {Math.round(progress)}%
+        Loading 3D model… {Math.round(progress)}%
       </p>
     </div>
   );
@@ -134,7 +134,7 @@ export default function ModelViewer({ modelUrl }) {
       <div className="absolute top-3 left-3 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/5 opacity-60 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none select-none">
         <span className="text-xs">🖱️</span>
         <span className="text-[11px] font-medium text-[#c0c0c0]">
-          Mantén presionado y arrastra para explorar en 3D
+          Click & drag to explore in 3D
         </span>
       </div>
 

@@ -12,7 +12,7 @@ function ViewerSkeleton() {
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
         <div className="w-16 h-16 rounded-full border-4 border-violet-500/20 border-t-violet-500 animate-spin" />
         <p className="text-sm font-semibold text-[#555555] tracking-wide animate-pulse">
-          Cargando modelo 3D…
+          Loading 3D model…
         </p>
       </div>
     </div>
@@ -28,7 +28,7 @@ export default function Public3DViewer() {
   useEffect(() => {
     async function fetchProject() {
       if (!id) {
-        setError('No se proporcionó un ID de proyecto válido.');
+        setError('No valid project ID was provided.');
         setLoading(false);
         return;
       }
@@ -41,8 +41,8 @@ export default function Public3DViewer() {
           .single();
 
         if (fetchErr) throw fetchErr;
-        if (!data) throw new Error('Proyecto no encontrado');
-        if (!data.model_3d_url) throw new Error('Este proyecto aún no tiene un modelo 3D disponible.');
+        if (!data) throw new Error('Project not found.');
+        if (!data.model_3d_url) throw new Error('This project does not have a 3D model available yet.');
 
         setProject(data);
       } catch (err) {
@@ -61,7 +61,7 @@ export default function Public3DViewer() {
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
         <div className="text-center">
           <div className="w-14 h-14 mx-auto rounded-full border-4 border-violet-500/20 border-t-violet-500 animate-spin" />
-          <p className="mt-4 text-sm text-[#888888]">Cargando propuesta 3D…</p>
+          <p className="mt-4 text-sm text-[#888888]">Loading 3D proposal…</p>
         </div>
       </div>
     );
@@ -75,7 +75,7 @@ export default function Public3DViewer() {
           <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <span className="text-4xl">⚠️</span>
           </div>
-          <h1 className="text-xl font-bold text-[#f0f0f0] mb-2">No se pudo cargar el modelo</h1>
+          <h1 className="text-xl font-bold text-[#f0f0f0] mb-2">Unable to load 3D model</h1>
           <p className="text-sm text-[#888888] leading-relaxed">{error}</p>
         </div>
       </div>
@@ -97,13 +97,13 @@ export default function Public3DViewer() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-[#f0f0f0] tracking-tight">Barba Construction</h1>
-              <p className="text-[11px] text-[#555555] uppercase tracking-widest">Propuesta 3D</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-widest">3D Proposal</p>
             </div>
           </div>
 
           {clientName && (
             <span className="text-xs text-[#888888] bg-[#1a1a1a] px-3 py-1.5 rounded-lg border border-[#2a2a2a]">
-              Preparado para <span className="text-[#f0f0f0] font-semibold">{clientName}</span>
+              Prepared for <span className="text-[#f0f0f0] font-semibold">{clientName}</span>
             </span>
           )}
         </div>
@@ -131,7 +131,7 @@ export default function Public3DViewer() {
         <div className="flex justify-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs text-violet-300 font-medium">
             <span>🖱️</span>
-            Mantén presionado y arrastra para explorar el modelo • Usa la rueda para hacer zoom
+            Click and drag to rotate • Scroll or pinch to zoom
           </div>
         </div>
 
@@ -145,7 +145,7 @@ export default function Public3DViewer() {
         {/* Footer CTA */}
         <div className="text-center pt-4 pb-8">
           <p className="text-xs text-[#555555]">
-            ¿Tienes preguntas sobre esta propuesta? Llámanos al{' '}
+            Questions about this proposal? Call us at{' '}
             <a href="tel:+15025470644" className="text-amber-400 hover:underline font-semibold">(502) 547-0644</a>
           </p>
         </div>
