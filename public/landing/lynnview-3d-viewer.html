@@ -1370,37 +1370,87 @@ function makeLimestoneTexture(baseHex = '#ddd4c3') {
   return tex;
 }
 
-// Procedural Multi-Tone Rustic Fieldstone / Rubble Stone Texture for the Central Monolith
-function makeFieldstoneTexture(baseHex = '#9a8e80') {
+// True Voronoi / Polygonal Random Fieldstone & Rubble Texture (matching referencia_city_of_lynnview.jpg)
+function makeFieldstoneTexture() {
+  const W = 512, H = 512;
   const cv = document.createElement('canvas');
-  cv.width = 512; cv.height = 512;
+  cv.width = W; cv.height = H;
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = baseHex;
-  ctx.fillRect(0, 0, 512, 512);
-  const palette = ['#8c8275', '#a89882', '#756d63', '#b5a48b', '#6e685f', '#9e8b72', '#c2b39c'];
-  for (let i = 0; i < 160; i++) {
-    const cx = Math.random() * 512;
-    const cy = Math.random() * 512;
-    const rx = 14 + Math.random() * 28;
-    const ry = 9 + Math.random() * 16;
-    ctx.fillStyle = palette[i % palette.length];
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, (Math.random() - 0.5) * 0.6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(55, 50, 44, 0.45)';
-    ctx.lineWidth = 2.2;
-    ctx.stroke();
+  const imgData = ctx.createImageData(W, H);
+  const data = imgData.data;
+
+  // Deterministic pseudo-random seed points on a jittered grid (tileable!)
+  const nx = 9, ny = 12;
+  const seeds = [];
+  const palette = [
+    [138, 122, 106], // warm grey-tan
+    [112,  95,  80], // rustic brown
+    [164, 145, 122], // buff fieldstone
+    [ 92,  88,  84], // charcoal slate
+    [148, 118,  92], // warm sienna stone
+    [124, 116, 108], // medium grey stone
+    [176, 158, 134], // light sandstone
+    [ 98,  82,  68], // dark umber stone
+  ];
+
+  let seedIdx = 1;
+  function sRand() {
+    seedIdx = (seedIdx * 16807) % 2147483647;
+    return (seedIdx - 1) / 2147483646;
   }
-  for (let i = 0; i < 22000; i++) {
-    const x = Math.random() * 512;
-    const y = Math.random() * 512;
-    const v = 110 + Math.floor(Math.random() * 95);
-    ctx.fillStyle = `rgba(${v},${v-6},${v-14},0.16)`;
-    ctx.fillRect(x, y, 2 + Math.random()*3, 2 + Math.random()*2);
+
+  for (let gy = 0; gy < ny; gy++) {
+    for (let gx = 0; gx < nx; gx++) {
+      const sx = ((gx + 0.18 + 0.64 * sRand()) / nx) * W;
+      const sy = ((gy + 0.18 + 0.64 * sRand()) / ny) * H;
+      const col = palette[(gx * 3 + gy * 5 + Math.floor(sRand() * 8)) % palette.length];
+      seeds.push({ x: sx, y: sy, r: col[0], g: col[1], b: col[2] });
+    }
   }
+
+  for (let py = 0; py < H; py++) {
+    for (let px = 0; px < W; px++) {
+      let d1 = 1e9, d2 = 1e9, best = seeds[0];
+      for (let i = 0; i < seeds.length; i++) {
+        const s = seeds[i];
+        let dx = Math.abs(px - s.x);
+        let dy = Math.abs(py - s.y);
+        if (dx > W * 0.5) dx = W - dx;
+        if (dy > H * 0.5) dy = H - dy;
+        // Slightly wider horizontal aspect for natural fieldstone bedding
+        const dist = Math.sqrt(dx * dx * 0.72 + dy * dy * 1.35);
+        if (dist < d1) {
+          d2 = d1;
+          d1 = dist;
+          best = s;
+        } else if (dist < d2) {
+          d2 = dist;
+        }
+      }
+      const edgeDist = d2 - d1;
+      const idx = (py * W + px) * 4;
+      const grain = (sRand() - 0.5) * 18;
+      if (edgeDist < 2.6) {
+        // Deep recessed mortar joint
+        data[idx]     = 76 + grain * 0.4;
+        data[idx + 1] = 72 + grain * 0.4;
+        data[idx + 2] = 66 + grain * 0.4;
+        data[idx + 3] = 255;
+      } else {
+        // Bevel shading near stone edge
+        const bev = Math.min(1.0, (edgeDist - 2.6) / 4.5);
+        const shade = 0.78 + 0.22 * bev;
+        data[idx]     = Math.min(255, Math.max(0, best.r * shade + grain));
+        data[idx + 1] = Math.min(255, Math.max(0, best.g * shade + grain));
+        data[idx + 2] = Math.min(255, Math.max(0, best.b * shade + grain));
+        data[idx + 3] = 255;
+      }
+    }
+  }
+  ctx.putImageData(imgData, 0, 0);
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(1.5, 1.5);
+  tex.repeat.set(1.3, 1.8);
   return tex;
 }
 
@@ -1592,9 +1642,7 @@ function makeCityFlagTexture() {
 
 const stoneTexA = makeLimestoneTexture('#ded5c4');
 const stoneTexB = makeLimestoneTexture('#d4cab7');
-const fieldTexA = makeFieldstoneTexture('#94897b');
-const fieldTexB = makeFieldstoneTexture('#83796d');
-const fieldTexC = makeFieldstoneTexture('#a89984');
+const fieldTexA = makeFieldstoneTexture();
 const grassTex = makeGrassTexture();
 const plazaTex = makeConcreteTexture('#e8dfd3');
 const walkTex = makeConcreteTexture('#ded8ce');
@@ -1615,13 +1663,15 @@ const matStoneA = new THREE.MeshStandardMaterial({ map: stoneTexA, bumpMap: ston
 const matStoneB = new THREE.MeshStandardMaterial({ map: stoneTexB, bumpMap: stoneTexB, bumpScale: 0.032, roughness: 0.78, metalness: 0.02, transparent: true, opacity: 1.0 });
 
 // Multi-Tone Rustic Fieldstone / Rubble Stone (Central Monolith)
-const matFieldstoneList = [
-  new THREE.MeshStandardMaterial({ map: fieldTexA, bumpMap: fieldTexA, bumpScale: 0.055, color: 0xb5a898, roughness: 0.86, metalness: 0.02, transparent: true, opacity: 1.0 }),
-  new THREE.MeshStandardMaterial({ map: fieldTexB, bumpMap: fieldTexB, bumpScale: 0.060, color: 0x968c82, roughness: 0.88, metalness: 0.02, transparent: true, opacity: 1.0 }),
-  new THREE.MeshStandardMaterial({ map: fieldTexC, bumpMap: fieldTexC, bumpScale: 0.055, color: 0xc4b097, roughness: 0.84, metalness: 0.02, transparent: true, opacity: 1.0 }),
-  new THREE.MeshStandardMaterial({ map: fieldTexA, bumpMap: fieldTexA, bumpScale: 0.060, color: 0x82786e, roughness: 0.90, metalness: 0.02, transparent: true, opacity: 1.0 }),
-  new THREE.MeshStandardMaterial({ map: fieldTexC, bumpMap: fieldTexC, bumpScale: 0.050, color: 0xab9780, roughness: 0.85, metalness: 0.02, transparent: true, opacity: 1.0 }),
-];
+const matFieldstoneMain = new THREE.MeshStandardMaterial({
+  map: fieldTexA,
+  bumpMap: fieldTexA,
+  bumpScale: 0.085,
+  roughness: 0.88,
+  metalness: 0.02,
+  transparent: true,
+  opacity: 1.0
+});
 
 const matMortar = new THREE.MeshStandardMaterial({ color: 0x635d55, roughness: 0.94, transparent: true, opacity: 1.0 });
 const matCap = new THREE.MeshStandardMaterial({ color: 0xf2efe9, bumpMap: stoneTexA, bumpScale: 0.008, roughness: 0.58, metalness: 0.02 });
@@ -1790,53 +1840,16 @@ function monoBoundsAtZ(z) {
   return { hw, hd, x0: -hw, x1: hw, y0: yCenterMono - hd, y1: yCenterMono + hd };
 }
 
-const bBot = monoBoundsAtZ(zMonoBot);
-const bTop = monoBoundsAtZ(zMonoTop - 0.03);
-const monoMortarMesh = createFrustumBlock(
-  bBot.x0 + 0.05, bBot.x1 - 0.05, bBot.y0 + 0.05, bBot.y1 - 0.05,
-  bTop.x0 + 0.05, bTop.x1 - 0.05, bTop.y0 + 0.05, bTop.y1 - 0.05,
-  zMonoBot, zMonoTop - 0.02, matMortar, false
-);
-veneerMeshes.push(monoMortarMesh);
-
-// Build 11 irregular horizontal courses of multi-tone fieldstone/rubble blocks tapering upward
-const nMonoCourses = 11;
-const monoCourseH = (zMonoTop - zMonoBot) / nMonoCourses;
 const joint = 0.032;
-
-const rubbleSplits = [
-  [0.0, 0.23, 0.51, 0.78, 1.0],
-  [0.0, 0.18, 0.42, 0.67, 0.85, 1.0],
-  [0.0, 0.29, 0.56, 0.79, 1.0],
-  [0.0, 0.21, 0.48, 0.73, 1.0],
-  [0.0, 0.16, 0.39, 0.64, 0.84, 1.0],
-];
-
-for (let c = 0; c < nMonoCourses; c++) {
-  const zb = zMonoBot + c * monoCourseH + (c === 0 ? 0 : joint * 0.45);
-  const zt = zMonoBot + (c + 1) * monoCourseH - (c === nMonoCourses - 1 ? 0 : joint * 0.45);
-  const bb = monoBoundsAtZ(zb);
-  const bt = monoBoundsAtZ(zt);
-  const sp = rubbleSplits[c % rubbleSplits.length];
-
-  for (let k = 0; k < sp.length - 1; k++) {
-    const u0 = sp[k] + (k === 0 ? 0 : 0.008);
-    const u1 = sp[k + 1] - (k === sp.length - 2 ? 0 : 0.008);
-
-    const x0b = bb.x0 + (bb.x1 - bb.x0) * u0;
-    const x1b = bb.x0 + (bb.x1 - bb.x0) * u1;
-    const x0t = bt.x0 + (bt.x1 - bt.x0) * u0;
-    const x1t = bt.x0 + (bt.x1 - bt.x0) * u1;
-
-    const matRubble = matFieldstoneList[(c * 3 + k * 2) % matFieldstoneList.length];
-    const blk = createFrustumBlock(
-      x0b, x1b, bb.y0, bb.y1,
-      x0t, x1t, bt.y0, bt.y1,
-      zb, zt, matRubble, true, 0.42
-    );
-    veneerMeshes.push(blk);
-  }
-}
+const bBot = monoBoundsAtZ(zMonoBot);
+const bTop = monoBoundsAtZ(zMonoTop);
+// Seamless Tapered Truncated-Pyramid Fieldstone Monolith (no horizontal brick lines, no base, no cap!)
+const monoFieldstoneMesh = createFrustumBlock(
+  bBot.x0, bBot.x1, bBot.y0, bBot.y1,
+  bTop.x0, bTop.x1, bTop.y0, bTop.y1,
+  zMonoBot, zMonoTop, matFieldstoneMain, true, 0.55
+);
+veneerMeshes.push(monoFieldstoneMesh);
 
 // Recessed 30" x 34" Bronze Historic Register Plaque tilted flush with the tapered front face
 const zPlaqueMid = 3.35;
