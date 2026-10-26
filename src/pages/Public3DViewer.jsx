@@ -120,7 +120,7 @@ export default function Public3DViewer() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-[#f0f0f0] tracking-tight">Barba Construction</h1>
-              <p className="text-[11px] text-[#555555] uppercase tracking-widest">Interactive 3D Engineering Proposal</p>
+              <p className="text-[11px] text-[#555555] uppercase tracking-widest">Interactive 3D Proposal</p>
             </div>
           </div>
 
@@ -136,7 +136,7 @@ export default function Public3DViewer() {
                   }`}
                 >
                   <Layers size={14} />
-                  Visor Ingeniería Completo (Luces + Cimentaciones + Pan)
+                  Interactive 3D Viewer (Lighting + Foundations + Pan)
                 </button>
                 <button
                   onClick={() => setViewerMode('glb')}
@@ -147,7 +147,7 @@ export default function Public3DViewer() {
                   }`}
                 >
                   <Box size={14} />
-                  Visor Malla .GLB
+                  3D .GLB Mesh
                 </button>
               </div>
             )}
@@ -182,7 +182,7 @@ export default function Public3DViewer() {
 
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 font-medium">
             <span>🖐️</span>
-            Usa <strong>"Arrastrar / Mover"</strong> para desplazar • <strong>Rueda</strong> para Zoom en el cursor • <strong>Rayos-X</strong> para ver Zapatas (-36&quot;/-60&quot;)
+            Use <strong>&quot;Pan / Drag&quot;</strong> to move freely • <strong>Scroll</strong> to zoom to cursor • <strong>X-Ray Foundations</strong> to inspect footings
           </div>
         </div>
 
@@ -196,17 +196,17 @@ export default function Public3DViewer() {
           >
             <iframe
               src="/landing/lynnview-3d-viewer.html"
-              title="City of Lynnview Interactive 3D Engineering Viewer"
+              title="City of Lynnview Interactive 3D Viewer"
               className="w-full h-full border-0"
               allow="fullscreen"
             />
             <button
               onClick={toggleCadFullscreen}
-              className="absolute bottom-3.5 right-28 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/80 hover:bg-amber-500 hover:text-black text-xs font-bold text-white border border-amber-500/50 transition-all shadow-lg"
-              title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+              className="absolute bottom-3.5 right-3.5 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/80 hover:bg-amber-500 hover:text-black text-xs font-bold text-white border border-amber-500/50 transition-all shadow-lg"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             >
               {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              {isFullscreen ? 'Salir Pantalla Completa' : 'Pantalla Completa'}
+              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
             </button>
           </div>
         ) : (

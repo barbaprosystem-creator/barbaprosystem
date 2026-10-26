@@ -139,10 +139,10 @@ export default function ModelViewer({ modelUrl }) {
                 ? 'bg-violet-600 text-white'
                 : 'bg-white/5 text-gray-300 hover:bg-white/10'
             }`}
-            title="Click izquierdo rota 360°"
+            title="Left click rotates 360°"
           >
             <RotateCw size={13} />
-            Rotar 360°
+            Rotate 360°
           </button>
           <button
             onClick={() => setMouseMode('pan')}
@@ -151,10 +151,10 @@ export default function ModelViewer({ modelUrl }) {
                 ? 'bg-amber-500 text-black'
                 : 'bg-white/5 text-gray-300 hover:bg-white/10'
             }`}
-            title="Click izquierdo arrastra y mueve libremente el modelo"
+            title="Left click drags and pans the model freely"
           >
             <Hand size={13} />
-            Arrastrar / Mover
+            Pan / Drag
           </button>
 
           <div className="w-px h-5 bg-white/15 mx-1" />
@@ -168,7 +168,7 @@ export default function ModelViewer({ modelUrl }) {
             }`}
           >
             <Sun size={13} />
-            Día
+            Daylight
           </button>
           <button
             onClick={() => setLightMode('sunset')}
@@ -179,7 +179,7 @@ export default function ModelViewer({ modelUrl }) {
             }`}
           >
             <Sunset size={13} />
-            Atardecer
+            Sunset
           </button>
           <button
             onClick={() => setLightMode('night')}
@@ -190,7 +190,7 @@ export default function ModelViewer({ modelUrl }) {
             }`}
           >
             <Moon size={13} />
-            Noche LED
+            Night LED
           </button>
 
           <div className="w-px h-5 bg-white/15 mx-1" />
@@ -204,7 +204,7 @@ export default function ModelViewer({ modelUrl }) {
             }`}
           >
             <Eye size={13} />
-            Rayos-X Cimentaciones
+            X-Ray Foundations
           </button>
           <button
             onClick={() => setWireframe((v) => !v)}
@@ -215,7 +215,7 @@ export default function ModelViewer({ modelUrl }) {
             }`}
           >
             <Grid size={13} />
-            Malla CAD
+            CAD Wireframe
           </button>
         </div>
 
@@ -223,14 +223,14 @@ export default function ModelViewer({ modelUrl }) {
           <button
             onClick={resetCamera}
             className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-violet-600/40 transition-all"
-            title="Centrar cámara"
+            title="Reset camera"
           >
             <RotateCcw size={14} />
           </button>
           <button
             onClick={toggleFullscreen}
             className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white hover:bg-violet-600/40 transition-all"
-            title={isFullscreen ? 'Salir de pantalla completa' : 'Pantalla completa'}
+            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
           >
             {isFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
           </button>

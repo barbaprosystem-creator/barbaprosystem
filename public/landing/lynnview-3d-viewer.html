@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Visor 3D Interactivo — City of Lynnview Monument &amp; Plazoleta | Barba Construction</title>
+<title>Interactive 3D Proposal — City of Lynnview Monument &amp; Civic Plaza | Barba Construction</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
   body {
@@ -24,7 +24,7 @@
     top: 10px;
     left: 10px;
     right: 10px;
-    background: rgba(15, 19, 25, 0.94);
+    background: rgba(15, 19, 25, 0.92);
     backdrop-filter: blur(10px);
     border: 1px solid #f59e0b;
     border-radius: 10px;
@@ -106,120 +106,7 @@
     accent-color: #f59e0b;
     cursor: pointer;
   }
-  .ca-sidebar {
-    position: absolute;
-    top: 76px;
-    left: 10px;
-    width: 288px;
-    background: rgba(15, 19, 25, 0.93);
-    backdrop-filter: blur(8px);
-    color: #f1f5f9;
-    border: 1.5px solid #334155;
-    border-radius: 10px;
-    padding: 12px;
-    z-index: 10;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  }
-  .ca-sidebar h2 {
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #f59e0b;
-    border-bottom: 1.5px solid #334155;
-    padding-bottom: 5px;
-    margin-bottom: 7px;
-  }
-  .spec-row {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10.2px;
-    padding: 3.2px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.07);
-  }
-  .spec-row span { color: #94a3b8; }
-  .spec-row strong { color: #f8fafc; }
-  .ca-note {
-    margin-top: 8px;
-    font-size: 10px;
-    line-height: 1.45;
-    background: rgba(245, 158, 11, 0.10);
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    color: #fde68a;
-    padding: 7px;
-    border-radius: 6px;
-  }
-  .label-3d {
-    position: absolute;
-    background: rgba(15, 23, 42, 0.92);
-    color: #f8fafc;
-    border: 1.5px solid #f59e0b;
-    border-radius: 5px;
-    padding: 3px 7px;
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.45);
-  }
-  .label-3d.label-xray {
-    background: rgba(124, 45, 18, 0.95);
-    border-color: #fb923c;
-    color: #ffedd5;
-  }
-  .nav-pad {
-    position: absolute;
-    bottom: 14px;
-    right: 14px;
-    background: rgba(15, 19, 25, 0.92);
-    border: 1px solid #3b4454;
-    border-radius: 10px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    z-index: 10;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.45);
-  }
-  .nav-pad-row {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-  }
-  .nav-btn {
-    width: 32px;
-    height: 30px;
-    background: #1e2532;
-    color: #f8fafc;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .nav-btn:hover {
-    background: #f59e0b;
-    color: #000;
-    border-color: #fbbf24;
-  }
-  .ca-footer {
-    position: absolute;
-    bottom: 12px;
-    left: 12px;
-    background: rgba(15, 19, 25, 0.92);
-    border: 1px solid #334155;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 10.5px;
-    color: #cbd5e1;
-    z-index: 10;
-  }
   @media (max-width: 900px) {
-    .ca-sidebar { display: none; }
     .ca-title { display: none; }
   }
 </style>
@@ -229,95 +116,43 @@
 
 <div class="ca-toolbar">
   <div class="ca-title">
-    <h1>CITY OF LYNNVIEW MONUMENT &amp; PLAZOLETA — VISOR 3D INGENIERÍA</h1>
-    <span>Preston Hwy &amp; Preston Dr | Zoom en Cursor • Arrastrar Libre • Luces LED 12V • Rayos-X Cimentaciones</span>
+    <h1>CITY OF LYNNVIEW MONUMENT &amp; CIVIC PLAZA — 3D VIEWER</h1>
+    <span>Preston Hwy &amp; Preston Dr | Zoom to Cursor • Free Pan/Drag • 12V LED Lighting • X-Ray Foundations</span>
   </div>
   <div class="ca-controls">
     <!-- Mouse Mode Toggle: Rotate vs Pan/Drag -->
-    <button class="ca-btn mode-btn active" id="btn-mode-rotate" onclick="setInteractionMode('rotate')" title="Click izquierdo rota 360°">🔄 Rotar 360°</button>
-    <button class="ca-btn mode-btn" id="btn-mode-pan" onclick="setInteractionMode('pan')" title="Click izquierdo arrastra y mueve el modelo libremente">🖐️ Arrastrar / Mover</button>
+    <button class="ca-btn mode-btn active" id="btn-mode-rotate" onclick="setInteractionMode('rotate')" title="Left click rotates 360°">🔄 Rotate 360°</button>
+    <button class="ca-btn mode-btn" id="btn-mode-pan" onclick="setInteractionMode('pan')" title="Left click drags and pans the model freely">🖐️ Pan / Drag</button>
 
     <div class="ca-divider"></div>
 
     <!-- Lighting & Render Modes -->
-    <button class="ca-btn active" id="btn-pbr" onclick="setRenderMode('pbr')">☀️ Día PBR</button>
-    <button class="ca-btn" id="btn-sunset" onclick="setRenderMode('sunset')">🌅 Atardecer</button>
-    <button class="ca-btn" id="btn-night" onclick="setRenderMode('night')">🌙 Noche LED 12V</button>
-    <button class="ca-btn" id="btn-vector" onclick="setRenderMode('vector')">📐 Vectorial CAD</button>
-    <button class="ca-btn" id="btn-xray" onclick="setRenderMode('xray')">🧱 Rayos-X: Cimentaciones</button>
+    <button class="ca-btn active" id="btn-pbr" onclick="setRenderMode('pbr')">☀️ Daylight PBR</button>
+    <button class="ca-btn" id="btn-sunset" onclick="setRenderMode('sunset')">🌅 Sunset</button>
+    <button class="ca-btn" id="btn-night" onclick="setRenderMode('night')">🌙 Night 12V LED</button>
+    <button class="ca-btn" id="btn-vector" onclick="setRenderMode('vector')">📐 CAD Wireframe</button>
+    <button class="ca-btn" id="btn-xray" onclick="setRenderMode('xray')">🧱 X-Ray Foundations</button>
 
     <div class="ca-divider"></div>
 
     <!-- Sun Angle & Exposure Sliders -->
-    <div class="ca-slider-group" title="Gira la posición del sol en tiempo real">
-      <span>☀️ Sol:</span>
+    <div class="ca-slider-group" title="Rotate sun position in real time">
+      <span>☀️ Sun:</span>
       <input type="range" min="0" max="360" value="135" oninput="updateSunAzimuth(this.value)" />
     </div>
-    <div class="ca-slider-group" title="Ajusta el brillo / exposición de las luces">
-      <span>💡 Luz:</span>
+    <div class="ca-slider-group" title="Adjust lighting brightness / exposure">
+      <span>💡 Light:</span>
       <input type="range" min="0.5" max="1.8" step="0.05" value="1.0" oninput="updateLightIntensity(this.value)" />
     </div>
 
     <div class="ca-divider"></div>
 
     <!-- Camera Presets -->
-    <button class="ca-btn" onclick="setCameraPreset('sw')">Perspectiva SO</button>
-    <button class="ca-btn" onclick="setCameraPreset('front')">Frontal</button>
-    <button class="ca-btn" onclick="setCameraPreset('top')">Planta</button>
-    <button class="ca-btn" onclick="setCameraPreset('under')">🔍 Ver Zapatas (-36"/-60")</button>
-
-    <div class="ca-divider"></div>
-
-    <button class="ca-btn active" id="btn-labels" onclick="toggleLabels()">📏 Cotas 3D</button>
-    <button class="ca-btn" onclick="toggleSidebar()">📋 Ficha</button>
+    <button class="ca-btn" onclick="setCameraPreset('sw')">SW Perspective</button>
+    <button class="ca-btn" onclick="setCameraPreset('front')">Front View</button>
+    <button class="ca-btn" onclick="setCameraPreset('top')">Top Plan</button>
+    <button class="ca-btn" onclick="setCameraPreset('under')">🔍 Foundations (-36"/-60")</button>
   </div>
-</div>
-
-<div class="ca-sidebar" id="ca-sidebar">
-  <h2>ESPECIFICACIONES VERIFICADAS (KBC / IBC)</h2>
-  <div class="spec-row"><span>Fondo Área Verde:</span><strong>22'-0" (Acera a Carretera)</strong></div>
-  <div class="spec-row"><span>Margen Vial Astas:</span><strong>3'-0" desde Preston Dr (Y=19')</strong></div>
-  <div class="spec-row"><span>Separación Astas:</span><strong>9'-0" O.C. (X = -9', 0', +9')</strong></div>
-  <div class="spec-row"><span>Banderas Reales:</span><strong>US 5'×8' | KY y City 4'×6'</strong></div>
-  <div class="spec-row"><span>Plazoleta Concreto:</span><strong>Corta a ras en Acera (31'-9")</strong></div>
-  <div class="spec-row"><span>Monolito Central:</span><strong>4'-0" W &times; 2'-0" D &times; 6'-0" H</strong></div>
-  <div class="spec-row"><span>Separaciones (Gaps):</span><strong>2'-0" Libres (Cada Lado)</strong></div>
-  <div class="spec-row"><span>Muros Curvos (R=13'):</span><strong>10'-0" Cuerda | 1'-0" Flecha | 15"</strong></div>
-  <div class="spec-row"><span>Columnas Exteriores:</span><strong>2'-0" &times; 2'-0" &times; 4'-9" H (Radiales)</strong></div>
-  <div class="spec-row"><span>Zapatas F-1/F-2/F-3:</span><strong>-36" Helada + Stem 16"/28"</strong></div>
-  <div class="spec-row"><span>Caissons Astas (3):</span><strong>30"&Oslash;&times;-60" y 24"&Oslash;&times;-54"</strong></div>
-  <div class="ca-note">
-    <strong>CONTROLES MEJORADOS:</strong><br/>
-    &bull; <strong>Botón "🖐️ Arrastrar":</strong> Mueve todo con click izq.<br/>
-    &bull; <strong>Rueda del Mouse:</strong> Zoom directo hacia el cursor<br/>
-    &bull; <strong>Doble Click:</strong> Enfoca cualquier pieza en 3D<br/>
-    &bull; <strong>Click Derecho + Arrastrar:</strong> Mover / Pan libre
-  </div>
-</div>
-
-<!-- On-screen D-Pad for 1-Click Pan & Zoom -->
-<div class="nav-pad" title="Controles rápidos para mover (Pan) y hacer Zoom">
-  <div class="nav-pad-row">
-    <button class="nav-btn" onclick="zoomStep(0.78)" title="Acercar (Zoom +)">➕</button>
-    <button class="nav-btn" onclick="panStep(0, 1)" title="Mover Arriba">⬆️</button>
-    <button class="nav-btn" onclick="zoomStep(1.25)" title="Alejar (Zoom -)">➖</button>
-  </div>
-  <div class="nav-pad-row">
-    <button class="nav-btn" onclick="panStep(-1, 0)" title="Mover Izquierda">⬅️</button>
-    <button class="nav-btn" onclick="setCameraPreset('sw')" title="Centrar Vista">🎯</button>
-    <button class="nav-btn" onclick="panStep(1, 0)" title="Mover Derecha">➡️</button>
-  </div>
-  <div class="nav-pad-row">
-    <button class="nav-btn" onclick="setCameraPreset('under')" title="Ver Cimentaciones">🧱</button>
-    <button class="nav-btn" onclick="panStep(0, -1)" title="Mover Abajo">⬇️</button>
-    <button class="nav-btn" onclick="setRenderMode(currentMode === 'night' ? 'pbr' : 'night')" title="Alternar Día / Noche LED">💡</button>
-  </div>
-</div>
-
-<div id="labels-container"></div>
-
-<div class="ca-footer">
-  Barba Construction • City of Lynnview, KY | Escala Real 1:1 | Caliza de Indiana, Placa de Bronce, 9 Luminarias LED 12V y Cimentaciones KBC/IBC
 </div>
 
 <script>
@@ -1445,7 +1280,7 @@ function getCursorWorldPoint(clientX, clientY) {
   raycaster.setFromCamera(mouseNDC, camera);
   const hits = raycaster.intersectObjects(scene.children, true);
   for (const h of hits) {
-    if (h.object && h.object.type === 'Mesh' && h.distance < 180) {
+    if (h.object && h.object.visible && h.object.type === 'Mesh' && h.distance < 180) {
       return h.point.clone();
     }
   }
@@ -1459,10 +1294,8 @@ function getCursorWorldPoint(clientX, clientY) {
 renderer.domElement.addEventListener('wheel', (e) => {
   const pt = getCursorWorldPoint(e.clientX, e.clientY);
   if (!pt) return;
-  // When zooming in (deltaY < 0), smoothly nudge target toward the cursor point
   const factor = (e.deltaY < 0) ? 0.14 : 0.05;
   const shift = new THREE.Vector3().subVectors(pt, controls.target).multiplyScalar(factor);
-  // Keep vertical target reasonable
   shift.y = Math.max(-2.5, Math.min(2.5, shift.y));
   controls.target.add(shift);
   camera.position.add(shift.clone().multiplyScalar(0.35));
@@ -1476,26 +1309,6 @@ renderer.domElement.addEventListener('dblclick', (e) => {
   camera.position.copy(pt).add(offset.multiplyScalar(0.75));
   controls.update();
 });
-
-function panStep(dx, dy) {
-  const right = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  camera.matrix.extractBasis(right, up, new THREE.Vector3());
-  const dist = camera.position.distanceTo(controls.target);
-  const scale = Math.max(0.8, dist * 0.08);
-  const delta = right.multiplyScalar(dx * scale).add(up.multiplyScalar(dy * scale));
-  camera.position.add(delta);
-  controls.target.add(delta);
-  controls.update();
-}
-
-function zoomStep(factor) {
-  const dir = new THREE.Vector3().subVectors(camera.position, controls.target);
-  const newLen = Math.max(controls.minDistance, Math.min(controls.maxDistance, dir.length() * factor));
-  dir.setLength(newLen);
-  camera.position.copy(controls.target).add(dir);
-  controls.update();
-}
 
 // Lighting Setup (Architectural Sun + Hemisphere Sky/Ground + Night 12V LEDs)
 const hemiLight = new THREE.HemisphereLight(0xf5f9ff, 0x7d8c72, 0.68);
@@ -1524,8 +1337,6 @@ scene.add(fillLight);
 const nightLightsGroup = new THREE.Group();
 nightLightsGroup.visible = false;
 scene.add(nightLightsGroup);
-
-const ledLensMeshes = [];
 
 function updateSunAzimuth(deg) {
   const rad = (parseFloat(deg) * Math.PI) / 180.0;
@@ -1556,6 +1367,40 @@ function makeLimestoneTexture(baseHex = '#ddd4c3') {
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
   tex.repeat.set(2, 2);
+  return tex;
+}
+
+// Procedural Multi-Tone Rustic Fieldstone / Rubble Stone Texture for the Central Monolith
+function makeFieldstoneTexture(baseHex = '#9a8e80') {
+  const cv = document.createElement('canvas');
+  cv.width = 512; cv.height = 512;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = baseHex;
+  ctx.fillRect(0, 0, 512, 512);
+  const palette = ['#8c8275', '#a89882', '#756d63', '#b5a48b', '#6e685f', '#9e8b72', '#c2b39c'];
+  for (let i = 0; i < 160; i++) {
+    const cx = Math.random() * 512;
+    const cy = Math.random() * 512;
+    const rx = 14 + Math.random() * 28;
+    const ry = 9 + Math.random() * 16;
+    ctx.fillStyle = palette[i % palette.length];
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, (Math.random() - 0.5) * 0.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(55, 50, 44, 0.45)';
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+  }
+  for (let i = 0; i < 22000; i++) {
+    const x = Math.random() * 512;
+    const y = Math.random() * 512;
+    const v = 110 + Math.floor(Math.random() * 95);
+    ctx.fillStyle = `rgba(${v},${v-6},${v-14},0.16)`;
+    ctx.fillRect(x, y, 2 + Math.random()*3, 2 + Math.random()*2);
+  }
+  const tex = new THREE.CanvasTexture(cv);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(1.5, 1.5);
   return tex;
 }
 
@@ -1615,78 +1460,63 @@ function makeConcreteTexture(baseHex) {
   return tex;
 }
 
+// Bronze Plaque matching referencia_city_of_lynnview.jpg
 function makePlaqueTexture() {
   const cv = document.createElement('canvas');
-  cv.width = 600; cv.height = 720;
+  cv.width = 600; cv.height = 680;
   const ctx = cv.getContext('2d');
-  const grad = ctx.createLinearGradient(0, 0, 600, 720);
-  grad.addColorStop(0, '#32251b');
-  grad.addColorStop(0.5, '#241a12');
-  grad.addColorStop(1, '#36281d');
+  const grad = ctx.createLinearGradient(0, 0, 600, 680);
+  grad.addColorStop(0, '#2b2017');
+  grad.addColorStop(0.5, '#1e1610');
+  grad.addColorStop(1, '#2d2118');
   ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, 600, 720);
+  ctx.fillRect(0, 0, 600, 680);
 
-  ctx.strokeStyle = '#d4af37';
-  ctx.lineWidth = 16;
-  ctx.strokeRect(22, 22, 556, 676);
-  ctx.lineWidth = 5;
-  ctx.strokeRect(42, 42, 516, 636);
-
-  for (const [rx, ry] of [[68, 68], [532, 68], [68, 652], [532, 652]]) {
-    ctx.beginPath();
-    ctx.arc(rx, ry, 14, 0, Math.PI * 2);
-    ctx.fillStyle = '#d4af37';
-    ctx.fill();
-  }
-
-  ctx.beginPath();
-  ctx.arc(300, 145, 42, 0, Math.PI * 2);
-  ctx.strokeStyle = '#e5c158';
+  ctx.strokeStyle = '#c8a456';
+  ctx.lineWidth = 14;
+  ctx.strokeRect(24, 24, 552, 632);
   ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.fillStyle = '#e5c158';
+  ctx.strokeRect(42, 42, 516, 596);
+
+  ctx.fillStyle = '#d8b76c';
   ctx.textAlign = 'center';
-  ctx.font = 'bold 20px Georgia, serif';
-  ctx.fillText('1954', 300, 152);
+  ctx.font = 'bold 31px Georgia, "Times New Roman", serif';
+  ctx.fillText('MEMBER OF THE', 300, 145);
 
-  ctx.font = 'bold 26px Georgia, serif';
-  ctx.fillText('MEMBER OF THE', 300, 245);
-  ctx.font = 'bold 38px Georgia, serif';
-  ctx.fillText('NATIONAL HISTORIC', 300, 310);
-  ctx.fillText('REGISTER OF PLACES', 300, 365);
+  ctx.font = 'bold 54px Georgia, "Times New Roman", serif';
+  ctx.fillText('NATIONAL', 300, 240);
+  ctx.fillText('HISTORIC', 300, 330);
+  ctx.fillText('REGISTER', 300, 420);
 
+  ctx.font = 'bold 38px Georgia, "Times New Roman", serif';
+  ctx.fillText('OF PLACES', 300, 505);
+
+  // Ornamental flourish at bottom
+  ctx.strokeStyle = '#c8a456';
+  ctx.lineWidth = 3.5;
   ctx.beginPath();
-  ctx.moveTo(130, 415); ctx.lineTo(470, 415);
-  ctx.strokeStyle = '#d4af37'; ctx.lineWidth = 3; ctx.stroke();
+  ctx.moveTo(210, 565); ctx.lineTo(390, 565);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(300, 565, 8, 0, Math.PI * 2);
+  ctx.fillStyle = '#c8a456';
+  ctx.fill();
 
-  ctx.font = 'bold 34px Georgia, serif';
-  ctx.fillText('CITY OF LYNNVIEW', 300, 480);
-  ctx.font = '24px Georgia, serif';
-  ctx.fillText('JEFFERSON COUNTY, KENTUCKY', 300, 535);
-  ctx.font = 'italic 20px Georgia, serif';
-  ctx.fillText('Dedicated to the Citizens of Lynnview', 300, 605);
   return new THREE.CanvasTexture(cv);
 }
 
+// Transparent-background engraved lettering directly on the curved limestone wall
 function makeWallSignTexture() {
   const cv = document.createElement('canvas');
   cv.width = 1024; cv.height = 256;
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#eee8dc';
-  ctx.fillRect(0, 0, 1024, 256);
-  for (let i = 0; i < 4000; i++) {
-    ctx.fillStyle = 'rgba(180,170,155,0.12)';
-    ctx.fillRect(Math.random()*1024, Math.random()*256, 3, 2);
-  }
-  ctx.strokeStyle = '#5c5549';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(18, 18, 988, 220);
+  ctx.clearRect(0, 0, 1024, 256);
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = 'bold italic 96px Georgia, "Times New Roman", serif';
-  ctx.fillStyle = 'rgba(255,255,255,0.75)';
-  ctx.fillText('City of Lynnview', 515, 131);
-  ctx.fillStyle = '#191614';
+  ctx.font = 'bold 110px Georgia, "Times New Roman", serif';
+  ctx.fillStyle = 'rgba(255, 250, 240, 0.55)';
+  ctx.fillText('City of Lynnview', 515, 132);
+  ctx.fillStyle = '#231f1c';
   ctx.fillText('City of Lynnview', 512, 128);
   return new THREE.CanvasTexture(cv);
 }
@@ -1733,34 +1563,41 @@ function makeKYFlagTexture() {
   return new THREE.CanvasTexture(cv);
 }
 
+// White City of Lynnview Flag matching referencia_city_of_lynnview.jpg
 function makeCityFlagTexture() {
   const cv = document.createElement('canvas');
   cv.width = 512; cv.height = 300;
   const ctx = cv.getContext('2d');
-  ctx.fillStyle = '#1b4d3e';
+  ctx.fillStyle = '#f8f9fa';
   ctx.fillRect(0, 0, 512, 300);
-  ctx.strokeStyle = '#d4af37';
-  ctx.lineWidth = 10;
-  ctx.strokeRect(18, 18, 476, 264);
   ctx.beginPath();
-  ctx.arc(256, 140, 56, 0, Math.PI * 2);
-  ctx.fillStyle = '#d4af37';
+  ctx.arc(256, 150, 74, 0, Math.PI * 2);
+  ctx.fillStyle = '#1e3a5f';
   ctx.fill();
-  ctx.fillStyle = '#1b4d3e';
-  ctx.font = 'bold 22px Georgia, serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('LYNNVIEW', 256, 147);
+  ctx.lineWidth = 7;
+  ctx.strokeStyle = '#c8a456';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(256, 150, 54, 0, Math.PI * 2);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 20px Georgia, serif';
-  ctx.fillText('CITY OF LYNNVIEW • EST. 1954', 256, 238);
+  ctx.fill();
+  ctx.fillStyle = '#1e3a5f';
+  ctx.font = 'bold 18px Georgia, serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('LYNNVIEW', 256, 148);
+  ctx.font = 'bold 12px Georgia, serif';
+  ctx.fillText('EST. 1954', 256, 168);
   return new THREE.CanvasTexture(cv);
 }
 
 const stoneTexA = makeLimestoneTexture('#ded5c4');
 const stoneTexB = makeLimestoneTexture('#d4cab7');
+const fieldTexA = makeFieldstoneTexture('#94897b');
+const fieldTexB = makeFieldstoneTexture('#83796d');
+const fieldTexC = makeFieldstoneTexture('#a89984');
 const grassTex = makeGrassTexture();
-const plazaTex = makeConcreteTexture('#efece6');
-const walkTex = makeConcreteTexture('#e2e0da');
+const plazaTex = makeConcreteTexture('#e8dfd3');
+const walkTex = makeConcreteTexture('#ded8ce');
 const foliageTex = makeFoliageTexture('#3d6132', '#527d44');
 
 // PBR Materials
@@ -1770,30 +1607,43 @@ const matRoad = new THREE.MeshStandardMaterial({ color: 0x363a40, roughness: 0.8
 const matRoadStripe = new THREE.MeshStandardMaterial({ color: 0xe6b800, roughness: 0.5 });
 const matCurb = new THREE.MeshStandardMaterial({ color: 0xcac8c2, roughness: 0.8, transparent: true, opacity: 1.0 });
 const matPlaza = new THREE.MeshStandardMaterial({ map: plazaTex, roughness: 0.76, metalness: 0.0, transparent: true, opacity: 1.0 });
-const matBand = new THREE.MeshStandardMaterial({ color: 0xc2bdb2, roughness: 0.82, metalness: 0.0, transparent: true, opacity: 1.0 });
-const matMulch = new THREE.MeshStandardMaterial({ color: 0x423022, roughness: 0.96, transparent: true, opacity: 1.0 });
+const matBand = new THREE.MeshStandardMaterial({ color: 0xd2c7b8, roughness: 0.80, metalness: 0.0, transparent: true, opacity: 1.0 });
+const matMulch = new THREE.MeshStandardMaterial({ color: 0x2b2018, roughness: 0.96, transparent: true, opacity: 1.0 });
+
+// Regular Coursed Buff Limestone Ashlar (Wing Walls & Exterior Columns)
 const matStoneA = new THREE.MeshStandardMaterial({ map: stoneTexA, bumpMap: stoneTexA, bumpScale: 0.028, roughness: 0.76, metalness: 0.02, transparent: true, opacity: 1.0 });
 const matStoneB = new THREE.MeshStandardMaterial({ map: stoneTexB, bumpMap: stoneTexB, bumpScale: 0.032, roughness: 0.78, metalness: 0.02, transparent: true, opacity: 1.0 });
-const matMortar = new THREE.MeshStandardMaterial({ color: 0x69645c, roughness: 0.94, transparent: true, opacity: 1.0 });
+
+// Multi-Tone Rustic Fieldstone / Rubble Stone (Central Monolith)
+const matFieldstoneList = [
+  new THREE.MeshStandardMaterial({ map: fieldTexA, bumpMap: fieldTexA, bumpScale: 0.055, color: 0xb5a898, roughness: 0.86, metalness: 0.02, transparent: true, opacity: 1.0 }),
+  new THREE.MeshStandardMaterial({ map: fieldTexB, bumpMap: fieldTexB, bumpScale: 0.060, color: 0x968c82, roughness: 0.88, metalness: 0.02, transparent: true, opacity: 1.0 }),
+  new THREE.MeshStandardMaterial({ map: fieldTexC, bumpMap: fieldTexC, bumpScale: 0.055, color: 0xc4b097, roughness: 0.84, metalness: 0.02, transparent: true, opacity: 1.0 }),
+  new THREE.MeshStandardMaterial({ map: fieldTexA, bumpMap: fieldTexA, bumpScale: 0.060, color: 0x82786e, roughness: 0.90, metalness: 0.02, transparent: true, opacity: 1.0 }),
+  new THREE.MeshStandardMaterial({ map: fieldTexC, bumpMap: fieldTexC, bumpScale: 0.050, color: 0xab9780, roughness: 0.85, metalness: 0.02, transparent: true, opacity: 1.0 }),
+];
+
+const matMortar = new THREE.MeshStandardMaterial({ color: 0x635d55, roughness: 0.94, transparent: true, opacity: 1.0 });
 const matCap = new THREE.MeshStandardMaterial({ color: 0xf2efe9, bumpMap: stoneTexA, bumpScale: 0.008, roughness: 0.58, metalness: 0.02 });
 const matCmuCore = new THREE.MeshStandardMaterial({ color: 0x737980, roughness: 0.9 });
 const matFooting = new THREE.MeshStandardMaterial({ color: 0xa4a8a2, roughness: 0.92 });
 const matRebar = new THREE.MeshStandardMaterial({ color: 0xd94814, metalness: 0.55, roughness: 0.35 });
 const matPole = new THREE.MeshStandardMaterial({ color: 0xe8edf2, metalness: 0.80, roughness: 0.20 });
 const matGold = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.18 });
-const matBronze = new THREE.MeshStandardMaterial({ color: 0x2c2219, metalness: 0.65, roughness: 0.32 });
+const matBronze = new THREE.MeshStandardMaterial({ color: 0x261d15, metalness: 0.65, roughness: 0.32 });
 const matLedLens = new THREE.MeshStandardMaterial({ color: 0xfff3c4, emissive: 0xffb732, emissiveIntensity: 0.0, roughness: 0.2 });
 const matShrub = new THREE.MeshStandardMaterial({ map: foliageTex, bumpMap: foliageTex, bumpScale: 0.04, roughness: 0.86 });
 const matRoseLeaf = new THREE.MeshStandardMaterial({ map: foliageTex, bumpMap: foliageTex, bumpScale: 0.04, color: 0xcfe6c8, roughness: 0.84 });
-const matRoseBloom = new THREE.MeshStandardMaterial({ color: 0xd91b32, roughness: 0.52 });
+const matRoseBloom = new THREE.MeshStandardMaterial({ color: 0xe8d96f, roughness: 0.55 });
 const matTreeBark = new THREE.MeshStandardMaterial({ color: 0x4f3d2d, roughness: 0.92 });
 const matPlaque = new THREE.MeshStandardMaterial({ map: makePlaqueTexture(), metalness: 0.45, roughness: 0.35 });
-const matWallSign = new THREE.MeshStandardMaterial({ map: makeWallSignTexture(), roughness: 0.60, metalness: 0.02, side: THREE.DoubleSide });
+const matWallSign = new THREE.MeshStandardMaterial({ map: makeWallSignTexture(), transparent: true, alphaTest: 0.08, roughness: 0.60, metalness: 0.02, side: THREE.DoubleSide });
 
 const groundMeshes = [];
 const veneerMeshes = [];
 const coreMeshes = [];
 const footingMeshes = [];
+const rebarMeshes = [];
 const edgeLines = [];
 
 function addEdges(mesh, colorHex = 0x181818, threshold = 15, opacity = 0.65) {
@@ -1820,6 +1670,51 @@ function createExtrudedPoly(pts2d, z_bot, z_top, material, addEdgeFlag = true, e
   mesh.castShadow = true;
   mesh.receiveShadow = true;
   if (addEdgeFlag) addEdges(mesh, 0x181818, 15, edgeOpacity);
+  scene.add(mesh);
+  return mesh;
+}
+
+// Helper for Tapered Frustum Box (wider at bottom z0, narrower at top z1)
+function createFrustumBlock(x0b, x1b, y0b, y1b, x0t, x1t, y0t, y1t, z0, z1, material, addEdgeFlag = true, edgeOpacity = 0.45) {
+  const geom = new THREE.BufferGeometry();
+  const v = [
+    to3(x0b, y0b, z0), // 0: front-left-bot
+    to3(x1b, y0b, z0), // 1: front-right-bot
+    to3(x1b, y1b, z0), // 2: back-right-bot
+    to3(x0b, y1b, z0), // 3: back-left-bot
+    to3(x0t, y0t, z1), // 4: front-left-top
+    to3(x1t, y0t, z1), // 5: front-right-top
+    to3(x1t, y1t, z1), // 6: back-right-top
+    to3(x0t, y1t, z1), // 7: back-left-top
+  ];
+  const faces = [
+    [0, 1, 5, 4], // front (-Y in CAD -> +Z in Three)
+    [1, 2, 6, 5], // right (+X)
+    [2, 3, 7, 6], // back (+Y)
+    [3, 0, 4, 7], // left (-X)
+    [4, 5, 6, 7], // top (+Z)
+    [3, 2, 1, 0], // bottom (-Z)
+  ];
+  const pos = [];
+  const uvs = [];
+  for (const [a, b, c, d] of faces) {
+    pos.push(
+      v[a].x, v[a].y, v[a].z,
+      v[b].x, v[b].y, v[b].z,
+      v[c].x, v[c].y, v[c].z,
+      v[a].x, v[a].y, v[a].z,
+      v[c].x, v[c].y, v[c].z,
+      v[d].x, v[d].y, v[d].z
+    );
+    uvs.push(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1);
+  }
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geom.computeVertexNormals();
+  const mesh = new THREE.Mesh(geom, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  if (addEdgeFlag) addEdges(mesh, 0x22201c, 18, edgeOpacity);
   scene.add(mesh);
   return mesh;
 }
@@ -1852,73 +1747,118 @@ const aStart = -0.3588, aEnd = Math.PI + 0.3588;
 for (let i = 0; i <= 48; i++) {
   const a = aStart + (aEnd - aStart) * (i / 48);
   pOut.push([17.0 * Math.cos(a), Math.max(0.0, 4.5 + 12.5 * Math.sin(a))]);
-  pIn.push([16.0 * Math.cos(a), Math.max(0.0, 4.5 + 11.5 * Math.sin(a))]);
+  pIn.push([15.6 * Math.cos(a), Math.max(0.0, 4.5 + 11.1 * Math.sin(a))]);
 }
 const plazaBandMesh = createExtrudedPoly(pOut, 0.0, 0.13, matBand, true, 0.45);
 const plazaInnerMesh = createExtrudedPoly(pIn, 0.13, 0.17, matPlaza, true, 0.35);
 groundMeshes.push(plazaBandMesh, plazaInnerMesh);
 
+// Semi-circular dark mulch bed around the central monolith & behind curved walls (matching reference photo!)
 const mulchPts = [
-  [-16.2, 9.5], [-17.2, 13.5], [-13.5, 19.8], [0.0, 20.6],
-  [13.5, 19.8], [17.2, 13.5], [16.2, 9.5], [13.2, 10.5],
-  [4.0, 13.8], [-4.0, 13.8], [-13.2, 10.5]
+  [-15.8, 9.2], [-16.8, 13.5], [-13.5, 19.8], [0.0, 20.6],
+  [13.5, 19.8], [16.8, 13.5], [15.8, 9.2],
+  [12.5, 9.6], [6.5, 11.2], [4.2, 11.5], [2.8, 10.6], [0.0, 10.2],
+  [-2.8, 10.6], [-4.2, 11.5], [-6.5, 11.2], [-12.5, 9.6]
 ];
-const mulchMesh = createExtrudedPoly(mulchPts, 0.0, 0.08, matMulch, false);
+const mulchMesh = createExtrudedPoly(mulchPts, 0.0, 0.19, matMulch, false);
 groundMeshes.push(mulchMesh);
 
-// 4. Central Monolith (4'-0" W x 2'-0" D x 6'-0" H at X=0, Y=13..15) + F-1 Footing (-36") + 28" Stem Wall
+// ============================================================================
+// 4. CENTRAL MONOLITH — TAPERED TRUNCATED-PYRAMID FIELDSTONE / RUBBLE MONOLITH
+//    (Matches referencia_city_of_lynnview.jpg: NO top cap, NO base step,
+//     tapered semi-pyramidal frustum rising directly from ground in rubble stone)
+// ============================================================================
 const f1Mesh = createExtrudedPoly([[-2.75, 12.25], [2.75, 12.25], [2.75, 15.75], [-2.75, 15.75]], -3.0, -1.83, matFooting, true, 0.7);
 footingMeshes.push(f1Mesh);
 
-const monoStemMesh = createExtrudedPoly([[-2.17, 12.83], [2.17, 12.83], [2.17, 15.17], [-2.17, 15.17]], -1.83, 0.17, matCmuCore, true, 0.6);
-const monoCoreMesh = createExtrudedPoly([[-1.65, 13.33], [1.65, 13.33], [1.65, 14.67], [-1.65, 14.67]], 0.17, 5.65, matCmuCore, true, 0.5);
+const monoStemMesh = createExtrudedPoly([[-2.10, 12.90], [2.10, 12.90], [2.10, 15.10], [-2.10, 15.10]], -1.83, 0.18, matCmuCore, true, 0.6);
+const monoCoreMesh = createFrustumBlock(-1.55, 1.55, 13.40, 14.60, -1.25, 1.25, 13.55, 14.45, 0.18, 5.75, matCmuCore, true, 0.5);
 coreMeshes.push(monoStemMesh, monoCoreMesh);
 
-const monoMortarMesh = createExtrudedPoly([[-1.96, 13.04], [1.96, 13.04], [1.96, 14.96], [-1.96, 14.96]], 0.17, 5.65, matMortar, false);
+// Tapered recessed mortar core (wider at bottom Z=0.18, narrower at top Z=5.95)
+// Bottom: 4'-2" W x 2'-2" D (-2.08..2.08, 12.92..15.08) -> Top: 3'-4" W x 1'-7" D (-1.66..1.66, 13.21..14.79)
+const zMonoBot = 0.18;
+const zMonoTop = 6.00;
+const hwBot = 2.08, hdBot = 1.08;
+const hwTop = 1.66, hdTop = 0.79;
+const yCenterMono = 14.0;
+
+function monoBoundsAtZ(z) {
+  const t = Math.max(0, Math.min(1, (z - zMonoBot) / (zMonoTop - zMonoBot)));
+  const hw = hwBot + (hwTop - hwBot) * t;
+  const hd = hdBot + (hdTop - hdBot) * t;
+  return { hw, hd, x0: -hw, x1: hw, y0: yCenterMono - hd, y1: yCenterMono + hd };
+}
+
+const bBot = monoBoundsAtZ(zMonoBot);
+const bTop = monoBoundsAtZ(zMonoTop - 0.03);
+const monoMortarMesh = createFrustumBlock(
+  bBot.x0 + 0.05, bBot.x1 - 0.05, bBot.y0 + 0.05, bBot.y1 - 0.05,
+  bTop.x0 + 0.05, bTop.x1 - 0.05, bTop.y0 + 0.05, bTop.y1 - 0.05,
+  zMonoBot, zMonoTop - 0.02, matMortar, false
+);
 veneerMeshes.push(monoMortarMesh);
 
-const nMonoCourses = 8;
-const monoCourseH = (5.65 - 0.17) / nMonoCourses;
-const joint = 0.03;
+// Build 11 irregular horizontal courses of multi-tone fieldstone/rubble blocks tapering upward
+const nMonoCourses = 11;
+const monoCourseH = (zMonoTop - zMonoBot) / nMonoCourses;
+const joint = 0.032;
+
+const rubbleSplits = [
+  [0.0, 0.23, 0.51, 0.78, 1.0],
+  [0.0, 0.18, 0.42, 0.67, 0.85, 1.0],
+  [0.0, 0.29, 0.56, 0.79, 1.0],
+  [0.0, 0.21, 0.48, 0.73, 1.0],
+  [0.0, 0.16, 0.39, 0.64, 0.84, 1.0],
+];
+
 for (let c = 0; c < nMonoCourses; c++) {
-  const zb = 0.17 + c * monoCourseH + joint * 0.5;
-  const zt = 0.17 + (c + 1) * monoCourseH - joint * 0.5;
-  const splits = (c % 2 === 0) ? [-2.0, -0.68, 0.68, 2.0] : [-2.0, -1.25, 0.0, 1.25, 2.0];
-  for (let k = 0; k < splits.length - 1; k++) {
-    const xa = splits[k] + joint * 0.4;
-    const xb = splits[k + 1] - joint * 0.4;
-    const matUse = ((c + k) % 2 === 0) ? matStoneA : matStoneB;
-    const blk = createExtrudedPoly([[xa, 13.0], [xb, 13.0], [xb, 15.0], [xa, 15.0]], zb, zt, matUse, true, 0.55);
+  const zb = zMonoBot + c * monoCourseH + (c === 0 ? 0 : joint * 0.45);
+  const zt = zMonoBot + (c + 1) * monoCourseH - (c === nMonoCourses - 1 ? 0 : joint * 0.45);
+  const bb = monoBoundsAtZ(zb);
+  const bt = monoBoundsAtZ(zt);
+  const sp = rubbleSplits[c % rubbleSplits.length];
+
+  for (let k = 0; k < sp.length - 1; k++) {
+    const u0 = sp[k] + (k === 0 ? 0 : 0.008);
+    const u1 = sp[k + 1] - (k === sp.length - 2 ? 0 : 0.008);
+
+    const x0b = bb.x0 + (bb.x1 - bb.x0) * u0;
+    const x1b = bb.x0 + (bb.x1 - bb.x0) * u1;
+    const x0t = bt.x0 + (bt.x1 - bt.x0) * u0;
+    const x1t = bt.x0 + (bt.x1 - bt.x0) * u1;
+
+    const matRubble = matFieldstoneList[(c * 3 + k * 2) % matFieldstoneList.length];
+    const blk = createFrustumBlock(
+      x0b, x1b, bb.y0, bb.y1,
+      x0t, x1t, bt.y0, bt.y1,
+      zb, zt, matRubble, true, 0.42
+    );
     veneerMeshes.push(blk);
   }
 }
 
-createExtrudedPoly([[-2.18, 12.82], [2.18, 12.82], [2.18, 15.18], [-2.18, 15.18]], 5.65, 5.95, matCap, true, 0.7);
-createExtrudedPoly([[-2.10, 12.90], [2.10, 12.90], [2.10, 15.10], [-2.10, 15.10]], 5.95, 6.03, matCap, true, 0.5);
+// Recessed 30" x 34" Bronze Historic Register Plaque tilted flush with the tapered front face
+const zPlaqueMid = 3.35;
+const bPlaque = monoBoundsAtZ(zPlaqueMid);
+const frontBatterAngle = Math.atan2(hdBot - hdTop, zMonoTop - zMonoBot); // ~3.0 deg backward tilt
 
-const plaqueFrame = new THREE.Mesh(new THREE.BoxGeometry(2.62, 3.12, 0.12), matBronze);
-plaqueFrame.position.copy(to3(0, 12.97, 3.20));
+const plaqueGroup = new THREE.Group();
+plaqueGroup.position.copy(to3(0, bPlaque.y0 - 0.02, zPlaqueMid));
+plaqueGroup.rotation.x = -frontBatterAngle;
+
+const plaqueFrame = new THREE.Mesh(new THREE.BoxGeometry(2.44, 2.76, 0.10), matBronze);
 plaqueFrame.castShadow = true;
-scene.add(plaqueFrame);
+plaqueGroup.add(plaqueFrame);
 
-const plaqueFace = new THREE.Mesh(new THREE.PlaneGeometry(2.50, 3.00), matPlaque);
-plaqueFace.position.copy(to3(0, 12.905, 3.20));
-scene.add(plaqueFace);
+const plaqueFace = new THREE.Mesh(new THREE.PlaneGeometry(2.34, 2.66), matPlaque);
+plaqueFace.position.z = 0.055;
+plaqueGroup.add(plaqueFace);
+scene.add(plaqueGroup);
 
-// Helper: True Curved Sign Tablet Following the Exact R=13'-0" Arc
-function createCurvedSignTablet(sampleArcFn, tStart, tEnd, zBot, zTop) {
-  const tabletPts = [];
-  const nSeg = 20;
-  for (let i = 0; i <= nSeg; i++) {
-    const pt = sampleArcFn(tStart + (tEnd - tStart) * (i / nSeg));
-    tabletPts.push([pt.x - 0.61 * pt.rx, pt.y - 0.61 * pt.ry]);
-  }
-  for (let i = nSeg; i >= 0; i--) {
-    const pt = sampleArcFn(tStart + (tEnd - tStart) * (i / nSeg));
-    tabletPts.push([pt.x - 0.69 * pt.rx, pt.y - 0.69 * pt.ry]);
-  }
-  createExtrudedPoly(tabletPts, zBot, zTop, matCap, true, 0.65);
-
+// Helper: Curved Engraved Lettering ("City of Lynnview") Mounted Directly on the R=13'-0" Curved Wall
+function createCurvedSignLettering(sampleArcFn, tStart, tEnd, zBot, zTop) {
+  const nSeg = 24;
   const geom = new THREE.BufferGeometry();
   const positions = [];
   const uvs = [];
@@ -1932,10 +1872,10 @@ function createCurvedSignTablet(sampleArcFn, tStart, tEnd, zBot, zTop) {
   for (let i = 0; i <= nSeg; i++) {
     const u = i / nSeg;
     const pt = sampleArcFn(tLeft + (tRight - tLeft) * u);
-    const fx = pt.x - 0.698 * pt.rx;
-    const fy = pt.y - 0.698 * pt.ry;
-    const vBot = to3(fx, fy, zBot + 0.02);
-    const vTop = to3(fx, fy, zTop - 0.02);
+    const fx = pt.x - 0.635 * pt.rx;
+    const fy = pt.y - 0.635 * pt.ry;
+    const vBot = to3(fx, fy, zBot);
+    const vTop = to3(fx, fy, zTop);
     positions.push(vBot.x, vBot.y, vBot.z);
     uvs.push(u, 0.0);
     positions.push(vTop.x, vTop.y, vTop.z);
@@ -1996,24 +1936,27 @@ function buildCircumferentialWing(side) {
   const f3Mesh = createExtrudedPoly(buildArcPolygon(0.0, 1.0, 1.0, 28), -3.0, -2.0, matFooting, true, 0.65);
   footingMeshes.push(f3Mesh);
 
-  // Full-Width 16" Grouted CMU Stem Wall (Z = -2.0' to +0.17') supporting both stone veneers + 8" CMU Core
-  const wStemMesh = createExtrudedPoly(buildArcPolygon(0.0, 1.0, 0.667, 28), -2.0, 0.17, matCmuCore, true, 0.55);
-  const wCoreMesh = createExtrudedPoly(buildArcPolygon(0.0, 1.0, 0.333, 28), 0.17, 3.75, matCmuCore, true, 0.45);
+  // Full-Width 16" Grouted CMU Stem Wall (Z = -2.0' to +0.17') + 8" CMU Core (inset at ends so never visible outside!)
+  const wStemMesh = createExtrudedPoly(buildArcPolygon(0.01, 0.99, 0.667, 28), -2.0, 0.17, matCmuCore, true, 0.55);
+  const wCoreMesh = createExtrudedPoly(buildArcPolygon(0.02, 0.98, 0.333, 28), 0.17, 3.70, matCmuCore, true, 0.45);
   coreMeshes.push(wStemMesh, wCoreMesh);
 
-  const wMortarMesh = createExtrudedPoly(buildArcPolygon(0.002, 0.998, 0.60, 28), 0.17, 3.75, matMortar, false);
+  const wMortarMesh = createExtrudedPoly(buildArcPolygon(0.015, 0.985, 0.59, 28), 0.17, 3.73, matMortar, false);
   veneerMeshes.push(wMortarMesh);
 
   const nWallCourses = 6;
   const wCourseH = (3.75 - 0.17) / nWallCourses;
   const nBlocksArc = 7;
   for (let c = 0; c < nWallCourses; c++) {
-    const zb = 0.17 + c * wCourseH + joint * 0.5;
-    const zt = 0.17 + (c + 1) * wCourseH - joint * 0.5;
+    const zb = 0.17 + c * wCourseH + joint * 0.45;
+    const zt = 0.17 + (c + 1) * wCourseH - joint * 0.45;
     const shift = (c % 2 === 1) ? 0.5 : 0.0;
-    for (let b = 0; b < nBlocksArc + (c % 2); b++) {
-      const tA = Math.max(0.0, (b - shift) / nBlocksArc) + 0.003;
-      const tB = Math.min(1.0, (b + 1 - shift) / nBlocksArc) - 0.003;
+    const totalB = nBlocksArc + (c % 2);
+    for (let b = 0; b < totalB; b++) {
+      const rawA = Math.max(0.0, (b - shift) / nBlocksArc);
+      const rawB = Math.min(1.0, (b + 1 - shift) / nBlocksArc);
+      const tA = (b === 0) ? 0.0 : rawA + 0.003;
+      const tB = (b === totalB - 1) ? 1.0 : rawB - 0.003;
       if (tB - tA < 0.03) continue;
       const bPoly = buildArcPolygon(tA, tB, 0.625, 4);
       const matUse = ((c + b) % 2 === 0) ? matStoneA : matStoneB;
@@ -2023,7 +1966,7 @@ function buildCircumferentialWing(side) {
   }
 
   createExtrudedPoly(buildArcPolygon(0.0, 1.0, 0.70, 28), 3.75, 4.00, matCap, true, 0.7);
-  createCurvedSignTablet(sampleArc, 0.20, 0.80, 1.62, 2.82);
+  createCurvedSignLettering(sampleArc, 0.15, 0.85, 1.70, 2.85);
 
   // Exterior 2'-0" x 2'-0" x 4'-9" Column Attached Radially at Outer End (t = 1.0)
   const E = sampleArc(1.0);
@@ -2039,22 +1982,21 @@ function buildCircumferentialWing(side) {
     ];
   }
 
-  // F-2 Column Pad Footing (3'-0" x 3'-0" x 12" at -36") + 24" Stem Wall + 16" CMU Core
   const f2Mesh = createExtrudedPoly(makeRadialColumnPoly(1.50, 1.50), -3.0, -2.0, matFooting, true, 0.7);
   footingMeshes.push(f2Mesh);
 
-  const cStemMesh = createExtrudedPoly(makeRadialColumnPoly(1.00, 1.00), -2.0, 0.17, matCmuCore, true, 0.55);
-  const cCoreMesh = createExtrudedPoly(makeRadialColumnPoly(0.67, 0.67), 0.17, 4.50, matCmuCore, true, 0.5);
+  const cStemMesh = createExtrudedPoly(makeRadialColumnPoly(0.96, 0.96), -2.0, 0.17, matCmuCore, true, 0.55);
+  const cCoreMesh = createExtrudedPoly(makeRadialColumnPoly(0.67, 0.67), 0.17, 4.45, matCmuCore, true, 0.5);
   coreMeshes.push(cStemMesh, cCoreMesh);
 
-  const cMortarMesh = createExtrudedPoly(makeRadialColumnPoly(0.96, 0.96), 0.17, 4.50, matMortar, false);
+  const cMortarMesh = createExtrudedPoly(makeRadialColumnPoly(0.95, 0.95), 0.17, 4.48, matMortar, false);
   veneerMeshes.push(cMortarMesh);
 
   const nColCourses = 7;
   const colCourseH = (4.50 - 0.17) / nColCourses;
   for (let c = 0; c < nColCourses; c++) {
-    const zb = 0.17 + c * colCourseH + joint * 0.5;
-    const zt = 0.17 + (c + 1) * colCourseH - joint * 0.5;
+    const zb = 0.17 + c * colCourseH + joint * 0.45;
+    const zt = 0.17 + (c + 1) * colCourseH - joint * 0.45;
     const matUse = (c % 2 === 0) ? matStoneA : matStoneB;
     const cBlk = createExtrudedPoly(makeRadialColumnPoly(1.00, 1.00), zb, zt, matUse, true, 0.6);
     veneerMeshes.push(cBlk);
@@ -2063,28 +2005,34 @@ function buildCircumferentialWing(side) {
   createExtrudedPoly(makeRadialColumnPoly(1.18, 1.18), 4.50, 4.74, matCap, true, 0.75);
   createExtrudedPoly(makeRadialColumnPoly(1.10, 1.10), 4.74, 4.82, matCap, true, 0.55);
 
-  // Rebar Dowels in Curved Wall & Exterior Column
-  for (let k = 0; k <= 10; k += 2) {
+  // Rebar Dowels (ONLY visible in X-Ray Foundations mode!)
+  for (const k of [1, 3, 5, 7, 9]) {
     const pk = sampleArc(k / 10);
-    const barM = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 6.4, 8), matRebar);
-    barM.position.copy(to3(pk.x, pk.y, 0.4));
+    const barM = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 6.2, 8), matRebar);
+    barM.position.copy(to3(pk.x, pk.y, 0.3));
+    barM.visible = false;
     scene.add(barM);
+    rebarMeshes.push(barM);
   }
   for (const [ox, oy] of [[-0.45, -0.45], [0.45, -0.45], [0.45, 0.45], [-0.45, 0.45]]) {
-    const colBar = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 7.2, 8), matRebar);
-    colBar.position.copy(to3(colCx + ox, colCy + oy, 0.8));
+    const colBar = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 7.0, 8), matRebar);
+    colBar.position.copy(to3(colCx + ox, colCy + oy, 0.7));
+    colBar.visible = false;
     scene.add(colBar);
+    rebarMeshes.push(colBar);
   }
 }
 
 buildCircumferentialWing('left');
 buildCircumferentialWing('right');
 
-for (const rx of [-1.2, 0.0, 1.2]) {
-  for (const ry of [13.6, 14.4]) {
-    const barM = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 8.2, 8), matRebar);
-    barM.position.copy(to3(rx, ry, 1.3));
+for (const rx of [-0.9, 0.0, 0.9]) {
+  for (const ry of [13.7, 14.3]) {
+    const barM = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 8.0, 8), matRebar);
+    barM.position.copy(to3(rx, ry, 1.2));
+    barM.visible = false;
     scene.add(barM);
+    rebarMeshes.push(barM);
   }
 }
 
@@ -2105,13 +2053,14 @@ for (const p of polesSpec) {
   scene.add(caisM);
   footingMeshes.push(caisM);
 
-  // Caisson Rebar Cage (6 #6 vertical bars + #3 ties visible in X-Ray mode)
   for (let rb = 0; rb < 6; rb++) {
     const ra = (rb / 6) * Math.PI * 2;
     const rr = p.rCais * 0.72;
     const cBar = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, p.dCais - 0.3, 8), matRebar);
     cBar.position.copy(to3(p.x + Math.cos(ra) * rr, p.y + Math.sin(ra) * rr, -p.dCais / 2));
+    cBar.visible = false;
     scene.add(cBar);
+    rebarMeshes.push(cBar);
   }
 
   const slvM = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.38, p.dCais - 2.0, 16), matCmuCore);
@@ -2149,7 +2098,7 @@ for (const p of polesSpec) {
 // 8. Realistic Organic Multi-Cluster Landscaping & Background Street Trees
 function createBushCluster(x, y, baseRadius, isRose) {
   const group = new THREE.Group();
-  group.position.copy(to3(x, y, 0.12));
+  group.position.copy(to3(x, y, 0.14));
   const nLobes = 11;
   for (let i = 0; i < nLobes; i++) {
     const ang = (i / nLobes) * Math.PI * 2 + (i * 0.4);
@@ -2168,7 +2117,7 @@ function createBushCluster(x, y, baseRadius, isRose) {
     for (let b = 0; b < 14; b++) {
       const ba = (b / 14) * Math.PI * 2 + 0.2;
       const br = baseRadius * (0.28 + (b % 4) * 0.16);
-      const bloom = new THREE.Mesh(new THREE.DodecahedronGeometry(0.08, 1), matRoseBloom);
+      const bloom = new THREE.Mesh(new THREE.DodecahedronGeometry(0.07, 1), matRoseBloom);
       bloom.position.set(Math.cos(ba) * br, baseRadius * (0.72 + (b % 3) * 0.11), Math.sin(ba) * br);
       group.add(bloom);
     }
@@ -2178,16 +2127,18 @@ function createBushCluster(x, y, baseRadius, isRose) {
 
 for (const [bx, by] of [
   [-12.8, 14.5], [-10.5, 15.6], [-8.2, 16.3], [-5.8, 16.7],
-  [5.8, 16.7], [8.2, 16.3], [10.5, 15.6], [12.8, 14.5]
+  [5.8, 16.7], [8.2, 16.3], [10.5, 15.6], [12.8, 14.5],
+  [-3.2, 12.2], [3.2, 12.2]
 ]) {
   createBushCluster(bx, by, 0.78, false);
 }
 
 for (const [kx, ky] of [
-  [-11.5, 9.5], [-9.2, 10.6], [-6.8, 11.4], [-4.6, 11.9],
-  [4.6, 11.9], [6.8, 11.4], [9.2, 10.6], [11.5, 9.5]
+  [-11.5, 10.0], [-9.2, 10.9], [-6.8, 11.6], [-4.6, 12.0],
+  [-1.6, 11.2], [0.0, 11.0], [1.6, 11.2],
+  [4.6, 12.0], [6.8, 11.6], [9.2, 10.9], [11.5, 10.0]
 ]) {
-  createBushCluster(kx, ky, 0.64, true);
+  createBushCluster(kx, ky, 0.56, true);
 }
 
 function createParkTree(tx, ty, scale = 1.0) {
@@ -2216,8 +2167,8 @@ createParkTree(25, 35, 1.08);
 
 // 9. All 9 Low-Voltage 12V Architectural LED Uplights (3000K Warm White)
 const ledCoords = [
-  { pos: [-0.85, 11.4, 0.22], target: [-0.5, 13.0, 3.6], intensity: 3.4 },
-  { pos: [ 0.85, 11.4, 0.22], target: [ 0.5, 13.0, 3.6], intensity: 3.4 },
+  { pos: [-1.15, 11.3, 0.22], target: [-0.5, 13.0, 3.6], intensity: 3.4 },
+  { pos: [ 1.15, 11.3, 0.22], target: [ 0.5, 13.0, 3.6], intensity: 3.4 },
   { pos: [-6.5,  11.0, 0.22], target: [-6.8, 12.6, 2.6], intensity: 2.8 },
   { pos: [-11.0,  9.5, 0.22], target: [-11.5, 11.2, 2.8], intensity: 2.6 },
   { pos: [ 6.5,  11.0, 0.22], target: [ 6.8, 12.6, 2.6], intensity: 2.8 },
@@ -2234,7 +2185,6 @@ for (const sp of ledCoords) {
   const lensM = new THREE.Mesh(new THREE.SphereGeometry(0.10, 12, 12), matLedLens);
   lensM.position.copy(to3(sp.pos[0], sp.pos[1], sp.pos[2] + 0.12));
   scene.add(lensM);
-  ledLensMeshes.push(lensM);
 
   const spot = new THREE.SpotLight(0xffe2a8, sp.intensity, 48, Math.PI / 3.0, 0.65, 1.0);
   spot.position.copy(to3(sp.pos[0], sp.pos[1], sp.pos[2] + 0.16));
@@ -2245,38 +2195,7 @@ for (const sp of ledCoords) {
   nightLightsGroup.add(spot);
 }
 
-// 10. Floating 3D Architectural Callout Labels
-const labelSpecs = [
-  { pos: [0, 14.0, 6.6], text: "MONOLITO CENTRAL: 4'-0\" W × 2'-0\" D × 6'-0\" H" },
-  { pos: [-3.0, 13.8, 2.2], text: "GAP: 2'-0\"" },
-  { pos: [3.0, 13.8, 2.2], text: "GAP: 2'-0\"" },
-  { pos: [9.0, 12.2, 4.4], text: "MURO CURVO (R=13'-0\"): 10'-0\" CUERDA | 1'-0\" FLECHA | 15\" ESP. × 4'-0\" H" },
-  { pos: [-14.2, 10.0, 5.3], text: "COLUMNA EXTERIOR: 2'-0\" × 2'-0\" × 4'-9\" H (RADIAL)" },
-  { pos: [0, 0.0, 0.4], text: "PLAZOLETA CORTA A RAS EN ACERA (Y = 0'-0\" | 31'-9\" ANCHO)" },
-  { pos: [0, 19.0, 26.2], text: "3 ASTAS A 9'-0\" O.C. (3'-0\" DE PRESTON DR | 25' CENTRO + 2×20')" },
-  { pos: [-19.5, 11.0, 0.4], text: "22'-0\" ESPACIO VERDE (ACERA A CARRETERA)" },
-  { pos: [0, 13.8, -3.2], text: "ZAPATAS F-1/F-2/F-3 A -36\" (KBC) + STEM WALLS 16\"/28\" CMU", xrayOnly: true },
-  { pos: [0, 19.0, -5.2], text: "CAISSON CENTRAL: 30\"Ø × -60\" | LATERALES: 24\"Ø × -54\" (IBC 1807.3)", xrayOnly: true },
-];
-
-const labelsContainer = document.getElementById('labels-container');
 let currentMode = 'pbr';
-let showLabels = true;
-
-const labelElements = labelSpecs.map(spec => {
-  const div = document.createElement('div');
-  div.className = 'label-3d' + (spec.xrayOnly ? ' label-xray' : '');
-  div.textContent = spec.text;
-  labelsContainer.appendChild(div);
-  return { el: div, pos3d: to3(...spec.pos), xrayOnly: !!spec.xrayOnly };
-});
-
-function toggleLabels() {
-  showLabels = !showLabels;
-  const btn = document.getElementById('btn-labels');
-  if (btn) btn.classList.toggle('active', showLabels);
-  labelsContainer.style.display = showLabels ? 'block' : 'none';
-}
 
 function setRenderMode(mode) {
   currentMode = mode;
@@ -2328,6 +2247,7 @@ function setRenderMode(mode) {
   gridHelper.visible = (mode === 'vector' || mode === 'xray');
   groundMeshes.forEach(m => { m.material.opacity = isXray ? 0.16 : 1.0; m.material.depthWrite = !isXray; });
   veneerMeshes.forEach(m => { m.material.opacity = isXray ? 0.22 : 1.0; m.material.depthWrite = !isXray; });
+  rebarMeshes.forEach(r => { r.visible = isXray; });
   edgeLines.forEach(l => {
     l.visible = (mode === 'vector' || mode === 'xray');
     l.material.opacity = (mode === 'vector') ? 0.65 : 0.45;
@@ -2350,11 +2270,6 @@ function setCameraPreset(preset) {
     controls.target.set(0, -1.8, -14.5);
   }
   controls.update();
-}
-
-function toggleSidebar() {
-  const sb = document.getElementById('ca-sidebar');
-  if (sb) sb.style.display = (sb.style.display === 'none') ? 'block' : 'none';
 }
 
 setRenderMode('pbr');
@@ -2390,26 +2305,6 @@ function animate() {
 
   controls.update();
   renderer.render(scene, camera);
-
-  if (showLabels) {
-    const W = container.clientWidth, H = container.clientHeight;
-    for (const item of labelElements) {
-      if (item.xrayOnly && currentMode !== 'xray') {
-        item.el.style.display = 'none';
-        continue;
-      }
-      const v = item.pos3d.clone().project(camera);
-      if (v.z > 1) {
-        item.el.style.display = 'none';
-      } else {
-        item.el.style.display = 'block';
-        const x = (v.x * 0.5 + 0.5) * W;
-        const y = (-v.y * 0.5 + 0.5) * H;
-        item.el.style.left = x + 'px';
-        item.el.style.top = y + 'px';
-      }
-    }
-  }
 }
 animate();
 
